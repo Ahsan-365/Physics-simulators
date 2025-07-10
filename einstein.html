@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einstein Physics Simulators</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #6200ea; /* Deep Purple */
+      --secondary-color: #03dac6; /* Teal */
+      --accent-color: #ff4081; /* Pink */
+      --dark-color: #212121;
+      --light-color: #f5f5f5;
+      --background-gradient: linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%);
+      --panel-bg: #ffffff;
+      --border-radius: 12px;
+      --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top */
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    header {
+      text-align: center;
+      padding: 25px;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.3rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tab-btn {
+      padding: 14px 28px;
+      background: var(--panel-bg);
+      border: none;
+      border-radius: 30px;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      color: var(--dark-color);
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(98, 0, 234, 0.4);
+    }
+
+    .tab-content {
+      display: none;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group input[type="range"], /* Keep range styling for now, though it will be removed */
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    /* Remove specific range input styling as they are replaced by number inputs */
+    .control-group input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 10px;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 5px;
+      transition: background 0.3s ease;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.3s ease, transform 0.1s ease;
+    }
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background 0.3s ease, transform 0.1s ease;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.1);
+    }
+    .control-group input[type="range"]::-moz-range-thumb:active {
+      transform: scale(1.1);
+    }
+
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: var(--dark-color);
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 900px;
+      height: 550px; /* Increased height for more visual space */
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .info-item {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee;
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-item strong {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .info-item span {
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    /* Specific styles for Blackbody Radiation */
+    .blackbody-color-display {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: black;
+      margin: 20px auto;
+      border: 3px solid var(--primary-color);
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      transition: background-color 0.1s ease-in-out;
+    }
+
+    /* Specific styles for Quantum Tunneling */
+    .particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: var(--accent-color);
+      border-radius: 50%;
+      transition: transform linear; /* For smooth movement */
+      box-shadow: 0 0 8px var(--accent-color);
+    }
+    .barrier {
+      position: absolute;
+      background-color: rgba(var(--primary-color), 0.7);
+      border: 2px solid var(--primary-color);
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(var(--primary-color), 0.5);
+    }
+
+    /* Specific styles for Gravitational Lensing */
+    .star {
+        position: absolute;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.8);
+        z-index: 10;
+    }
+    .galaxy {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: radial-gradient(circle at center, #fff, #88f, #448);
+        border-radius: 50%;
+        box-shadow: 0 0 20px 5px rgba(100, 100, 255, 0.7);
+        z-index: 5;
+    }
+    .light-ray {
+        position: absolute;
+        background-color: yellow;
+        height: 2px;
+        transform-origin: left center;
+        z-index: 1;
+        opacity: 0.8;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        gap: 15px;
+      }
+      header {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+      }
+      .tabs {
+        gap: 8px;
+      }
+      .tab-btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+      .tab-content {
+        padding: 25px;
+      }
+      .simulation-title {
+        font-size: 1.8rem;
+      }
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 15px;
+      }
+      .control-group label {
+        font-size: 0.9rem;
+      }
+      .control-group input[type="number"],
+      .control-group input[type="range"],
+      .control-group select {
+        padding: 10px;
+        font-size: 0.95rem;
+      }
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 450px;
+      }
+      .info-panel {
+        padding: 20px;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      .simulation-area {
+        height: 380px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Einstein Physics Simulators</h1>
+      <p class="subtitle">Exploring the Universe through Relativity and Quantum Mechanics</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="specialRelativity">Special Relativity</button>
+      <button class="tab-btn" data-tab="massEnergy">Mass-Energy Equivalence</button>
+      <button class="tab-btn" data-tab="quantumTunneling">Quantum Tunneling</button>
+      <button class="tab-btn" data-tab="blackbodyRadiation">Blackbody Radiation</button>
+      <button class="tab-btn" data-tab="gravitationalLensing">Gravitational Lensing</button>
+    </div>
+
+    <!-- Special Relativity Tab -->
+    <div id="specialRelativity" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Time Dilation & Length Contraction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="relativeVelocity">Relative Velocity (v/c):</label>
+            <input type="number" id="relativeVelocity" min="0" max="0.999" value="0.5" step="0.001">
+          </div>
+          <div class="control-group">
+            <label for="properTime">Proper Time (Δt₀ in seconds):</label>
+            <input type="number" id="properTime" min="1" max="60" value="10" step="1">
+          </div>
+          <div class="control-group">
+            <label for="properLength">Proper Length (L₀ in meters):</label>
+            <input type="number" id="properLength" min="1" max="1000" value="100" step="1">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="specialRelativityCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Relative Velocity:</strong> <span id="infoVelocity">0.500 c</span></div>
+          <div class="info-item"><strong>Proper Time (Rest Frame):</strong> <span id="infoProperTime">10 s</span></div>
+          <div class="info-item"><strong>Dilated Time (Moving Frame):</strong> <span id="dilatedTime">11.55 s</span></div>
+          <div class="info-item"><strong>Proper Length (Rest Frame):</strong> <span id="infoProperLength">100 m</span></div>
+          <div class="info-item"><strong>Contracted Length (Moving Frame):</strong> <span id="contractedLength">86.60 m</span></div>
+          <div class="info-item"><strong>Lorentz Factor (γ):</strong> <span id="lorentzFactor">1.15</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mass-Energy Equivalence Tab -->
+    <div id="massEnergy" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Mass-Energy Equivalence (E=mc²)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="massInput">Mass (kg):</label>
+            <input type="number" id="massInput" min="0.000001" max="1" value="0.001" step="0.000001">
+          </div>
+          <div class="control-group">
+            <label for="energyUnit">Energy Unit:</label>
+            <select id="energyUnit">
+              <option value="joules">Joules (J)</option>
+              <option value="kilojoules">Kilojoules (kJ)</option>
+              <option value="megajoules">Megajoules (MJ)</option>
+              <option value="gigajoules">Gigajoules (GJ)</option>
+              <option value="terajoules">Terajoules (TJ)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Mass (m):</strong> <span id="infoMass">0.001 kg</span></div>
+          <div class="info-item"><strong>Speed of Light (c):</strong> <span>299,792,458 m/s</span></div>
+          <div class="info-item"><strong>Energy (E):</strong> <span id="calculatedEnergy">89,875,517,873,681.76 J</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quantum Tunneling Tab -->
+    <div id="quantumTunneling" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Quantum Tunneling</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="particleEnergy">Particle Energy (eV):</label>
+            <input type="number" id="particleEnergy" min="0.1" max="1.9" value="0.5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="barrierHeight">Barrier Height (eV):</label>
+            <input type="number" id="barrierHeight" min="1" max="5" value="2" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="barrierWidth">Barrier Width (nm):</label>
+            <input type="number" id="barrierWidth" min="0.1" max="2" value="0.5" step="0.1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startTunnelingBtn">Start Tunneling</button>
+          <button class="secondary" id="resetTunnelingBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <div id="tunnelingBarrier" class="barrier"></div>
+          <div id="tunnelingParticles"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Particle Energy:</strong> <span id="infoParticleEnergy">0.5 eV</span></div>
+          <div class="info-item"><strong>Barrier Height:</strong> <span id="infoBarrierHeight">2.0 eV</span></div>
+          <div class="info-item"><strong>Barrier Width:</strong> <span id="infoBarrierWidth">0.5 nm</span></div>
+          <div class="info-item"><strong>Tunneling Probability (relative):</strong> <span id="tunnelingProbability">?</span></div>
+          <div class="info-item"><strong>Particles Tunneled:</strong> <span id="particlesTunneled">0</span></div>
+          <div class="info-item"><strong>Particles Reflected:</strong> <span id="particlesReflected">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blackbody Radiation Tab -->
+    <div id="blackbodyRadiation" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Blackbody Radiation</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="temperatureInput">Temperature (Kelvin):</label>
+            <input type="number" id="temperatureInput" min="500" max="10000" value="3000" step="100">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="blackbodyCanvas"></canvas>
+          <div class="blackbody-color-display"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Temperature:</strong> <span id="infoTemperature">3000 K</span></div>
+          <div class="info-item"><strong>Peak Wavelength (λ_max):</strong> <span id="peakWavelength">966 nm (Infrared)</span></div>
+          <div class="info-item"><strong>Total Emitted Power (relative):</strong> <span id="totalPower">81.00</span></div>
+          <div class="info-item"><strong>Visible Color:</strong> <span id="visibleColor">Red-Orange</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gravitational Lensing Tab -->
+    <div id="gravitationalLensing" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Gravitational Lensing</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="lensMass">Lens Mass (relative):</label>
+            <input type="number" id="lensMass" min="1" max="100" value="50" step="1">
+          </div>
+          <div class="control-group">
+            <label for="sourceDistance">Source Distance (relative):</label>
+            <input type="number" id="sourceDistance" min="10" max="100" value="50" step="1">
+          </div>
+          <div class="control-group">
+            <label for="observerDistance">Observer Distance (relative):</label>
+            <input type="number" id="observerDistance" min="10" max="100" value="50" step="1">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <div id="lensingStar" class="star" style="width:10px; height:10px; left: 50px; top: 50%;"></div>
+          <div id="lensingGalaxy" class="galaxy" style="left: 50%; top: 50%; transform: translate(-50%, -50%);"></div>
+          <div id="lensingObserver" class="star" style="width:15px; height:15px; right: 50px; top: 50%; background-color: cyan; box-shadow: 0 0 15px 5px rgba(0,255,255,0.8);"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Lens Mass:</strong> <span id="infoLensMass">50 (relative)</span></div>
+          <div class="info-item"><strong>Source Distance:</strong> <span id="infoSourceDistance">50 (relative)</span></div>
+          <div class="info-item"><strong>Observer Distance:</strong> <span id="infoObserverDistance">50 (relative)</span></div>
+          <div class="info-item"><strong>Einstein Radius (relative):</strong> <span id="einsteinRadius">?</span></div>
+          <div class="info-item"><strong>Image Distortion:</strong> <span id="imageDistortion">Minor</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId;
+    let currentTabMode = 'specialRelativity'; // Initial active tab
+    let simulationCanvas = null; // Reference to the currently active canvas
+    let simulationCtx = null; // Reference to the currently active canvas context
+
+    // Constants
+    const C = 299792458; // Speed of light in m/s
+
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to draw an arrowhead at a given point and angle.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate of the arrow tip.
+     * @param {number} y - The y-coordinate of the arrow tip.
+     * @param {number} angle - The angle of the arrow in radians.
+     * @param {string} color - The color of the arrowhead.
+     * @param {number} size - The size of the arrowhead.
+     */
+    function drawArrowhead(ctx, x, y, angle, color, size = 10) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Updates the info panel based on the current simulation mode and its parameters.
+     */
+    function updateInfoPanel() {
+      // Special Relativity Info
+      if (currentTabMode === 'specialRelativity') {
+        const v_c = parseFloat(document.getElementById('relativeVelocity').value);
+        const properTime = parseFloat(document.getElementById('properTime').value);
+        const properLength = parseFloat(document.getElementById('properLength').value);
+
+        if (v_c >= 1) { // Prevent division by zero or imaginary numbers
+            document.getElementById('dilatedTime').textContent = 'Infinity';
+            document.getElementById('contractedLength').textContent = '0.00 m';
+            document.getElementById('lorentzFactor').textContent = 'Infinity';
+        } else {
+            const lorentzFactor = 1 / Math.sqrt(1 - v_c * v_c);
+            const dilatedTime = properTime * lorentzFactor;
+            const contractedLength = properLength / lorentzFactor;
+
+            document.getElementById('infoVelocity').textContent = `${v_c.toFixed(3)} c`;
+            document.getElementById('infoProperTime').textContent = `${properTime.toFixed(0)} s`;
+            document.getElementById('dilatedTime').textContent = `${dilatedTime.toFixed(2)} s`;
+            document.getElementById('infoProperLength').textContent = `${properLength.toFixed(0)} m`;
+            document.getElementById('contractedLength').textContent = `${contractedLength.toFixed(2)} m`;
+            document.getElementById('lorentzFactor').textContent = `${lorentzFactor.toFixed(2)}`;
+        }
+      }
+      // Mass-Energy Equivalence Info
+      else if (currentTabMode === 'massEnergy') {
+        const mass = parseFloat(document.getElementById('massInput').value);
+        const energyUnit = document.getElementById('energyUnit').value;
+
+        const energyInJoules = mass * C * C;
+        let displayedEnergy = energyInJoules;
+        let unitSuffix = 'J';
+
+        switch (energyUnit) {
+          case 'kilojoules':
+            displayedEnergy /= 1e3;
+            unitSuffix = 'kJ';
+            break;
+          case 'megajoules':
+            displayedEnergy /= 1e6;
+            unitSuffix = 'MJ';
+            break;
+          case 'gigajoules':
+            displayedEnergy /= 1e9;
+            unitSuffix = 'GJ';
+            break;
+          case 'terajoules':
+            displayedEnergy /= 1e12;
+            unitSuffix = 'TJ';
+            break;
+          case 'joules':
+          default:
+            // Already in Joules
+            break;
+        }
+
+        document.getElementById('infoMass').textContent = `${mass.toPrecision(3)} kg`;
+        document.getElementById('calculatedEnergy').textContent = `${displayedEnergy.toPrecision(5)} ${unitSuffix}`;
+      }
+      // Quantum Tunneling Info
+      else if (currentTabMode === 'quantumTunneling') {
+        const particleEnergy = parseFloat(document.getElementById('particleEnergy').value);
+        const barrierHeight = parseFloat(document.getElementById('barrierHeight').value);
+        const barrierWidth = parseFloat(document.getElementById('barrierWidth').value);
+
+        // Simplified tunneling probability (qualitative, not exact quantum formula)
+        let probability = 0;
+        if (particleEnergy < barrierHeight) {
+            // Probability decreases exponentially with barrier height and width, and increases with particle energy
+            const energyDifference = barrierHeight - particleEnergy;
+            probability = Math.exp(-2 * energyDifference * barrierWidth * 0.5); // Arbitrary scaling factor
+            probability = Math.max(0, Math.min(1, probability)); // Clamp between 0 and 1
+        } else {
+            probability = 1; // If particle energy is greater than barrier, it always passes
+        }
+
+        document.getElementById('infoParticleEnergy').textContent = `${particleEnergy.toFixed(1)} eV`;
+        document.getElementById('infoBarrierHeight').textContent = `${barrierHeight.toFixed(1)} eV`;
+        document.getElementById('infoBarrierWidth').textContent = `${barrierWidth.toFixed(1)} nm`;
+        document.getElementById('tunnelingProbability').textContent = `${(probability * 100).toFixed(2)} %`;
+      }
+      // Blackbody Radiation Info
+      else if (currentTabMode === 'blackbodyRadiation') {
+        const temperature = parseFloat(document.getElementById('temperatureInput').value);
+        const b = 2.898e-3; // Wien's displacement constant (m·K)
+
+        // Wien's Displacement Law: λ_max = b / T
+        const peakWavelengthMeters = b / temperature;
+        const peakWavelengthNM = peakWavelengthMeters * 1e9; // Convert to nanometers
+
+        let colorDescription = 'Infrared';
+        if (temperature < 1500) colorDescription = 'Deep Red';
+        else if (temperature < 2500) colorDescription = 'Dull Red';
+        else if (temperature < 3500) colorDescription = 'Red-Orange';
+        else if (temperature < 4500) colorDescription = 'Orange-Yellow';
+        else if (temperature < 5500) colorDescription = 'Yellow-White';
+        else if (temperature < 7000) colorDescription = 'White';
+        else if (temperature < 9000) colorDescription = 'Blue-White';
+        else colorDescription = 'Blue (UV dominant)';
+
+        // Stefan-Boltzmann Law: P ∝ T^4 (relative power)
+        const totalPower = Math.pow(temperature / 1000, 4); // Scale for readability
+
+        document.getElementById('infoTemperature').textContent = `${temperature.toFixed(0)} K`;
+        document.getElementById('peakWavelength').textContent = `${peakWavelengthNM.toFixed(0)} nm (${colorDescription})`;
+        document.getElementById('totalPower').textContent = `${totalPower.toFixed(2)}`;
+        document.getElementById('visibleColor').textContent = colorDescription;
+      }
+      // Gravitational Lensing Info
+      else if (currentTabMode === 'gravitationalLensing') {
+        const lensMass = parseFloat(document.getElementById('lensMass').value);
+        const sourceDistance = parseFloat(document.getElementById('sourceDistance').value); // D_S
+        const observerDistance = parseFloat(document.getElementById('observerDistance').value); // D_L
+
+        // Simplified Einstein Radius (qualitative, not exact formula)
+        // R_E proportional to sqrt(M * D_L * (D_S - D_L) / D_S)
+        // Assuming D_S and D_L are relative distances, we can use them directly
+        let einsteinRadius = Math.sqrt(lensMass * observerDistance * (sourceDistance - observerDistance) / sourceDistance);
+        if (isNaN(einsteinRadius) || einsteinRadius < 0) einsteinRadius = 0; // Handle invalid inputs
+
+        let distortion = 'Minor';
+        if (einsteinRadius > 15) distortion = 'Moderate';
+        if (einsteinRadius > 30) distortion = 'Significant';
+        if (einsteinRadius > 50) distortion = 'Strong (Einstein Ring possible)';
+
+        document.getElementById('infoLensMass').textContent = `${lensMass.toFixed(0)} (relative)`;
+        document.getElementById('infoSourceDistance').textContent = `${sourceDistance.toFixed(0)} (relative)`;
+        document.getElementById('infoObserverDistance').textContent = `${observerDistance.toFixed(0)} (relative)`;
+        document.getElementById('einsteinRadius').textContent = `${einsteinRadius.toFixed(2)} (relative units)`;
+        document.getElementById('imageDistortion').textContent = distortion;
+      }
+    }
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations
+        cancelAnimationFrame(animationId);
+        if (quantumTunnelingSim.animationId) clearInterval(quantumTunnelingSim.animationId);
+        if (blackbodyRadiationSim.animationId) cancelAnimationFrame(blackbodyRadiationSim.animationId);
+        if (gravitationalLensingSim.animationId) cancelAnimationFrame(gravitationalLensingSim.animationId);
+
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Update global mode
+        currentTabMode = tabId;
+
+        // Initialize canvas and context for the active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set for drawing
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Specific initializations/resets for each tab
+        if (currentTabMode === 'specialRelativity') {
+            specialRelativitySim.init();
+        } else if (currentTabMode === 'massEnergy') {
+            // No canvas, just update info panel
+        } else if (currentTabMode === 'quantumTunneling') {
+            quantumTunnelingSim.init();
+        } else if (currentTabMode === 'blackbodyRadiation') {
+            blackbodyRadiationSim.init();
+        } else if (currentTabMode === 'gravitationalLensing') {
+            gravitationalLensingSim.init();
+        }
+
+        // Re-start main animation loop if current tab needs it
+        if (currentTabMode === 'specialRelativity' || currentTabMode === 'blackbodyRadiation' || currentTabMode === 'gravitationalLensing') {
+            animate();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- Special Relativity Simulation ---
+    const specialRelativityCanvas = document.getElementById('specialRelativityCanvas');
+    const relativeVelocityInput = document.getElementById('relativeVelocity');
+    const properTimeInput = document.getElementById('properTime');
+    const properLengthInput = document.getElementById('properLength');
+
+    const specialRelativitySim = {
+        ctx: null,
+        canvas: null,
+        init: function() {
+            this.canvas = specialRelativityCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const v_c = parseFloat(relativeVelocityInput.value);
+            const properLength = parseFloat(properLengthInput.value);
+
+            // Calculate Lorentz factor
+            const lorentzFactor = 1 / Math.sqrt(1 - v_c * v_c);
+            const contractedLength = properLength / lorentzFactor;
+
+            // Visual representation
+            const restFrameLength = 200; // Pixels
+            const movingFrameLength = restFrameLength * (contractedLength / properLength);
+
+            const centerY = height / 2;
+            const startX = width / 2 - restFrameLength / 2;
+
+            // Draw Rest Frame (proper length)
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 4;
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, centerY - 50);
+            this.ctx.lineTo(startX + restFrameLength, centerY - 50);
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'green';
+            this.ctx.font = '16px Inter';
+            this.ctx.fillText(`L₀ = ${properLength.toFixed(0)} m (Rest Frame)`, startX, centerY - 65);
+            this.ctx.fillText(`Δt₀ = ${properTimeInput.value} s`, startX, centerY - 30);
+
+
+            // Draw Moving Frame (contracted length)
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 4;
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, centerY + 50);
+            this.ctx.lineTo(startX + movingFrameLength, centerY + 50);
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'red';
+            this.ctx.fillText(`L = ${contractedLength.toFixed(2)} m (Moving Frame)`, startX, centerY + 35);
+            this.ctx.fillText(`Δt = ${properTimeInput.value * lorentzFactor.toFixed(2)} s`, startX, centerY + 70);
+
+            // Draw an arrow for velocity
+            const arrowLength = 50;
+            const arrowX = startX + movingFrameLength / 2;
+            const arrowY = centerY + 50;
+            this.ctx.strokeStyle = 'blue';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(arrowX - arrowLength / 2, arrowY + 20);
+            this.ctx.lineTo(arrowX + arrowLength / 2, arrowY + 20);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, arrowX + arrowLength / 2, arrowY + 20, 0, 'blue', 10);
+            this.ctx.fillStyle = 'blue';
+            this.ctx.fillText(`v = ${v_c.toFixed(3)}c`, arrowX - 20, arrowY + 40);
+
+            updateInfoPanel();
+        }
+    };
+
+    relativeVelocityInput.addEventListener('input', specialRelativitySim.draw);
+    properTimeInput.addEventListener('input', specialRelativitySim.draw);
+    properLengthInput.addEventListener('input', specialRelativitySim.draw);
+
+    // --- Mass-Energy Equivalence Simulation ---
+    const massInput = document.getElementById('massInput');
+    const energyUnitSelect = document.getElementById('energyUnit');
+
+    // No canvas for this, just info panel updates
+    massInput.addEventListener('input', updateInfoPanel);
+    energyUnitSelect.addEventListener('change', updateInfoPanel);
+
+
+    // --- Quantum Tunneling Simulation ---
+    const quantumTunnelingCanvasContainer = document.getElementById('quantumTunneling').querySelector('.simulation-area');
+    const startTunnelingBtn = document.getElementById('startTunnelingBtn');
+    const resetTunnelingBtn = document.getElementById('resetTunnelingBtn');
+    const particleEnergyInput = document.getElementById('particleEnergy');
+    const barrierHeightInput = document.getElementById('barrierHeight');
+    const barrierWidthInput = document.getElementById('barrierWidth');
+    const tunnelingBarrierDiv = document.getElementById('tunnelingBarrier');
+    const tunnelingParticlesDiv = document.getElementById('tunnelingParticles');
+
+    const quantumTunnelingSim = {
+        animationId: null,
+        particles: [],
+        particlesTunneled: 0,
+        particlesReflected: 0,
+        init: function() {
+            this.reset();
+            this.updateBarrierVisual();
+        },
+        updateBarrierVisual: function() {
+            const width = quantumTunnelingCanvasContainer.offsetWidth;
+            const height = quantumTunnelingCanvasContainer.offsetHeight;
+            const barrierWidth = parseFloat(barrierWidthInput.value) * 50; // Scale nm to pixels
+            const barrierHeight = parseFloat(barrierHeightInput.value) * 30; // Scale eV to pixels
+
+            tunnelingBarrierDiv.style.width = `${barrierWidth}px`;
+            tunnelingBarrierDiv.style.height = `${barrierHeight}px`;
+            tunnelingBarrierDiv.style.left = `${(width - barrierWidth) / 2}px`;
+            tunnelingBarrierDiv.style.top = `${(height - barrierHeight) / 2}px`;
+        },
+        start: function() {
+            this.reset();
+            this.animationId = setInterval(() => {
+                this.createParticle();
+            }, 500); // Create a new particle every 0.5 seconds
+        },
+        reset: function() {
+            clearInterval(this.animationId);
+            this.particles = [];
+            this.particlesTunneled = 0;
+            this.particlesReflected = 0;
+            tunnelingParticlesDiv.innerHTML = ''; // Clear all particles
+            document.getElementById('particlesTunneled').textContent = '0';
+            document.getElementById('particlesReflected').textContent = '0';
+            updateInfoPanel();
+        },
+        createParticle: function() {
+            const particleEnergy = parseFloat(particleEnergyInput.value);
+            const barrierHeight = parseFloat(barrierHeightInput.value);
+            const barrierWidth = parseFloat(barrierWidthInput.value) * 50; // Pixels
+            const containerWidth = quantumTunnelingCanvasContainer.offsetWidth;
+            const containerHeight = quantumTunnelingCanvasContainer.offsetHeight;
+            const barrierX = (containerWidth - barrierWidth) / 2;
+
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            const startX = 0;
+            const startY = containerHeight / 2;
+            particle.style.left = `${startX}px`;
+            particle.style.top = `${startY}px`;
+            tunnelingParticlesDiv.appendChild(particle);
+
+            // Determine if tunneling occurs
+            let willTunnel = false;
+            if (particleEnergy >= barrierHeight) {
+                willTunnel = true; // Particle has enough energy to go over
+            } else {
+                // Simplified probability calculation for tunneling
+                const energyDifference = barrierHeight - particleEnergy;
+                const probability = Math.exp(-2 * energyDifference * barrierWidth * 0.01); // Arbitrary scaling
+                willTunnel = Math.random() < probability;
+            }
+
+            // Animate particle
+            const animationDuration = 2000; // ms
+            const travelDistance = containerWidth;
+            let finalX;
+
+            if (willTunnel) {
+                finalX = containerWidth - particle.offsetWidth;
+                this.particlesTunneled++;
+                document.getElementById('particlesTunneled').textContent = this.particlesTunneled;
+            } else {
+                finalX = barrierX - particle.offsetWidth; // Reflect before barrier
+                this.particlesReflected++;
+                document.getElementById('particlesReflected').textContent = this.particlesReflected;
+            }
+
+            particle.style.transitionDuration = `${animationDuration / 1000}s`;
+            particle.style.transform = `translateX(${finalX}px)`;
+
+            particle.addEventListener('transitionend', () => {
+                particle.remove(); // Remove particle after animation
+            });
+            updateInfoPanel();
+        }
+    };
+
+    startTunnelingBtn.addEventListener('click', () => quantumTunnelingSim.start());
+    resetTunnelingBtn.addEventListener('click', () => quantumTunnelingSim.reset());
+    particleEnergyInput.addEventListener('input', () => { quantumTunnelingSim.updateBarrierVisual(); updateInfoPanel(); });
+    barrierHeightInput.addEventListener('input', () => { quantumTunnelingSim.updateBarrierVisual(); updateInfoPanel(); });
+    barrierWidthInput.addEventListener('input', () => { quantumTunnelingSim.updateBarrierVisual(); updateInfoPanel(); });
+
+
+    // --- Blackbody Radiation Simulation ---
+    const blackbodyCanvas = document.getElementById('blackbodyCanvas');
+    const temperatureInput = document.getElementById('temperatureInput');
+    const blackbodyColorDisplay = document.querySelector('.blackbody-color-display');
+
+    const blackbodyRadiationSim = {
+        ctx: null,
+        canvas: null,
+        animationId: null,
+        init: function() {
+            this.canvas = blackbodyCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const temperature = parseFloat(temperatureInput.value);
+
+            // Get the primary color from CSS variables
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+
+            // Draw Planck's curve (simplified representation)
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = primaryColor; /* Use primary color from CSS */
+            this.ctx.lineWidth = 2;
+
+            // X-axis represents wavelength (arbitrary scale)
+            // Y-axis represents intensity
+            const maxIntensity = Math.pow(temperature / 1000, 3) * 10; // Scale intensity
+            const peakWavelengthPos = width * (2.898e-3 / temperature) * 1e9 / 1000; // Wien's Law, scaled to canvas width
+
+            this.ctx.moveTo(0, height);
+            for (let x = 0; x <= width; x++) {
+                // Simplified Planck's Law curve shape
+                const wavelengthFactor = x / width; // 0 to 1
+                const intensity = maxIntensity * wavelengthFactor * Math.exp(-wavelengthFactor * (temperature / 10000));
+                this.ctx.lineTo(x, height - intensity);
+            }
+            this.ctx.stroke();
+
+            // Draw axes and labels
+            this.ctx.strokeStyle = '#666';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, height);
+            this.ctx.lineTo(width, height); // X-axis (Wavelength)
+            this.ctx.moveTo(0, height);
+            this.ctx.lineTo(0, 0); // Y-axis (Intensity)
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = '#333';
+            this.ctx.font = '14px Inter';
+            this.ctx.fillText('Wavelength (λ)', width / 2 - 50, height - 10);
+            this.ctx.save();
+            this.ctx.translate(10, height / 2);
+            this.ctx.rotate(-Math.PI / 2);
+            this.ctx.fillText('Intensity', 0, 0);
+            this.ctx.restore();
+
+            // Update color display based on temperature
+            const color = this.temperatureToColor(temperature);
+            blackbodyColorDisplay.style.backgroundColor = color;
+
+            updateInfoPanel();
+        },
+        // Converts temperature to an approximate visible color (simplified)
+        temperatureToColor: function(temp) {
+            // These are approximate and visually tuned, not scientifically precise
+            if (temp < 1000) return '#400000'; // Very dull red/black
+            if (temp < 1500) return '#800000'; // Dark Red
+            if (temp < 2000) return '#B02000'; // Red
+            if (temp < 2500) return '#E04000'; // Bright Red
+            if (temp < 3000) return '#FF6000'; // Orange-Red
+            if (temp < 3500) return '#FF8000'; // Orange
+            if (temp < 4000) return '#FFA000'; // Yellow-Orange
+            if (temp < 4500) return '#FFC000'; // Yellow
+            if (temp < 5000) return '#FFE000'; // Bright Yellow
+            if (temp < 5500) return '#FFFF00'; // Pure Yellow
+            if (temp < 6000) return '#FFFF80'; // Light Yellow
+            if (temp < 6500) return '#FFFFFF'; // White
+            if (temp < 7500) return '#E0FFFF'; // Bluish White
+            if (temp < 9000) return '#A0E0FF'; // Light Blue
+            return '#60B0FF'; // Blue
+        }
+    };
+
+    temperatureInput.addEventListener('input', blackbodyRadiationSim.draw);
+
+
+    // --- Gravitational Lensing Simulation ---
+    const gravitationalLensingCanvasContainer = document.getElementById('gravitationalLensing').querySelector('.simulation-area');
+    const lensMassInput = document.getElementById('lensMass');
+    const sourceDistanceInput = document.getElementById('sourceDistance');
+    const observerDistanceInput = document.getElementById('observerDistance');
+    const lensingStar = document.getElementById('lensingStar');
+    const lensingGalaxy = document.getElementById('lensingGalaxy');
+    const lensingObserver = document.getElementById('lensingObserver');
+
+    const gravitationalLensingSim = {
+        animationId: null,
+        lightRays: [],
+        init: function() {
+            this.resetVisuals();
+            this.draw();
+        },
+        resetVisuals: function() {
+            this.lightRays = [];
+            // Clear existing light rays
+            const existingRays = gravitationalLensingCanvasContainer.querySelectorAll('.light-ray');
+            existingRays.forEach(ray => ray.remove());
+        },
+        draw: function() {
+            this.resetVisuals(); // Clear and redraw all rays
+
+            const containerWidth = gravitationalLensingCanvasContainer.offsetWidth;
+            const containerHeight = gravitationalLensingCanvasContainer.offsetHeight;
+
+            const lensMass = parseFloat(lensMassInput.value);
+            const sourceDistance = parseFloat(sourceDistanceInput.value);
+            const observerDistance = parseFloat(observerDistanceInput.value);
+
+            // Position elements dynamically
+            const starX = containerWidth * 0.1;
+            const galaxyX = containerWidth * 0.5;
+            const observerX = containerWidth * 0.9;
+            const centerY = containerHeight / 2;
+
+            lensingStar.style.left = `${starX - lensingStar.offsetWidth / 2}px`;
+            lensingStar.style.top = `${centerY - lensingStar.offsetHeight / 2}px`;
+
+            lensingGalaxy.style.left = `${galaxyX - lensingGalaxy.offsetWidth / 2}px`;
+            lensingGalaxy.style.top = `${centerY - lensingGalaxy.offsetHeight / 2}px`;
+
+            lensingObserver.style.left = `${observerX - lensingObserver.offsetWidth / 2}px`;
+            lensingObserver.style.top = `${centerY - lensingObserver.offsetHeight / 2}px`;
+
+            // Simulate light rays bending
+            const numRays = 10;
+            const maxOffset = containerHeight / 3; // Max vertical offset for rays
+
+            for (let i = 0; i < numRays; i++) {
+                const offset = (i - numRays / 2 + 0.5) * (maxOffset / numRays); // Spread rays vertically
+                const startY = centerY + offset;
+
+                // Create ray element
+                const ray = document.createElement('div');
+                ray.className = 'light-ray';
+                gravitationalLensingCanvasContainer.appendChild(ray);
+
+                // Path for the ray (simplified parabolic bend)
+                // The bend amount depends on lensMass and how close it passes to the galaxy
+                const bendFactor = lensMass * 0.005; // Adjust for visual effect
+                const initialSlope = (startY - centerY) / (galaxyX - starX);
+
+                // Define points for a bezier curve to simulate bending
+                const p1 = { x: starX, y: startY };
+                const p2 = { x: galaxyX, y: centerY + offset * (1 - bendFactor) }; // Control point near galaxy
+                const p3 = { x: observerX, y: centerY + offset * (1 + bendFactor) }; // Final point
+
+                // Draw the ray as a series of small line segments for visual curve
+                const steps = 50;
+                let currentX = p1.x;
+                let currentY = p1.y;
+
+                for (let j = 0; j <= steps; j++) {
+                    const t = j / steps;
+                    const nextX = (1 - t) * (1 - t) * p1.x + 2 * (1 - t) * t * p2.x + t * t * p3.x;
+                    const nextY = (1 - t) * (1 - t) * p1.y + 2 * (1 - t) * t * p2.y + t * t * p3.y;
+
+                    if (j > 0) {
+                        const segment = document.createElement('div');
+                        segment.className = 'light-ray';
+                        const dx = nextX - currentX;
+                        const dy = nextY - currentY;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                        segment.style.width = `${length}px`;
+                        segment.style.height = `2px`;
+                        segment.style.left = `${currentX}px`;
+                        segment.style.top = `${currentY}px`;
+                        segment.style.transform = `rotate(${angle}deg)`;
+                        gravitationalLensingCanvasContainer.appendChild(segment);
+                    }
+                    currentX = nextX;
+                    currentY = nextY;
+                }
+            }
+            updateInfoPanel();
+        }
+    };
+
+    // Corrected event listeners for gravitationalLensingSim to ensure 'this' context
+    lensMassInput.addEventListener('input', () => gravitationalLensingSim.draw());
+    sourceDistanceInput.addEventListener('input', () => gravitationalLensingSim.draw());
+    observerDistanceInput.addEventListener('input', () => gravitationalLensingSim.draw());
+
+
+    // Main animation loop - this function runs repeatedly and calls the drawing function
+    // for the currently active simulation tab if it's a canvas-based animation.
+    function animate() {
+      if (!simulationCtx && currentTabMode !== 'massEnergy' && currentTabMode !== 'quantumTunneling') {
+          animationId = requestAnimationFrame(animate); // Keep trying until ctx is set for canvas-based sims
+          return;
+      }
+
+      // Resize canvas if container size changes
+      if (simulationCanvas) {
+          const parentContainer = simulationCanvas.closest('.simulation-area');
+          if (parentContainer && (simulationCanvas.width !== parentContainer.offsetWidth || simulationCanvas.height !== parentContainer.offsetHeight)) {
+              simulationCanvas.width = parentContainer.offsetWidth;
+              simulationCanvas.height = parentContainer.offsetHeight;
+              // Redraw after resize
+              if (currentTabMode === 'specialRelativity') {
+                  specialRelativitySim.draw();
+              } else if (currentTabMode === 'blackbodyRadiation') {
+                  blackbodyRadiationSim.draw();
+              }
+          }
+      }
+
+
+      if (currentTabMode === 'specialRelativity') {
+          specialRelativitySim.draw();
+      } else if (currentTabMode === 'blackbodyRadiation') {
+          blackbodyRadiationSim.draw();
+      } else if (currentTabMode === 'gravitationalLensing') {
+          gravitationalLensingSim.draw(); // This one redraws DOM elements, not canvas
+      }
+      // Mass-Energy and Quantum Tunneling are event-driven or have their own intervals
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Initialize the simulators that need an initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            currentTabMode = tabId; // Set initial mode
+        }
+
+        // Initialize all simulators
+        specialRelativitySim.init();
+        quantumTunnelingSim.init(); // Init will reset and update barrier visual
+        blackbodyRadiationSim.init();
+        gravitationalLensingSim.init();
+
+        updateInfoPanel(); // Initial update of the info panel for the active tab
+
+        // Start the main animation loop only if the active tab is one that uses it
+        if (currentTabMode === 'specialRelativity' || currentTabMode === 'blackbodyRadiation' || currentTabMode === 'gravitationalLensing') {
+            animate();
+        }
+    });
+
+  </script>
+</body>
+</html>

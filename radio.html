@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Simulation Suite</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif; /* Using Inter font */
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 10px; /* Space between tabs */
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0; /* Prevent buttons from shrinking too much */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px; /* Reduced margin */
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px; /* Reduced margin */
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group input[type="range"],
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .control-group input[type="range"] {
+      padding: 0;
+      height: 25px; /* Adjust height for better touch target */
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 10px;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap; /* Allow buttons to wrap */
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px; /* Constrain max width for canvas */
+      height: 500px; /* Fixed height for canvas container */
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative; /* For absolute positioning of cars */
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%; /* Make canvas fill its container */
+      background: white;
+      border-radius: var(--border-radius); /* Apply radius to canvas as well */
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Styles for Electric/Magnetic Field indicators */
+    .field-indicator {
+        position: absolute;
+        font-size: 24px;
+        font-weight: bold;
+        color: #555;
+        opacity: 0.3;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .electric-field-line {
+        position: absolute;
+        width: 2px;
+        background-color: purple;
+        opacity: 0.5;
+        z-index: 5;
+    }
+
+    .magnetic-field-dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: green;
+        opacity: 0.5;
+        z-index: 5;
+    }
+
+    .magnetic-field-cross {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        opacity: 0.5;
+        z-index: 5;
+    }
+    .magnetic-field-cross::before, .magnetic-field-cross::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background-color: green;
+        top: 50%;
+        left: 0;
+        transform: translateY(-50%) rotate(45deg);
+    }
+    .magnetic-field-cross::after {
+        transform: translateY(-50%) rotate(-45deg);
+    }
+
+    /* Photoelectric Specific Styles (Reverted to canvas-compatible structure) */
+    /* .photoelectric-light-beam and .photoelectric-metal-surface will be drawn on canvas */
+    /* .photon and .electron CSS classes are removed as they are no longer used */
+
+    /* Radioactive Decay Specific Styles */
+    .decay-atom {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #ff6b6b; /* Parent atom color */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+        transition: background-color 0.5s ease;
+    }
+    .decay-atom.decayed {
+        background-color: #6bff6b; /* Daughter atom color */
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Physics Simulation Suite</h1>
+      <p class="subtitle">Interactive simulations of fundamental physics phenomena</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="alphaRays">Alpha Rays (α)</button>
+      <button class="tab-btn" data-tab="betaRays">Beta Rays (β)</button>
+      <button class="tab-btn" data-tab="gammaRays">Gamma Rays (γ)</button>
+      <button class="tab-btn" data-tab="photoelectricEffect">Photoelectric Effect</button>
+      <button class="tab-btn" data-tab="radioactiveDecay">Radioactive Decay</button>
+    </div>
+
+    <!-- Alpha Rays Tab -->
+    <div id="alphaRays" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Alpha Ray Penetration & Field Interaction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="alphaEnergy">Particle Energy (relative):</label>
+            <input type="number" id="alphaEnergy" min="1" max="10" value="5" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="alphaAbsorberMaterial">Absorber Material:</label>
+            <select id="alphaAbsorberMaterial">
+              <option value="none">None</option>
+              <option value="paper">Paper</option>
+              <option value="aluminum">Aluminum</option>
+              <option value="lead">Lead</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="alphaNumParticles">Number of Particles:</label>
+            <input type="number" id="alphaNumParticles" min="1" max="50" value="10" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="alphaElectricFieldStrength">Electric Field Strength (relative):</label>
+            <input type="number" id="alphaElectricFieldStrength" min="0" max="10" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="alphaElectricFieldDirection">Electric Field Direction:</label>
+            <select id="alphaElectricFieldDirection">
+              <option value="none">None</option>
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="alphaMagneticFieldStrength">Magnetic Field Strength (relative):</label>
+            <input type="number" id="alphaMagneticFieldStrength" min="0" max="5" value="0" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="alphaMagneticFieldDirection">Magnetic Field Direction:</label>
+            <select id="alphaMagneticFieldDirection">
+              <option value="none">None</option>
+              <option value="into">Into Screen (X)</option>
+              <option value="out">Out of Screen (•)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="alphaEmitParticlesBtn">Emit Particles</button>
+          <button class="secondary" id="alphaClearSimulationBtn">Clear Simulation</button>
+        </div>
+
+        <div class="simulation-area">
+          <div id="alphaElectricFieldVisual" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;"></div>
+          <div id="alphaMagneticFieldVisual" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;"></div>
+          <canvas id="alphaRaysCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="alphaRaysInfo">
+          <div class="info-item">Particle Type: <span id="infoAlphaParticleType">Alpha (α)</span></div>
+          <div class="info-item">Absorber: <span id="infoAlphaAbsorberMaterial">None</span></div>
+          <div class="info-item">Particles Emitted: <span id="alphaParticlesEmitted">0</span></div>
+          <div class="info-item">Particles Detected: <span id="alphaParticlesDetected">0</span></div>
+          <div class="info-item">Particles Stopped: <span id="alphaParticlesStopped">0</span></div>
+          <div class="info-item">Electric Field: <span id="infoAlphaElectricField">None</span></div>
+          <div class="info-item">Magnetic Field: <span id="infoAlphaMagneticField">None</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beta Rays Tab -->
+    <div id="betaRays" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Beta Ray Penetration & Field Interaction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="betaEnergy">Particle Energy (relative):</label>
+            <input type="number" id="betaEnergy" min="1" max="10" value="5" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="betaAbsorberMaterial">Absorber Material:</label>
+            <select id="betaAbsorberMaterial">
+              <option value="none">None</option>
+              <option value="paper">Paper</option>
+              <option value="aluminum">Aluminum</option>
+              <option value="lead">Lead</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="betaNumParticles">Number of Particles:</label>
+            <input type="number" id="betaNumParticles" min="1" max="50" value="10" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="betaElectricFieldStrength">Electric Field Strength (relative):</label>
+            <input type="number" id="betaElectricFieldStrength" min="0" max="10" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="betaElectricFieldDirection">Electric Field Direction:</label>
+            <select id="betaElectricFieldDirection">
+              <option value="none">None</option>
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="betaMagneticFieldStrength">Magnetic Field Strength (relative):</label>
+            <input type="number" id="betaMagneticFieldStrength" min="0" max="5" value="0" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="betaMagneticFieldDirection">Magnetic Field Direction:</label>
+            <select id="betaMagneticFieldDirection">
+              <option value="none">None</option>
+              <option value="into">Into Screen (X)</option>
+              <option value="out">Out of Screen (•)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="betaEmitParticlesBtn">Emit Particles</button>
+          <button class="secondary" id="betaClearSimulationBtn">Clear Simulation</button>
+        </div>
+
+        <div class="simulation-area">
+          <div id="betaElectricFieldVisual" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;"></div>
+          <div id="betaMagneticFieldVisual" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none;"></div>
+          <canvas id="betaRaysCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="betaRaysInfo">
+          <div class="info-item">Particle Type: <span id="infoBetaParticleType">Beta (β)</span></div>
+          <div class="info-item">Absorber: <span id="infoBetaAbsorberMaterial">None</span></div>
+          <div class="info-item">Particles Emitted: <span id="betaParticlesEmitted">0</span></div>
+          <div class="info-item">Particles Detected: <span id="betaParticlesDetected">0</span></div>
+          <div class="info-item">Particles Stopped: <span id="betaParticlesStopped">0</span></div>
+          <div class="info-item">Electric Field: <span id="infoBetaElectricField">None</span></div>
+          <div class="info-item">Magnetic Field: <span id="infoBetaMagneticField">None</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gamma Rays Tab -->
+    <div id="gammaRays" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Gamma Ray Penetration</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="gammaEnergy">Particle Energy (relative):</label>
+            <input type="number" id="gammaEnergy" min="1" max="10" value="5" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="gammaAbsorberMaterial">Absorber Material:</label>
+            <select id="gammaAbsorberMaterial">
+              <option value="none">None</option>
+              <option value="paper">Paper</option>
+              <option value="aluminum">Aluminum</option>
+              <option value="lead">Lead</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="gammaAbsorberThickness">Absorber Thickness (relative):</label>
+            <input type="number" id="gammaAbsorberThickness" min="1" max="10" value="5" step="1">
+          </div>
+
+          <div class="control-group">
+            <label for="gammaNumParticles">Number of Particles:</label>
+            <input type="number" id="gammaNumParticles" min="1" max="50" value="10" step="1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="gammaEmitParticlesBtn">Emit Particles</button>
+          <button class="secondary" id="gammaClearSimulationBtn">Clear Simulation</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="gammaRaysCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="gammaRaysInfo">
+          <div class="info-item">Particle Type: <span id="infoGammaParticleType">Gamma (γ)</span></div>
+          <div class="info-item">Absorber: <span id="infoGammaAbsorberMaterial">None</span></div>
+          <div class="info-item">Absorber Thickness: <span id="infoGammaAbsorberThickness">5</span></div>
+          <div class="info-item">Particles Emitted: <span id="gammaParticlesEmitted">0</span></div>
+          <div class="info-item">Particles Detected: <span id="gammaParticlesDetected">0</span></div>
+          <div class="info-item">Particles Stopped: <span id="gammaParticlesStopped">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photoelectric Effect Tab -->
+    <div id="photoelectricEffect" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Photoelectric Effect</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="metalWorkFunction">Metal Work Function (eV, relative):</label>
+            <input type="number" id="metalWorkFunction" min="0.1" max="10" value="2.3" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="lightIntensity">Light Intensity (%):</label>
+            <input type="number" id="lightIntensity" min="0" max="100" value="50" step="1">
+          </div>
+          <div class="control-group">
+            <label for="lightFrequency">Light Frequency (THz):</label>
+            <input type="number" id="lightFrequency" min="300" max="1000" value="600" step="10">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startPhotoelectricBtn">Start Light</button>
+          <button class="secondary" id="stopPhotoelectricBtn">Stop Light</button>
+          <button class="secondary" id="resetPhotoelectricBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="photoelectricCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="photoelectricInfo">
+          <div class="info-item">Metal Work Function: <span id="infoWorkFunction">2.3 eV</span></div>
+          <div class="info-item">Light Frequency: <span id="infoLightFrequency">600 THz</span></div>
+          <div class="info-item">Photon Energy: <span id="infoPhotonEnergy">2.48 eV</span></div>
+          <div class="info-item">Electrons Emitted: <span id="infoElectronsEmitted">0</span></div>
+          <div class="info-item">Kinetic Energy of Electrons: <span id="infoKineticEnergy">0 eV</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radioactive Decay Tab -->
+    <div id="radioactiveDecay" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Radioactive Decay</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="halfLife">Half-Life (seconds):</label>
+            <input type="number" id="halfLife" min="1" max="60" value="10" step="1">
+          </div>
+          <div class="control-group">
+            <label for="initialAtoms">Initial Number of Atoms:</label>
+            <input type="number" id="initialAtoms" min="10" max="200" value="100" step="10">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startDecayBtn">Start Decay</button>
+          <button class="secondary" id="resetDecayBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="radioactiveDecayCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="radioactiveDecayInfo">
+          <div class="info-item">Half-Life: <span id="infoHalfLife">10 seconds</span></div>
+          <div class="info-item">Initial Atoms: <span id="infoInitialAtoms">100</span></div>
+          <div class="info-item">Parent Atoms Remaining: <span id="infoParentAtoms">100</span></div>
+          <div class="info-item">Daughter Atoms Formed: <span id="infoDaughterAtoms">0</span></div>
+          <div class="info-item">Time Elapsed: <span id="infoTimeElapsed">0 s</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId;
+    let simulationCanvas = null;
+    let simulationCtx = null;
+    let currentActiveTab = 'alphaRays'; // Keep track of the currently active tab ID
+
+    /**
+     * Utility function to draw an arrowhead.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate of the arrow tip.
+     * @param {number} y - The y-coordinate of the arrow tip.
+     * @param {number} angle - The angle of the arrow in radians.
+     * @param {string} color - The color of the arrowhead.
+     */
+    function drawArrowhead(ctx, x, y, angle, color) {
+      const length = 10;
+      const width = 6;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-length, -width / 2);
+      ctx.lineTo(-length, width / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Function to update the info panel dynamically based on the current simulation.
+     */
+    function updateInfoPanel() {
+      const tabId = currentActiveTab;
+      const particleType = tabId.replace('Rays', ''); // 'alpha', 'beta', 'gamma'
+
+      if (tabId === 'alphaRays' || tabId === 'betaRays' || tabId === 'gammaRays') {
+        const infoParticleType = document.getElementById(`info${particleType.charAt(0).toUpperCase() + particleType.slice(1)}ParticleType`);
+        const infoAbsorberMaterial = document.getElementById(`info${particleType.charAt(0).toUpperCase() + particleType.slice(1)}AbsorberMaterial`);
+        const particlesEmitted = document.getElementById(`${particleType}ParticlesEmitted`);
+        const particlesDetected = document.getElementById(`${particleType}ParticlesDetected`);
+        const particlesStopped = document.getElementById(`${particleType}ParticlesStopped`);
+
+        if (infoParticleType) infoParticleType.textContent = particleType.charAt(0).toUpperCase() + particleType.slice(1) + (particleType === 'alpha' ? ' (α)' : particleType === 'beta' ? ' (β)' : ' (γ)');
+        if (infoAbsorberMaterial) infoAbsorberMaterial.textContent = document.getElementById(`${particleType}AbsorberMaterial`).value.charAt(0).toUpperCase() + document.getElementById(`${particleType}AbsorberMaterial`).value.slice(1);
+        if (particlesEmitted) particlesEmitted.textContent = radioactiveRaysSim[particleType].particlesEmitted;
+        if (particlesDetected) particlesDetected.textContent = radioactiveRaysSim[particleType].particlesDetected;
+        if (particlesStopped) particlesStopped.textContent = radioactiveRaysSim[particleType].particlesStopped;
+
+        if (particleType !== 'gamma') {
+            const infoElectricField = document.getElementById(`info${particleType.charAt(0).toUpperCase() + particleType.slice(1)}ElectricField`);
+            const infoMagneticField = document.getElementById(`info${particleType.charAt(0).toUpperCase() + particleType.slice(1)}MagneticField`);
+            const electricStrengthEl = document.getElementById(`${particleType}ElectricFieldStrength`);
+            const electricStrength = electricStrengthEl ? parseFloat(electricStrengthEl.value) : 0;
+            const electricDirectionEl = document.getElementById(`${particleType}ElectricFieldDirection`);
+            const electricDirection = electricDirectionEl ? electricDirectionEl.value : 'none';
+            const magneticStrengthEl = document.getElementById(`${particleType}MagneticFieldStrength`);
+            const magneticStrength = magneticStrengthEl ? parseFloat(magneticStrengthEl.value) : 0;
+            const magneticDirectionEl = document.getElementById(`${particleType}MagneticFieldDirection`);
+            const magneticDirection = magneticDirectionEl ? magneticDirectionEl.value : 'none';
+
+            if (infoElectricField) infoElectricField.textContent = electricStrength > 0 ? `${electricStrength} (${electricDirection})` : 'None';
+            if (infoMagneticField) infoMagneticField.textContent = magneticStrength > 0 ? `${magneticStrength} (${magneticDirection})` : 'None';
+        } else {
+            const infoAbsorberThickness = document.getElementById(`infoGammaAbsorberThickness`);
+            const gammaAbsorberThicknessEl = document.getElementById(`gammaAbsorberThickness`);
+            if (infoAbsorberThickness && gammaAbsorberThicknessEl) infoAbsorberThickness.textContent = parseFloat(gammaAbsorberThicknessEl.value);
+        }
+      } else if (tabId === 'photoelectricEffect') {
+          const metalWorkFunctionInput = document.getElementById('metalWorkFunction');
+          const lightFrequencyInput = document.getElementById('lightFrequency');
+          
+          const workFunction = metalWorkFunctionInput ? parseFloat(metalWorkFunctionInput.value) : 0;
+          const frequencyTHz = lightFrequencyInput ? parseFloat(lightFrequencyInput.value) : 0;
+          const h = 4.135667696e-15; // Planck's constant in eV·s
+          const photonEnergy = h * frequencyTHz * 1e12; // Convert THz to Hz
+
+          if (document.getElementById('infoWorkFunction')) document.getElementById('infoWorkFunction').textContent = `${workFunction.toFixed(2)} eV`;
+          if (document.getElementById('infoLightFrequency')) document.getElementById('infoLightFrequency').textContent = `${frequencyTHz} THz`;
+          if (document.getElementById('infoPhotonEnergy')) document.getElementById('infoPhotonEnergy').textContent = `${photonEnergy.toFixed(2)} eV`;
+          // Access photoelectricSim through radioactiveRaysSim
+          if (radioactiveRaysSim.photoelectric && document.getElementById('infoElectronsEmitted')) document.getElementById('infoElectronsEmitted').textContent = radioactiveRaysSim.photoelectric.electronsEmitted;
+          if (document.getElementById('infoKineticEnergy')) document.getElementById('infoKineticEnergy').textContent = `${Math.max(0, photonEnergy - workFunction).toFixed(2)} eV`;
+      } else if (tabId === 'radioactiveDecay') {
+          // Access radioactiveDecaySim through radioactiveRaysSim
+          if (radioactiveRaysSim.radioactiveDecay && document.getElementById('infoHalfLife')) document.getElementById('infoHalfLife').textContent = `${radioactiveRaysSim.radioactiveDecay.halfLife} seconds`;
+          if (radioactiveRaysSim.radioactiveDecay && document.getElementById('infoInitialAtoms')) document.getElementById('infoInitialAtoms').textContent = radioactiveRaysSim.radioactiveDecay.initialAtoms;
+          // FIX: Changed radioactiveDecaySim to radioactiveRaysSim.radioactiveDecay
+          if (radioactiveRaysSim.radioactiveDecay && document.getElementById('infoParentAtoms')) document.getElementById('infoParentAtoms').textContent = radioactiveRaysSim.radioactiveDecay.parentAtoms;
+          // FIX: Changed radioactiveDecaySim to radioactiveRaysSim.radioactiveDecay
+          if (radioactiveRaysSim.radioactiveDecay && document.getElementById('infoDaughterAtoms')) document.getElementById('infoDaughterAtoms').textContent = radioactiveRaysSim.radioactiveDecay.daughterAtoms;
+          // FIX: Changed radioactiveDecaySim to radioactiveRaysSim.radioactiveDecay
+          if (radioactiveRaysSim.radioactiveDecay && document.getElementById('infoTimeElapsed')) document.getElementById('infoTimeElapsed').textContent = `${radioactiveRaysSim.radioactiveDecay.timeElapsed.toFixed(1)} s`;
+      }
+    }
+
+    /**
+     * Function to resize the active canvas and re-initialize its simulation.
+     * This ensures responsiveness when the window is resized.
+     */
+    function resizeActiveCanvas() {
+        if (simulationCanvas && simulationCtx) {
+            const parentContainer = simulationCanvas.closest('.simulation-area');
+            if (parentContainer) {
+                const oldWidth = simulationCanvas.width;
+                const oldHeight = simulationCanvas.height;
+
+                simulationCanvas.width = parentContainer.offsetWidth;
+                simulationCanvas.height = parentContainer.offsetHeight;
+
+                // Re-initialize the active simulation to adapt to new canvas size
+                if (currentActiveTab === 'alphaRays') {
+                    radioactiveRaysSim.alpha.init();
+                    radioactiveRaysSim.alpha.drawFieldVisuals();
+                } else if (currentActiveTab === 'betaRays') {
+                    radioactiveRaysSim.beta.init();
+                    radioactiveRaysSim.beta.drawFieldVisuals();
+                } else if (currentActiveTab === 'gammaRays') {
+                    radioactiveRaysSim.gamma.init();
+                } else if (currentActiveTab === 'photoelectricEffect') {
+                    radioactiveRaysSim.photoelectric.init(); // Re-init to adjust positions
+                    radioactiveRaysSim.photoelectric.draw();
+                } else if (currentActiveTab === 'radioactiveDecay') {
+                    radioactiveRaysSim.radioactiveDecay.init(); // Re-init to redistribute atoms
+                }
+            }
+        }
+    }
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations in all simulators
+        cancelAnimationFrame(animationId);
+        if (radioactiveRaysSim.alpha.animationFrameId) cancelAnimationFrame(radioactiveRaysSim.alpha.animationFrameId);
+        if (radioactiveRaysSim.beta.animationFrameId) cancelAnimationFrame(radioactiveRaysSim.beta.animationFrameId);
+        if (radioactiveRaysSim.gamma.animationFrameId) cancelAnimationFrame(radioactiveRaysSim.gamma.animationFrameId);
+        // Check if photoelectric and radioactiveDecay simulators exist before trying to cancel their animations
+        if (radioactiveRaysSim.photoelectric && radioactiveRaysSim.photoelectric.animationFrameId) cancelAnimationFrame(radioactiveRaysSim.photoelectric.animationFrameId); // Changed back to cancelAnimationFrame
+        if (radioactiveRaysSim.radioactiveDecay && radioactiveRaysSim.radioactiveDecay.decayLoopId) clearInterval(radioactiveRaysSim.radioactiveDecay.decayLoopId);
+
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+        currentActiveTab = tabId; // Update global active tab
+
+        // Set up canvas for the active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Initialize the specific simulator for the active tab
+        if (tabId === 'alphaRays' || tabId === 'betaRays' || tabId === 'gammaRays') {
+            const particleType = tabId.replace('Rays', '');
+            // Ensure the simulator object exists before calling init
+            if (radioactiveRaysSim[particleType]) {
+                radioactiveRaysSim[particleType].init();
+                radioactiveRaysSim[particleType].drawFieldVisuals(); // Draw field indicators immediately
+            }
+        } else if (tabId === 'photoelectricEffect') {
+            if (radioactiveRaysSim.photoelectric) {
+                radioactiveRaysSim.photoelectric.init();
+                radioactiveRaysSim.photoelectric.draw(); // Initial draw for photoelectric
+            }
+        } else if (tabId === 'radioactiveDecay') {
+            if (radioactiveRaysSim.radioactiveDecay) {
+                radioactiveRaysSim.radioactiveDecay.init();
+                radioactiveRaysSim.radioactiveDecay.draw(); // Initial draw for radioactiveDecay
+            }
+        }
+
+
+        updateInfoPanel();
+      });
+    });
+
+    // --- Radioactive Rays Simulation Manager ---
+    let radioactiveRaysSim; // Declare it globally with let
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Define common properties and methods for ray simulations
+        const commonRayMethods = {
+            ctx: null,
+            canvas: null,
+            particles: [],
+            absorber: {
+                type: 'none',
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0,
+                color: ''
+            },
+            detector: {
+                x: 0,
+                y: 0,
+                width: 20,
+                height: 100,
+                color: 'rgba(0, 200, 0, 0.5)',
+                active: false
+            },
+            particlesEmitted: 0,
+            particlesDetected: 0,
+            particlesStopped: 0,
+            animationFrameId: null,
+            particleType: '', // Will be set by specific ray simulator
+
+            init: function(canvasId, type) {
+                this.particleType = type;
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                const parentContainer = this.canvas.closest('.simulation-area');
+                if (parentContainer) {
+                  this.canvas.width = parentContainer.offsetWidth;
+                  this.canvas.height = parentContainer.offsetHeight;
+                }
+                this.reset();
+            },
+
+            reset: function() {
+                cancelAnimationFrame(this.animationFrameId);
+                this.particles = [];
+                this.particlesEmitted = 0;
+                this.particlesDetected = 0;
+                this.particlesStopped = 0;
+                this.detector.active = false;
+                this.setupAbsorber();
+                this.draw(); // Draw initial empty state
+                updateInfoPanel();
+            },
+
+            setupAbsorber: function() {
+                const absorberMaterialId = `${this.particleType}AbsorberMaterial`;
+                const absorberTypeEl = document.getElementById(absorberMaterialId);
+                const absorberType = absorberTypeEl ? absorberTypeEl.value : 'none';
+                const canvasWidth = this.canvas.width;
+                const canvasHeight = this.canvas.height;
+
+                this.absorber.type = absorberType;
+                this.absorber.width = 50;
+                this.absorber.x = canvasWidth * 0.6;
+                this.absorber.y = (canvasHeight - 200) / 2;
+                this.absorber.height = 200;
+
+                switch (absorberType) {
+                    case 'paper':
+                        this.absorber.color = 'rgba(200, 200, 200, 0.7)';
+                        break;
+                    case 'aluminum':
+                        this.absorber.color = 'rgba(150, 150, 150, 0.7)';
+                        break;
+                    case 'lead':
+                        this.absorber.color = 'rgba(100, 100, 100, 0.7)';
+                        break;
+                    case 'none':
+                    default:
+                        this.absorber.color = 'transparent';
+                        break;
+                }
+
+                this.detector.x = this.absorber.type !== 'none' ? this.absorber.x + this.absorber.width + 50 : canvasWidth * 0.8;
+                this.detector.y = (canvasHeight - this.detector.height) / 2;
+            },
+
+            emitParticles: function() {
+                this.reset();
+                const numParticlesId = `${this.particleType}NumParticles`;
+                const energyInputId = `${this.particleType}Energy`;
+                const numEl = document.getElementById(numParticlesId);
+                const energyEl = document.getElementById(energyInputId);
+
+                const num = numEl ? parseInt(numEl.value) : 0;
+                const energy = energyEl ? parseFloat(energyEl.value) : 0;
+
+                const sourceX = this.canvas.width * 0.1;
+                const sourceY = this.canvas.height / 2;
+                const spread = 50;
+
+                for (let i = 0; i < num; i++) {
+                    let particle = {
+                        type: this.particleType,
+                        x: sourceX,
+                        y: sourceY + (Math.random() - 0.5) * spread,
+                        vx: energy * 2,
+                        vy: (Math.random() - 0.5) * energy * 0.5,
+                        radius: 0,
+                        color: '',
+                        stopped: false,
+                        detected: false
+                    };
+
+                    switch (this.particleType) {
+                        case 'alpha':
+                            particle.radius = 8;
+                            particle.color = 'red';
+                            particle.charge = 2; // +2e
+                            break;
+                        case 'beta':
+                            particle.radius = 4;
+                            particle.color = 'blue';
+                            particle.charge = -1; // -e
+                            break;
+                        case 'gamma':
+                            particle.radius = 2;
+                            particle.color = 'green';
+                            particle.charge = 0; // No charge
+                            break;
+                    }
+                    this.particles.push(particle);
+                }
+                this.particlesEmitted = num;
+                this.startAnimation();
+            },
+
+            startAnimation: function() {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animate();
+            },
+
+            animate: function() {
+                this.draw();
+                this.updateParticles();
+
+                // Continue animation if there are active particles or if light is on (for photoelectric effect)
+                // This condition needs to be specific to the current simulation
+                let shouldContinueAnimation = false;
+                if (this.particleType === 'alpha' || this.particleType === 'beta' || this.particleType === 'gamma') {
+                    shouldContinueAnimation = this.particles.some(p => !p.stopped && !p.detected && p.x < this.canvas.width + 10);
+                }
+                // For other simulations, their own animate loops will handle continuation
+
+                if (shouldContinueAnimation) {
+                    this.animationFrameId = requestAnimationFrame(() => this.animate());
+                } else {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+            },
+
+            draw: function() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw Source
+                this.ctx.fillStyle = '#555';
+                this.ctx.fillRect(this.canvas.width * 0.1 - 10, this.canvas.height / 2 - 30, 20, 60);
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText('Source', this.canvas.width * 0.1 - 10, this.canvas.height / 2 + 5);
+
+                // Draw Absorber
+                if (this.absorber.type !== 'none') {
+                    this.ctx.fillStyle = this.absorber.color;
+                    this.ctx.fillRect(this.absorber.x, this.absorber.y, this.absorber.width, this.absorber.height);
+                    this.ctx.strokeStyle = '#333';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.strokeRect(this.absorber.x, this.absorber.y, this.absorber.width, this.absorber.height);
+                    this.ctx.fillStyle = '#333';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.fillText(this.absorber.type.toUpperCase(), this.absorber.x + 5, this.absorber.y + 15);
+                }
+
+                // Draw Detector
+                this.ctx.fillStyle = this.detector.active ? 'rgba(0, 255, 0, 0.7)' : this.detector.color;
+                this.ctx.fillRect(this.detector.x, this.detector.y, this.detector.width, this.detector.height);
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(this.detector.x, this.detector.y, this.detector.width, this.detector.height);
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText('Detector', this.detector.x + 3, this.detector.y + 15);
+
+                // Draw Particles
+                this.particles.forEach(p => {
+                    if (!p.stopped) {
+                        this.ctx.fillStyle = p.color;
+                        if (p.type === 'gamma') {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p.x - p.vx, p.y - p.vy);
+                            this.ctx.lineTo(p.x, p.y);
+                            this.ctx.strokeStyle = p.color;
+                            this.ctx.lineWidth = p.radius * 2;
+                            this.ctx.stroke();
+                        } else {
+                            this.ctx.beginPath();
+                            this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                            this.ctx.fill();
+                        }
+                    }
+                });
+                updateInfoPanel();
+            },
+
+            updateParticles: function() {
+                this.detector.active = false;
+
+                let electricStrength = 0;
+                let electricDirection = 'none';
+                let magneticStrength = 0;
+                let magneticDirection = 'none';
+                let absorberThickness = 1; // Default for gamma if not found
+
+                if (this.particleType !== 'gamma') {
+                    const electricStrengthEl = document.getElementById(`${this.particleType}ElectricFieldStrength`);
+                    if (electricStrengthEl) electricStrength = parseFloat(electricStrengthEl.value);
+
+                    const electricDirectionEl = document.getElementById(`${this.particleType}ElectricFieldDirection`);
+                    if (electricDirectionEl) electricDirection = electricDirectionEl.value;
+
+                    const magneticStrengthEl = document.getElementById(`${this.particleType}MagneticFieldStrength`);
+                    if (magneticStrengthEl) magneticStrength = parseFloat(magneticStrengthEl.value);
+
+                    const magneticDirectionEl = document.getElementById(`${this.particleType}MagneticFieldDirection`);
+                    if (magneticDirectionEl) magneticDirection = magneticDirectionEl.value;
+                } else {
+                    const absorberThicknessEl = document.getElementById(`${this.particleType}AbsorberThickness`);
+                    if (absorberThicknessEl) absorberThickness = parseFloat(absorberThicknessEl.value);
+                }
+
+                this.particles.forEach(p => {
+                    if (p.stopped || p.detected) return;
+
+                    // Apply Electric Field Force (only for charged particles)
+                    if (p.charge !== 0 && electricStrength > 0) {
+                        let Fy = 0;
+                        if (electricDirection === 'up') {
+                            Fy = -electricStrength * p.charge; // Upwards force for positive, downwards for negative
+                        } else if (electricDirection === 'down') {
+                            Fy = electricStrength * p.charge; // Downwards force for positive, upwards for negative
+                        }
+                        // Scale force for visual effect
+                        p.vy += Fy * 0.05;
+                    }
+
+                    // Apply Magnetic Field Force (Lorentz Force: F = q(v x B))
+                    // Assuming B is perpendicular to the plane (into/out of screen)
+                    if (p.charge !== 0 && magneticStrength > 0) {
+                        let B_z = magneticStrength;
+                        if (magneticDirection === 'into') {
+                            B_z = magneticStrength;
+                        } else if (magneticDirection === 'out') {
+                            B_z = -magneticStrength;
+                        } else {
+                            B_z = 0;
+                        }
+
+                        // Fx = q * vy * Bz
+                        // Fy = -q * vx * Bz
+                        const forceX = p.charge * p.vy * B_z * 0.005; // Adjusted scaling
+                        const forceY = -p.charge * p.vx * B_z * 0.005; // Adjusted scaling
+
+                        p.vx += forceX;
+                        p.vy += forceY;
+                    }
+
+
+                    // Update position
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Check collision with absorber
+                    if (this.absorber.type !== 'none' &&
+                        p.x + p.radius > this.absorber.x &&
+                        p.x - p.radius < this.absorber.x + this.absorber.width &&
+                        p.y + p.radius > this.absorber.y &&
+                        p.y - p.radius < this.absorber.y + this.absorber.height) {
+
+                        let stopped = false;
+                        switch (p.type) {
+                            case 'alpha':
+                                if (this.absorber.type === 'paper' || this.absorber.type === 'aluminum' || this.absorber.type === 'lead') stopped = true;
+                                break;
+                            case 'beta':
+                                if (this.absorber.type === 'aluminum' || this.absorber.type === 'lead') stopped = true;
+                                break;
+                            case 'gamma':
+                                // Gamma attenuation based on thickness and material
+                                let attenuationCoefficient = 0; // Relative
+                                if (this.absorber.type === 'paper') attenuationCoefficient = 0.01;
+                                else if (this.absorber.type === 'aluminum') attenuationCoefficient = 0.05;
+                                else if (this.absorber.type === 'lead') attenuationCoefficient = 0.2;
+
+                                const probabilityOfPassing = Math.exp(-attenuationCoefficient * absorberThickness);
+                                if (Math.random() > probabilityOfPassing) {
+                                    stopped = true;
+                                }
+                                break;
+                        }
+
+                        if (stopped) {
+                            p.stopped = true;
+                            this.particlesStopped++;
+                        }
+                    }
+
+                    // Check collision with detector
+                    if (!p.stopped &&
+                        p.x + p.radius > this.detector.x &&
+                        p.x - p.radius < this.detector.x + this.detector.width &&
+                        p.y + p.radius > this.detector.y &&
+                        p.y - p.radius < this.detector.y + this.detector.height) {
+                        p.detected = true;
+                        this.particlesDetected++;
+                        this.detector.active = true;
+                    }
+
+                    // Remove particles that go off-screen
+                    if (p.x > this.canvas.width + 50 || p.y < -50 || p.y > this.canvas.height + 50) {
+                        p.stopped = true;
+                    }
+                });
+                // Filter out stopped particles to prevent them from being updated further
+                this.particles = this.particles.filter(p => !p.stopped);
+            },
+
+            drawFieldVisuals: function() {
+                const electricFieldVisualDiv = document.getElementById(`${this.particleType}ElectricFieldVisual`);
+                const magneticFieldVisualDiv = document.getElementById(`${this.particleType}MagneticFieldVisual`);
+
+                if (electricFieldVisualDiv) electricFieldVisualDiv.innerHTML = '';
+                if (magneticFieldVisualDiv) magneticFieldVisualDiv.innerHTML = '';
+
+                if (this.particleType !== 'gamma') { // Only draw fields for alpha and beta
+                    const electricStrengthEl = document.getElementById(`${this.particleType}ElectricFieldStrength`);
+                    const electricStrength = electricStrengthEl ? parseFloat(electricStrengthEl.value) : 0;
+                    const electricDirectionEl = document.getElementById(`${this.particleType}ElectricFieldDirection`);
+                    const electricDirection = electricDirectionEl ? electricDirectionEl.value : 'none';
+
+                    const magneticStrengthEl = document.getElementById(`${this.particleType}MagneticFieldStrength`);
+                    const magneticStrength = magneticStrengthEl ? parseFloat(magneticStrengthEl.value) : 0;
+                    const magneticDirectionEl = document.getElementById(`${this.particleType}MagneticFieldDirection`);
+                    const magneticDirection = magneticDirectionEl ? magneticDirectionEl.value : 'none';
+
+                    const areaWidth = this.canvas.width;
+                    const areaHeight = this.canvas.height;
+
+                    // Draw Electric Field Lines
+                    if (electricStrength > 0 && electricFieldVisualDiv) {
+                        const numLines = 10;
+                        const spacing = areaWidth / (numLines + 1);
+                        for (let i = 0; i < numLines; i++) {
+                            const line = document.createElement('div');
+                            line.className = 'electric-field-line';
+                            line.style.left = `${(i + 1) * spacing}px`;
+                            line.style.height = '100%';
+                            if (electricDirection === 'up') {
+                                line.style.transform = 'rotate(90deg)';
+                                line.style.transformOrigin = 'center center';
+                                line.innerHTML = '<span style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%);">&#x2191;</span><span style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">&#x2193;</span>';
+                            } else if (electricDirection === 'down') {
+                                line.style.transform = 'rotate(90deg)';
+                                line.style.transformOrigin = 'center center';
+                                line.innerHTML = '<span style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%);">&#x2193;</span><span style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);">&#x2191;</span>';
+                            }
+                            electricFieldVisualDiv.appendChild(line);
+                        }
+                    }
+
+                    // Draw Magnetic Field Indicators
+                    if (magneticStrength > 0 && magneticFieldVisualDiv) {
+                        const numIndicatorsX = 8;
+                        const numIndicatorsY = 5;
+                        const spacingX = areaWidth / (numIndicatorsX + 1);
+                        const spacingY = areaHeight / (numIndicatorsY + 1);
+
+                        for (let i = 0; i < numIndicatorsX; i++) {
+                            for (let j = 0; j < numIndicatorsY; j++) {
+                                const indicator = document.createElement('div');
+                                indicator.style.left = `${(i + 1) * spacingX - 5}px`;
+                                indicator.style.top = `${(j + 1) * spacingY - 5}px`;
+                                if (magneticDirection === 'into') {
+                                    indicator.className = 'magnetic-field-cross';
+                                } else if (magneticDirection === 'out') {
+                                    indicator.className = 'magnetic-field-dot';
+                                }
+                                magneticFieldVisualDiv.appendChild(indicator);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // --- Photoelectric Effect Simulator (Canvas-based) ---
+        const photoelectricSim = {
+            canvas: null,
+            ctx: null,
+            metalSurfaceY: 0,
+            metalSurfaceXStart: 0,
+            metalSurfaceXEnd: 0,
+            metalSurfaceHeight: 20, // Fixed height for drawing
+            electrons: [],
+            photons: [],
+            electronsEmitted: 0,
+            lightOn: false,
+            animationFrameId: null,
+            lightSourceX: 0,
+            lightSourceY: 50, // Adjusted Y for light source
+            lightBeamWidth: 50, // Width of the light source area
+
+            init: function() {
+                this.canvas = document.getElementById('photoelectricCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                const parentContainer = this.canvas.closest('.simulation-area');
+                if (parentContainer) {
+                    this.canvas.width = parentContainer.offsetWidth;
+                    this.canvas.height = parentContainer.offsetHeight;
+                }
+                // Position metal surface relative to canvas height
+                this.metalSurfaceY = this.canvas.height - 100; // 100px from bottom for better spacing
+                this.metalSurfaceXStart = this.canvas.width * 0.2; // Start more to the right
+                this.metalSurfaceXEnd = this.canvas.width * 0.8; // End more to the left
+
+                // Attach event listeners for controls
+                document.getElementById('metalWorkFunction').addEventListener('input', () => this.updateInfo());
+                document.getElementById('lightIntensity').addEventListener('input', () => this.updateInfo());
+                document.getElementById('lightFrequency').addEventListener('input', () => this.updateInfo());
+
+                // Attach event listeners for buttons
+                document.getElementById('startPhotoelectricBtn').addEventListener('click', () => this.startLight());
+                document.getElementById('stopPhotoelectricBtn').addEventListener('click', () => this.stopLight());
+                document.getElementById('resetPhotoelectricBtn').addEventListener('click', () => this.reset());
+
+                this.reset();
+            },
+
+            reset: function() {
+                cancelAnimationFrame(this.animationFrameId);
+                this.electrons = [];
+                this.photons = [];
+                this.electronsEmitted = 0;
+                this.lightOn = false;
+                this.draw(); // Clear canvas and draw initial state
+                this.updateInfo();
+            },
+
+            startLight: function() {
+                this.lightOn = true;
+                cancelAnimationFrame(this.animationFrameId); // Stop any previous animation
+                this.animate(); // Start new animation loop
+            },
+
+            stopLight: function() {
+                this.lightOn = false;
+                // Keep electrons/photons animating until they leave screen
+                // The animate loop's condition will handle stopping when all particles are gone.
+            },
+
+            animate: function() {
+                this.draw();
+                this.update();
+
+                // Continue animation if light is on OR there are still particles to animate
+                if (this.lightOn || this.electrons.length > 0 || this.photons.length > 0) {
+                    this.animationFrameId = requestAnimationFrame(() => this.animate());
+                } else {
+                    cancelAnimationFrame(this.animationFrameId);
+                }
+            },
+
+            draw: function() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw Light Source
+                this.ctx.fillStyle = '#555';
+                this.ctx.fillRect(this.lightSourceX, this.lightSourceY - this.lightBeamWidth / 2, 20, this.lightBeamWidth);
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText('Light', this.lightSourceX + 25, this.lightSourceY + 5);
+
+
+                // Draw Metal Surface
+                this.ctx.fillStyle = '#bbb';
+                this.ctx.fillRect(this.metalSurfaceXStart, this.metalSurfaceY, this.metalSurfaceXEnd - this.metalSurfaceXStart, this.metalSurfaceHeight);
+                this.ctx.strokeStyle = '#888';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(this.metalSurfaceXStart, this.metalSurfaceY, this.metalSurfaceXEnd - this.metalSurfaceXStart, this.metalSurfaceHeight);
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText('Metal', this.metalSurfaceXStart + 5, this.metalSurfaceY + 15);
+
+
+                // Draw Light Beam (visual representation)
+                if (this.lightOn) {
+                    const intensity = parseFloat(document.getElementById('lightIntensity').value);
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    // Draw multiple lines to represent the beam, from source to metal
+                    for (let i = 0; i < 5; i++) { // Draw a few lines to show spread
+                        const startY = this.lightSourceY - this.lightBeamWidth / 2 + (i / 4) * this.lightBeamWidth;
+                        // Calculate a target X on the metal surface for this specific line
+                        const targetX = this.metalSurfaceXStart + (i / 4) * (this.metalSurfaceXEnd - this.metalSurfaceXStart);
+                        const targetY = this.metalSurfaceY;
+
+                        this.ctx.moveTo(this.lightSourceX + 20, startY); // Start from right edge of light source box
+                        this.ctx.lineTo(targetX, targetY);
+                    }
+                    this.ctx.strokeStyle = `rgba(255, 255, 0, ${intensity / 100 * 0.3})`; // Yellow, semi-transparent
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                }
+
+                // Draw Photons
+                this.photons.forEach(p => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.fill();
+                });
+
+                // Draw Electrons
+                this.electrons.forEach(e => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = 'red'; // Electron color
+                    this.ctx.fill();
+
+                    // Draw the minus sign
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = `${e.radius * 1.5}px Arial`; // Scale font with radius
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText('-', e.x, e.y + 1); // Adjust y for centering
+                });
+                this.updateInfo(); // Update info panel after drawing
+            },
+
+            update: function() {
+                const workFunction = parseFloat(document.getElementById('metalWorkFunction').value);
+                const frequencyTHz = parseFloat(document.getElementById('lightFrequency').value);
+                const intensity = parseFloat(document.getElementById('lightIntensity').value);
+
+                const h = 4.135667696e-15; // Planck's constant in eV·s
+                const photonEnergy = h * frequencyTHz * 1e12; // Convert THz to Hz
+
+                // --- Photon Generation ---
+                // Emit more photons at higher intensity for better visual effect
+                const photonsPerFrame = Math.floor(intensity / 10) + 1; // Ensure at least 1 photon even at low intensity
+                const photonRadius = 3;
+                const photonSpeed = 8; // Constant speed for photons
+
+                if (this.lightOn) {
+                    for (let i = 0; i < photonsPerFrame; i++) {
+                        // Random start Y within the light source's vertical spread
+                        const startY = this.lightSourceY - this.lightBeamWidth / 2 + Math.random() * this.lightBeamWidth;
+                        
+                        // Choose a random target X on the metal surface
+                        const targetX = this.metalSurfaceXStart + Math.random() * (this.metalSurfaceXEnd - this.metalSurfaceXStart);
+                        const targetY = this.metalSurfaceY; // Target Y is the metal surface
+
+                        const dx = targetX - (this.lightSourceX + 20); // Start from right edge of light source box
+                        const dy = targetY - startY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        this.photons.push({
+                            x: this.lightSourceX + 20, // Start from right edge of light source box
+                            y: startY,
+                            vx: (dx / distance) * photonSpeed,
+                            vy: (dy / distance) * photonSpeed,
+                            radius: photonRadius,
+                            color: 'yellow'
+                        });
+                    }
+                }
+
+                // --- Photon Movement and Collision Detection ---
+                this.photons = this.photons.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Check if photon hits the metal surface
+                    // Check if photon's bottom edge is at or below metal surface top edge
+                    // And if photon's x is within metal surface x bounds
+                    if (p.y + p.radius >= this.metalSurfaceY && p.x >= this.metalSurfaceXStart && p.x <= this.metalSurfaceXEnd) {
+                        // Photon hit the metal
+                        if (photonEnergy > workFunction) {
+                            // Emit an electron from the hit location
+                            this.emitElectron(photonEnergy - workFunction, p.x);
+                        }
+                        return false; // Remove photon after hit
+                    }
+
+                    // Remove if off screen (passed metal or went too far)
+                    return p.x < this.canvas.width + p.radius && p.y < this.canvas.height + p.radius && p.x > -p.radius && p.y > -p.radius;
+                });
+
+                // --- Electron Movement ---
+                this.electrons = this.electrons.filter(e => {
+                    e.x += e.vx;
+                    e.y += e.vy;
+                    e.vy += 0.1; // Simple gravity effect
+
+                    // Remove if off screen
+                    return e.y < this.canvas.height + e.radius && e.x > -e.radius && e.x < this.canvas.width + e.radius;
+                });
+            },
+
+            emitElectron: function(kineticEnergy, emitX) {
+                const electronRadius = 8; // Increased radius for visibility
+                // Define a base speed and scale factor to ensure visible electron movement
+                // Even with low kinetic energy, electrons should have a noticeable initial kick
+                const baseSpeed = 2; // Minimum upward speed for visibility
+                const speedScaleFactor = 0.5; // How much kinetic energy influences speed (more pronounced effect)
+                const electronInitialVelocity = baseSpeed + (kineticEnergy * speedScaleFactor);
+
+                this.electrons.push({
+                    x: emitX, // Emit from the exact X where photon hit
+                    y: this.metalSurfaceY - electronRadius, // Start just above the metal surface
+                    vx: (Math.random() - 0.5) * 0.5, // Small horizontal spread for better visibility
+                    vy: -electronInitialVelocity, // Directly use calculated initial velocity upwards
+                    radius: electronRadius,
+                    color: 'red',
+                    kineticEnergy: kineticEnergy
+                });
+                this.electronsEmitted++;
+            },
+
+            updateInfo: function() {
+                const workFunction = parseFloat(document.getElementById('metalWorkFunction').value);
+                const frequencyTHz = parseFloat(document.getElementById('lightFrequency').value);
+                const intensity = parseFloat(document.getElementById('lightIntensity').value);
+                const h = 4.135667696e-15; // Planck's constant in eV·s
+                const photonEnergy = h * frequencyTHz * 1e12; // Convert THz to Hz
+
+                document.getElementById('infoWorkFunction').textContent = `${workFunction.toFixed(2)} eV`;
+                document.getElementById('infoLightFrequency').textContent = `${frequencyTHz} THz`;
+                document.getElementById('infoPhotonEnergy').textContent = `${photonEnergy.toFixed(2)} eV`;
+                document.getElementById('infoElectronsEmitted').textContent = this.electronsEmitted;
+                document.getElementById('infoKineticEnergy').textContent = `${Math.max(0, photonEnergy - workFunction).toFixed(2)} eV`;
+            }
+        };
+
+        // --- Radioactive Decay Simulator ---
+        const radioactiveDecaySim = {
+            canvas: null,
+            ctx: null,
+            atoms: [],
+            initialAtoms: 0,
+            halfLife: 0,
+            parentAtoms: 0,
+            daughterAtoms: 0,
+            timeElapsed: 0,
+            decayLoopId: null,
+            lastUpdateTime: 0,
+
+            init: function() {
+                this.canvas = document.getElementById('radioactiveDecayCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                const parentContainer = this.canvas.closest('.simulation-area');
+                if (parentContainer) {
+                    this.canvas.width = parentContainer.offsetWidth;
+                    this.canvas.height = parentContainer.offsetHeight;
+                }
+
+                // Attach event listeners
+                const halfLifeInput = document.getElementById('halfLife');
+                if (halfLifeInput) halfLifeInput.addEventListener('input', updateInfoPanel);
+                const initialAtomsInput = document.getElementById('initialAtoms');
+                if (initialAtomsInput) initialAtomsInput.addEventListener('input', () => this.reset()); // Reset on initial atoms change
+                const startDecayBtn = document.getElementById('startDecayBtn');
+                if (startDecayBtn) startDecayBtn.addEventListener('click', () => this.startDecay());
+                const resetDecayBtn = document.getElementById('resetDecayBtn');
+                if (resetDecayBtn) resetDecayBtn.addEventListener('click', () => this.reset());
+
+                this.reset();
+            },
+
+            reset: function() {
+                if (this.decayLoopId) clearInterval(this.decayLoopId);
+                const initialAtomsInput = document.getElementById('initialAtoms');
+                const halfLifeInput = document.getElementById('halfLife');
+
+                this.initialAtoms = initialAtomsInput ? parseInt(initialAtomsInput.value) : 100;
+                this.halfLife = halfLifeInput ? parseInt(halfLifeInput.value) : 10;
+                this.parentAtoms = this.initialAtoms;
+                this.daughterAtoms = 0;
+                this.timeElapsed = 0;
+                this.atoms = [];
+                // Distribute atoms randomly across the canvas
+                for (let i = 0; i < this.initialAtoms; i++) {
+                    this.atoms.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        decayed: false
+                    });
+                }
+                this.draw();
+                updateInfoPanel();
+            },
+
+            startDecay: function() {
+                this.reset(); // Ensure a fresh start
+                this.lastUpdateTime = performance.now();
+                this.decayLoopId = setInterval(() => this.update(), 100); // Update every 100ms
+            },
+
+            update: function() {
+                // Stop the timer if all parent atoms have decayed
+                if (this.parentAtoms <= 0) {
+                    if (this.decayLoopId) clearInterval(this.decayLoopId);
+                    this.decayLoopId = null; // Clear the interval ID
+                    this.draw(); // Draw one last time to ensure info panel is updated
+                    return;
+                }
+
+                const now = performance.now();
+                const deltaTime = (now - this.lastUpdateTime) / 1000; // Time in seconds
+                this.lastUpdateTime = now;
+                this.timeElapsed += deltaTime;
+
+                const decayConstant = Math.log(2) / this.halfLife;
+                let decayedThisInterval = 0;
+
+                this.atoms.forEach(atom => {
+                    if (!atom.decayed) {
+                        // Probability of decay in this small time interval
+                        const probabilityOfDecay = 1 - Math.exp(-decayConstant * deltaTime);
+                        if (Math.random() < probabilityOfDecay) {
+                            atom.decayed = true;
+                            decayedThisInterval++;
+                        }
+                    }
+                }
+                );
+
+                this.parentAtoms -= decayedThisInterval;
+                this.daughterAtoms += decayedThisInterval;
+
+                // Ensure counts don't go negative
+                if (this.parentAtoms < 0) this.parentAtoms = 0;
+
+                this.draw();
+            },
+
+            draw: function() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.atoms.forEach(atom => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(atom.x, atom.y, 8, 0, Math.PI * 2);
+                    this.ctx.fillStyle = atom.decayed ? '#6bff6b' : '#ff6b6b'; // Green for daughter, red for parent
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#333';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                });
+                updateInfoPanel();
+            }
+        };
+
+
+        // Initialize radioactiveRaysSim and its properties
+        radioactiveRaysSim = {
+            alpha: Object.create(commonRayMethods),
+            beta: Object.create(commonRayMethods),
+            gamma: Object.create(commonRayMethods),
+            photoelectric: photoelectricSim,
+            radioactiveDecay: radioactiveDecaySim
+        };
+
+        // Assign specific init functions (which call common.init and attach listeners)
+        radioactiveRaysSim.alpha.init = function() {
+            commonRayMethods.init.call(this, 'alphaRaysCanvas', 'alpha');
+            document.getElementById('alphaEnergy').addEventListener('input', updateInfoPanel);
+            document.getElementById('alphaAbsorberMaterial').addEventListener('change', () => this.setupAbsorber());
+            document.getElementById('alphaNumParticles').addEventListener('input', updateInfoPanel);
+            document.getElementById('alphaElectricFieldStrength').addEventListener('input', () => this.drawFieldVisuals());
+            document.getElementById('alphaElectricFieldDirection').addEventListener('change', () => this.drawFieldVisuals());
+            document.getElementById('alphaMagneticFieldStrength').addEventListener('input', () => this.drawFieldVisuals());
+            document.getElementById('alphaMagneticFieldDirection').addEventListener('change', () => this.drawFieldVisuals());
+            document.getElementById('alphaEmitParticlesBtn').addEventListener('click', () => this.emitParticles());
+            document.getElementById('alphaClearSimulationBtn').addEventListener('click', () => this.reset());
+        };
+
+        radioactiveRaysSim.beta.init = function() {
+            commonRayMethods.init.call(this, 'betaRaysCanvas', 'beta');
+            document.getElementById('betaEnergy').addEventListener('input', updateInfoPanel);
+            document.getElementById('betaAbsorberMaterial').addEventListener('change', () => this.setupAbsorber());
+            document.getElementById('betaNumParticles').addEventListener('input', updateInfoPanel);
+            document.getElementById('betaElectricFieldStrength').addEventListener('input', () => this.drawFieldVisuals());
+            document.getElementById('betaElectricFieldDirection').addEventListener('change', () => this.drawFieldVisuals());
+            document.getElementById('betaMagneticFieldStrength').addEventListener('input', () => this.drawFieldVisuals());
+            document.getElementById('betaMagneticFieldDirection').addEventListener('change', () => this.drawFieldVisuals());
+            document.getElementById('betaEmitParticlesBtn').addEventListener('click', () => this.emitParticles());
+            document.getElementById('betaClearSimulationBtn').addEventListener('click', () => this.reset());
+        };
+
+        radioactiveRaysSim.gamma.init = function() {
+            commonRayMethods.init.call(this, 'gammaRaysCanvas', 'gamma');
+            document.getElementById('gammaEnergy').addEventListener('input', updateInfoPanel);
+            document.getElementById('gammaAbsorberMaterial').addEventListener('change', () => this.setupAbsorber());
+            document.getElementById('gammaAbsorberThickness').addEventListener('input', updateInfoPanel);
+            document.getElementById('gammaNumParticles').addEventListener('input', updateInfoPanel);
+            document.getElementById('gammaEmitParticlesBtn').addEventListener('click', () => this.emitParticles());
+            document.getElementById('gammaClearSimulationBtn').addEventListener('click', () => this.reset());
+        };
+
+
+        // Set up the initial canvas for the default active tab (Alpha Rays)
+        const initialTabBtn = document.querySelector('.tab-btn.active');
+        if (initialTabBtn) {
+            const tabId = initialTabBtn.getAttribute('data-tab');
+            currentActiveTab = tabId;
+            // Only get canvas for canvas-based tabs
+            if (tabId === 'alphaRays' || tabId === 'betaRays' || tabId === 'gammaRays' || tabId === 'radioactiveDecay' || tabId === 'photoelectricEffect') { // Added photoelectricEffect here
+                const initialCanvas = document.querySelector(`#${tabId} canvas`);
+                if (initialCanvas) {
+                    simulationCanvas = initialCanvas;
+                    simulationCtx = initialCanvas.getContext('2d');
+                    const parentContainer = initialCanvas.closest('.simulation-area');
+                    if (parentContainer) {
+                      initialCanvas.width = parentContainer.offsetWidth;
+                      initialCanvas.height = parentContainer.offsetHeight;
+                    }
+                }
+            }
+        }
+        // Initialize all simulators, but only the active one will draw initially
+        radioactiveRaysSim.alpha.init();
+        radioactiveRaysSim.beta.init();
+        radioactiveRaysSim.gamma.init();
+        radioactiveRaysSim.photoelectric.init(); // Initialize photoelectric
+        radioactiveRaysSim.radioactiveDecay.init(); // Initialize radioactive decay
+
+        // Ensure the initial active tab's visuals are drawn
+        if (currentActiveTab === 'alphaRays' || currentActiveTab === 'betaRays' || currentActiveTab === 'gammaRays') {
+            if (radioactiveRaysSim[currentActiveTab.replace('Rays', '')]) {
+                radioactiveRaysSim[currentActiveTab.replace('Rays', '')].drawFieldVisuals();
+            }
+        } else if (currentActiveTab === 'photoelectricEffect') {
+            radioactiveRaysSim.photoelectric.draw(); // Ensure initial draw for photoelectric
+        }
+        updateInfoPanel();
+
+        // Add global resize listener
+        window.addEventListener('resize', resizeActiveCanvas);
+    });
+
+  </script>
+</body>
+</html>

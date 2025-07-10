@@ -1,0 +1,3368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Simulation Suite</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 30px;
+      max-width: 1200px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      width: 100%;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+      width: 100%;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .control-group {
+      margin-bottom: 0;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Specific styles for Electric Fields */
+    .charge {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        color: white;
+        cursor: grab;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .charge.positive { background-color: red; }
+    .charge.negative { background-color: blue; }
+
+    /* Quantum Tunneling styles */
+    .wave-packet {
+        position: absolute;
+        background: linear-gradient(to right, rgba(0, 128, 255, 0.5), rgba(0, 128, 255, 0.1));
+        height: 50px; /* Visual height of the wave */
+        top: calc(50% - 25px);
+        border-radius: 5px;
+        transition: left 0.5s linear;
+    }
+    .barrier {
+        position: absolute;
+        background-color: #666;
+        height: 100%;
+        top: 0;
+    }
+
+    /* Magnetic Resonance specific styles */
+    .magnetic-resonance-stage {
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        color: #555;
+    }
+    .magnetic-resonance-stage span {
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 20px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .simulation-area {
+        height: 350px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      .subtitle {
+        font-size: 1rem;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .button-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      button {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Physics Simulation Suite</h1>
+      <p class="subtitle">Interactive physics simulations for education and exploration</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="magneticFields">Magnetic Fields</button>
+      <button class="tab-btn" data-tab="electricFields">Electric Fields</button>
+      <button class="tab-btn" data-tab="magneticForceCurrent">Magnetic Force (Current)</button>
+      <button class="tab-btn" data-tab="magneticForceCharge">Magnetic Force (Charge)</button>
+      <button class="tab-btn" data-tab="induction">Electromagnetic Induction</button>
+      <button class="tab-btn" data-tab="earthMagneticField">Earth's Magnetic Field</button>
+      <button class="tab-btn" data-tab="magneticResonance">Magnetic Resonance</button>
+      <button class="tab-btn" data-tab="quantumTunneling">Quantum Tunneling</button>
+    </div>
+
+    <!-- Magnetic Fields Tab -->
+    <div id="magneticFields" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Interactive Magnetic Field Visualization</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="magnetFieldSource">Field Source:</label>
+            <select id="magnetFieldSource">
+              <option value="bar_magnet">Bar Magnet</option>
+              <option value="two_bar_magnets_attract">Two Bar Magnets (Attraction)</option>
+              <option value="two_bar_magnets_repel">Two Bar Magnets (Repulsion)</option>
+              <option value="horseshoe_magnet">Horseshoe Magnet</option>
+              <option value="electromagnet">Electromagnet</option>
+              <option value="current_wire">Current-Carrying Wire</option>
+              <option value="solenoid">Solenoid</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="magnetStrengthInput">Strength:</label>
+            <input type="number" id="magnetStrengthInput" min="1" max="100" value="50" step="1">
+          </div>
+
+          <div class="control-group" id="wireDirectionGroup" style="display:none;">
+            <label for="wireDirection">Current Direction:</label>
+            <select id="wireDirection">
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+            </select>
+          </div>
+
+          <div class="control-group" id="solenoidTurnsGroup" style="display:none;">
+            <label for="solenoidTurns">Number of Turns:</label>
+            <input type="number" id="solenoidTurns" min="5" max="50" value="15" step="1">
+          </div>
+
+          <div class="control-group" id="solenoidCurrentGroup" style="display:none;">
+            <label for="solenoidCurrent">Current (A):</label>
+            <input type="number" id="solenoidCurrent" min="0.1" max="10" value="2" step="0.1">
+          </div>
+
+          <div class="control-group" id="electromagnetCoreGroup" style="display:none;">
+            <label for="electromagnetCore">Core Material:</label>
+            <select id="electromagnetCore">
+              <option value="air">Air</option>
+              <option value="iron">Iron</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="portableCompassType_magneticFields">Compass Type:</label>
+            <select id="portableCompassType_magneticFields">
+              <option value="N-S">North-South</option>
+              <option value="S-N">South-North</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="resetMagnetFieldBtn">Reset Field</button>
+          <button class="secondary" id="toggleMagnetFieldLines">Toggle Field Lines</button>
+          <button class="secondary" id="togglePortableCompass_magneticFields">Toggle Portable Compass</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="magneticFieldCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Field Source: <span id="infoMagnetFieldSource">Bar Magnet</span></div>
+          <div class="info-item">Strength: <span id="infoMagnetStrength">50</span></div>
+          <div class="info-item" id="infoMagnetWireDirection" style="display:none;">Current Direction: <span id="currentMagnetWireDirection">Up</span></div>
+          <div class="info-item" id="infoMagnetSolenoidTurns" style="display:none;">Solenoid Turns: <span id="solenoidMagnetInfoTurns">15</span></div>
+          <div class="info-item" id="infoMagnetSolenoidCurrent" style="display:none;">Solenoid Current: <span id="solenoidMagnetInfoCurrent">2</span> A</div>
+          <div class="info-item" id="infoElectromagnetCore" style="display:none;">Core: <span id="electromagnetInfoCore">Air</span></div>
+          <div class="info-item">Field Lines Visible: <span id="magnetFieldLinesStatus">Yes</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Electric Fields Tab -->
+    <div id="electricFields" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Electric Field Visualization</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="chargeType">Charge Type:</label>
+            <select id="chargeType">
+              <option value="positive">Positive (+)</option>
+              <option value="negative">Negative (-)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="chargeMagnitude">Magnitude:</label>
+            <input type="number" id="chargeMagnitude" min="1" max="10" value="5" step="1">
+          </div>
+          <!-- Removed portable compass controls from Electric Fields tab -->
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="addChargeBtn">Add Charge (Click Canvas)</button>
+          <button class="secondary" id="clearChargesBtn">Clear All Charges</button>
+          <button class="secondary" id="toggleElectricFieldLines">Toggle Field Lines</button>
+          <!-- Removed portable compass toggle button from Electric Fields tab -->
+        </div>
+
+        <div class="simulation-area" id="electricFieldArea">
+          <canvas id="electricFieldCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Total Charges: <span id="totalCharges">0</span></div>
+          <div class="info-item">Field Lines Visible: <span id="electricFieldLinesStatus">Yes</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magnetic Force on Current Tab -->
+    <div id="magneticForceCurrent" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Magnetic Force on Current-Carrying Wire</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="currentForceDirection">Current Direction:</label>
+            <select id="currentForceDirection">
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+              <option value="in">Into Screen (X)</option>
+              <option value="out">Out of Screen (Dot)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="magneticFieldDirection">Magnetic Field Direction:</label>
+            <select id="magneticFieldDirection">
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="currentWireStrength">Current Strength (A):</label>
+            <input type="number" id="currentWireStrength" min="0.1" max="10" value="5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="magneticFieldStrength">Field Strength (T):</label>
+            <input type="number" id="magneticFieldStrength" min="0.1" max="5" value="1" step="0.1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="resetCurrentForceBtn">Reset Simulation</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="magneticForceCurrentCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Force Direction: <span id="currentForceResult">None</span></div>
+          <div class="info-item">Force Magnitude: <span id="currentForceMagnitude">0</span> N</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magnetic Force on Charge Tab -->
+    <div id="magneticForceCharge" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Magnetic Force on Moving Charge</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="chargeParticleType">Charge Type:</label>
+            <select id="chargeParticleType">
+              <option value="positive">Positive (+)</option>
+              <option value="negative">Negative (-)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="particleVelocity">Velocity:</label>
+            <input type="number" id="particleVelocity" min="1" max="10" value="5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="chargeFieldDirection">Magnetic Field Direction:</label>
+            <select id="chargeFieldDirection">
+              <option value="up">Up</option>
+              <option value="down">Down</option>
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+              <option value="in">Into Screen (X)</option>
+              <option value="out">Out of Screen (Dot)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="chargeFieldStrength">Field Strength (T):</label>
+            <input type="number" id="chargeFieldStrength" min="0.1" max="5" value="1" step="0.1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startChargeForceBtn">Start Simulation</button>
+          <button class="secondary" id="resetChargeForceBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="magneticForceChargeCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Force Direction: <span id="chargeForceResult">None</span></div>
+          <div class="info-item">Force Magnitude: <span id="chargeForceMagnitude">0</span> N</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Electromagnetic Induction Tab -->
+    <div id="induction" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Electromagnetic Induction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="magnetSpeed">Magnet Speed:</label>
+            <input type="number" id="magnetSpeed" min="0.1" max="5" value="1" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="coilTurns">Coil Turns:</label>
+            <input type="number" id="coilTurns" min="5" max="30" value="10" step="1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startInductionBtn">Start Induction</button>
+          <button class="secondary" id="resetInductionBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="inductionCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Induced Current: <span id="inducedCurrent">None</span></div>
+          <div class="info-item">Induced Voltage: <span id="inducedVoltage">0</span> V</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earth's Magnetic Field Tab -->
+    <div id="earthMagneticField" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Earth's Magnetic Field</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="earthTilt">Magnetic Axis Tilt (degrees):</label>
+            <input type="number" id="earthTilt" min="0" max="45" value="11.3" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="earthFieldStrength">Field Strength:</label>
+            <input type="number" id="earthFieldStrength" min="1" max="100" value="50" step="1">
+          </div>
+          <div class="control-group">
+            <label for="portableCompassType_earthMagneticField">Compass Type:</label>
+            <select id="portableCompassType_earthMagneticField">
+              <option value="N-S">North-South</option>
+              <option value="S-N">South-North</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="resetEarthFieldBtn">Reset Field</button>
+          <button class="secondary" id="toggleEarthFieldLines">Toggle Field Lines</button>
+          <button class="secondary" id="togglePortableCompass_earthMagneticField">Toggle Portable Compass</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="earthMagneticFieldCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Magnetic Tilt: <span id="infoEarthTilt">11.3</span> degrees</div>
+          <div class="info-item">Field Strength: <span id="infoEarthFieldStrength">50</span></div>
+          <div class="info-item">Field Lines Visible: <span id="earthFieldLinesStatus">Yes</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magnetic Resonance Tab -->
+    <div id="magneticResonance" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Magnetic Resonance (Conceptual)</h2>
+        <div class="magnetic-resonance-stage">Current Stage: <span id="mrStage">Initial Alignment</span></div>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="b0Strength">B0 Field Strength:</label>
+            <input type="number" id="b0Strength" min="1" max="10" value="5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="rfPulseStrength">RF Pulse Strength:</label>
+            <input type="number" id="rfPulseStrength" min="0.1" max="5" value="2" step="0.1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startMrSimBtn">Start Simulation</button>
+          <button class="secondary" id="nextMrStepBtn">Next Step</button>
+          <button class="secondary" id="resetMrSimBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="magneticResonanceCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">B0 Strength: <span id="infoB0Strength">5</span></div>
+          <div class="info-item">RF Pulse Strength: <span id="infoRfPulseStrength">2</span></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Quantum Tunneling Tab -->
+    <div id="quantumTunneling" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Quantum Tunneling (Conceptual)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="particleEnergy">Particle Energy (E):</label>
+            <input type="number" id="particleEnergy" min="1" max="10" value="3" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="barrierHeight">Barrier Height (V0):</label>
+            <input type="number" id="barrierHeight" min="1" max="10" value="5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="barrierWidth">Barrier Width:</label>
+            <input type="number" id="barrierWidth" min="10" max="100" value="50" step="5">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startTunnelingBtn">Start Simulation</button>
+          <button class="secondary" id="resetTunnelingBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="quantumTunnelingCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item">Transmission Probability: <span id="transmissionProb">?</span> %</div>
+          <div class="info-item">Reflection Probability: <span id="reflectionProb">?</span> %</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Global Variables and Setup ---
+    let currentCanvas = null;
+    let currentCtx = null;
+    let animationFrameId = null; // For main animation loop
+
+    /**
+     * Helper function to draw an arrowhead at a given point and angle.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate of the arrow tip.
+     * @param {number} y - The y-coordinate of the arrow tip.
+     * @param {number} angle - The angle of the arrow in radians.
+     * @param {number} size - Size of the arrowhead.
+     * @param {string} color - The color of the arrowhead.
+     */
+    function drawArrowhead(ctx, x, y, angle, size, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Helper function to draw a dot/cross for into/out of screen.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate.
+     * @param {number} y - The y-coordinate.
+     * @param {string} type - 'in' (cross) or 'out' (dot).
+     * @param {string} color - Color of the symbol.
+     * @param {number} size - Size of the symbol.
+     */
+    function drawDepthIndicator(ctx, x, y, type, color, size = 10) {
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2;
+        if (type === 'in') { // Cross
+            ctx.beginPath();
+            ctx.moveTo(x - size, y - size);
+            ctx.lineTo(x + size, y + size);
+            ctx.moveTo(x + size, y - size);
+            ctx.lineTo(x - size, y + size);
+            ctx.stroke();
+        } else { // Dot (Out)
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+    }
+
+    /**
+     * Draws a portable compass needle.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {Object} compass - Compass object {x, y, visible, type, angle, width, height}.
+     */
+    function drawPortableCompass(ctx, compass) {
+        if (!compass.visible) return;
+
+        const halfWidth = compass.width / 2;
+        const halfHeight = compass.height / 2;
+
+        ctx.save();
+        ctx.translate(compass.x, compass.y);
+        ctx.rotate(compass.angle);
+
+        // Draw the compass needle
+        ctx.beginPath();
+        ctx.moveTo(-halfWidth, -halfHeight);
+        ctx.lineTo(halfWidth, -halfHeight);
+        ctx.lineTo(halfWidth, halfHeight);
+        ctx.lineTo(-halfWidth, halfHeight);
+        ctx.closePath();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Draw North (red) and South (blue) ends
+        if (compass.type === 'N-S') { // Red tip is North
+            ctx.fillStyle = 'red';
+            ctx.fillRect(0, -halfHeight, halfWidth, compass.height);
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(-halfWidth, -halfHeight, halfWidth, compass.height);
+        } else { // S-N, Blue tip is North
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(0, -halfHeight, halfWidth, compass.height);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(-halfWidth, -halfHeight, halfWidth, compass.height);
+        }
+
+        ctx.restore();
+
+        // Draw N and S labels relative to the compass's orientation
+        ctx.save();
+        ctx.translate(compass.x, compass.y);
+        ctx.rotate(compass.angle);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (compass.type === 'N-S') {
+            ctx.fillText('N', halfWidth / 2, 0);
+            ctx.fillText('S', -halfWidth / 2, 0);
+        } else {
+            ctx.fillText('N', halfWidth / 2, 0);
+            ctx.fillText('S', -halfWidth / 2, 0);
+        }
+        ctx.restore();
+    }
+
+    /**
+     * Calculates the magnetic field vector (Bx, By) at a given point (px, py)
+     * due to a magnetic dipole (like a bar magnet or Earth's field).
+     * @param {number} px - X-coordinate of the point.
+     * @param {number} py - Y-coordinate of the point.
+     * @param {Object} N_pole - {x, y} coordinates of the North pole.
+     * @param {Object} S_pole - {x, y} coordinates of the South pole.
+     * @param {number} strength - Overall field strength multiplier.
+     * @returns {{Bx: number, By: number}} The magnetic field vector components.
+     */
+    function calculateDipoleField(px, py, N_pole, S_pole, strength) {
+        const k = strength * 50; // Scaling constant for visualization
+
+        let Bx = 0;
+        let By = 0;
+
+        // Field from North pole (points away from N)
+        let dx_N = px - N_pole.x;
+        let dy_N = py - N_pole.y;
+        let dist_N_sq = dx_N * dx_N + dy_N * dy_N;
+        if (dist_N_sq < 100) dist_N_sq = 100; // Prevent division by zero/large fields close to pole
+        let dist_N = Math.sqrt(dist_N_sq);
+        Bx += k * (dx_N / dist_N_sq);
+        By += k * (dy_N / dist_N_sq);
+
+        // Field from South pole (points towards S)
+        let dx_S = px - S_pole.x;
+        let dy_S = py - S_pole.y;
+        let dist_S_sq = dx_S * dx_S + dy_S * dy_S;
+        if (dist_S_sq < 100) dist_S_sq = 100; // Prevent division by zero/large fields close to pole
+        let dist_S = Math.sqrt(dist_S_sq);
+        Bx += k * (-dx_S / dist_S_sq); // Towards S pole
+        By += k * (-dy_S / dist_S_sq); // Towards S pole
+
+        return { Bx, By };
+    }
+
+    /**
+     * Calculates the magnetic field vector (Bx, By) at a given point (px, py)
+     * due to a current-carrying wire.
+     * @param {number} px - X-coordinate of the point.
+     * @param {number} py - Y-coordinate of the point.
+     * @param {number} wireX - X-coordinate of the wire.
+     * @param {number} wireY - Y-coordinate of the wire.
+     * @param {string} direction - 'up' or 'down' for current direction.
+     * @param {number} strength - Overall field strength multiplier.
+     * @returns {{Bx: number, By: number}} The magnetic field vector components.
+     */
+    function calculateWireField(px, py, wireX, wireY, direction, strength) {
+        const k = strength * 5; // Scaling constant for visualization
+        const dx = px - wireX;
+        const dy = py - wireY;
+        const r_sq = dx * dx + dy * dy;
+        if (r_sq < 25) return { Bx: 0, By: 0 }; // Avoid division by zero close to wire
+        const r = Math.sqrt(r_sq);
+
+        let Bx, By;
+        if (direction === 'up') { // Current up (positive Y), field is clockwise
+            Bx = k * (dy / r_sq);
+            By = k * (-dx / r_sq);
+        } else { // Current down (negative Y), field is counter-clockwise
+            Bx = k * (-dy / r_sq);
+            By = k * (dx / r_sq);
+        }
+        return { Bx, By };
+    }
+
+    /**
+     * Calculates the magnetic field vector (Bx, By) at a given point (px, py)
+     * for a solenoid/electromagnet.
+     * @param {number} px - X-coordinate of the point.
+     * @param {number} py - Y-coordinate of the point.
+     * @param {number} solenoidX - X-center of the solenoid.
+     * @param {number} solenoidY - Y-center of the solenoid.
+     * @param {number} solenoidLength - Length of the solenoid.
+     * @param {number} solenoidRadius - Radius of the solenoid.
+     * @param {number} strength - Overall field strength multiplier.
+     * @returns {{Bx: number, By: number}} The magnetic field vector components.
+     */
+    function calculateSolenoidField(px, py, solenoidX, solenoidY, solenoidLength, solenoidRadius, strength) {
+        const halfLength = solenoidLength / 2;
+        const startX = solenoidX - halfLength;
+        const endX = solenoidX + halfLength;
+        const topY = solenoidY - solenoidRadius;
+        const bottomY = solenoidY + solenoidRadius;
+
+        // Simplified: Uniform field inside, dipole-like outside
+        if (px > startX && px < endX && py > topY && py < bottomY) {
+            // Inside the solenoid, field is uniform and points right (N pole on right)
+            return { Bx: strength * 0.1, By: 0 };
+        } else {
+            // Outside, approximate as a bar magnet
+            const N_pole = { x: endX, y: solenoidY };
+            const S_pole = { x: startX, y: solenoidY };
+            return calculateDipoleField(px, py, N_pole, S_pole, strength * 0.5);
+        }
+    }
+
+    /**
+     * Calculates the total magnetic field vector at a given point for the current simulation.
+     * @param {string} simType - The ID of the current simulation tab.
+     * @param {number} compassX - X-coordinate of the compass.
+     * @param {number} compassY - Y-coordinate of the compass.
+     * @returns {{Bx: number, By: number}} The total magnetic field vector components.
+     */
+    function calculateMagneticFieldVector(simType, compassX, compassY) {
+        let Bx = 0;
+        let By = 0;
+
+        if (simType === 'magneticFields') {
+            const source = magnetFieldSourceSelect.value;
+            const strength = parseFloat(magnetStrengthInput.value);
+            const wireDirection = wireDirectionSelect.value;
+            const solenoidTurns = parseFloat(solenoidTurnsInput.value);
+            const solenoidCurrent = parseFloat(solenoidCurrentInput.value);
+            const electromagnetCore = electromagnetCoreSelect.value;
+
+            const centerX = magneticFieldSim.canvas.width / 2;
+            const centerY = magneticFieldSim.canvas.height / 2;
+
+            if (source === 'bar_magnet') {
+                const magnetWidth = 150;
+                const magnetHeight = 40;
+                const N_pole = { x: centerX - magnetWidth / 4, y: centerY };
+                const S_pole = { x: centerX + magnetWidth / 4, y: centerY };
+                ({ Bx, By } = calculateDipoleField(compassX, compassY, N_pole, S_pole, strength));
+            } else if (source === 'two_bar_magnets_attract') {
+                const magnetWidth = 80;
+                const gap = 50;
+                const N1_pole = { x: centerX - magnetWidth * 0.75 - gap / 2, y: centerY };
+                const S1_pole = { x: centerX - magnetWidth * 0.25 - gap / 2, y: centerY };
+                const S2_pole = { x: centerX + magnetWidth * 0.25 + gap / 2, y: centerY };
+                const N2_pole = { x: centerX + magnetWidth * 0.75 + gap / 2, y: centerY };
+
+                let field1 = calculateDipoleField(compassX, compassY, N1_pole, S1_pole, strength);
+                let field2 = calculateDipoleField(compassX, compassY, N2_pole, S2_pole, strength);
+                Bx = field1.Bx + field2.Bx;
+                By = field1.By + field2.By;
+            } else if (source === 'two_bar_magnets_repel') {
+                const magnetWidth = 80;
+                const gap = 50;
+                const N1_pole = { x: centerX - magnetWidth * 0.75 - gap / 2, y: centerY };
+                const S1_pole = { x: centerX - magnetWidth * 0.25 - gap / 2, y: centerY };
+                const N2_pole = { x: centerX + magnetWidth * 0.25 + gap / 2, y: centerY };
+                const S2_pole = { x: centerX + magnetWidth * 0.75 + gap / 2, y: centerY };
+
+                // For repulsion, consider N1 and N2 as primary interacting poles
+                // Field from N1 (repelling) and N2 (repelling)
+                let field1 = calculateDipoleField(compassX, compassY, N1_pole, S1_pole, strength);
+                let field2 = calculateDipoleField(compassX, compassY, N2_pole, S2_pole, strength);
+                Bx = field1.Bx + field2.Bx;
+                By = field1.By + field2.By;
+            } else if (source === 'horseshoe_magnet') {
+                const poleWidth = 40;
+                const poleGap = 50;
+                const N_pole = { x: centerX - poleGap / 2 - poleWidth / 2, y: centerY };
+                const S_pole = { x: centerX + poleGap / 2 + poleWidth / 2, y: centerY };
+                ({ Bx, By } = calculateDipoleField(compassX, compassY, N_pole, S_pole, strength));
+            } else if (source === 'electromagnet') {
+                const solenoidLength = 200;
+                const solenoidRadius = 40;
+                const coreFactor = electromagnetCore === 'iron' ? 3 : 1;
+                ({ Bx, By } = calculateSolenoidField(compassX, compassY, centerX, centerY, solenoidLength, solenoidRadius, strength * coreFactor));
+            } else if (source === 'current_wire') {
+                ({ Bx, By } = calculateWireField(compassX, compassY, centerX, centerY, wireDirection, strength));
+            } else if (source === 'solenoid') {
+                const solenoidLength = 200;
+                const solenoidRadius = 40;
+                ({ Bx, By } = calculateSolenoidField(compassX, compassY, centerX, centerY, solenoidLength, solenoidRadius, strength));
+            }
+        } else if (simType === 'earthMagneticField') {
+            const earthRadius = 150;
+            const tiltDegrees = parseFloat(earthTiltInput.value);
+            const strength = parseFloat(earthFieldStrengthInput.value);
+            const centerX = earthMagneticFieldSim.canvas.width / 2;
+            const centerY = earthMagneticFieldSim.canvas.height / 2;
+
+            const tiltRad = tiltDegrees * Math.PI / 180;
+
+            // Earth's magnetic North pole is actually a magnetic South pole (where field lines enter)
+            // Earth's magnetic South pole is actually a magnetic North pole (where field lines exit)
+            const magSouthPoleGeoNorthX = centerX - earthRadius * Math.sin(tiltRad);
+            const magSouthPoleGeoNorthY = centerY - earthRadius * Math.cos(tiltRad);
+            const magNorthPoleGeoSouthX = centerX + earthRadius * Math.sin(tiltRad);
+            const magNorthPoleGeoSouthY = centerY + earthRadius * Math.cos(tiltRad);
+
+            // For the dipole model, the "North" pole of the internal magnet is at the geographic South pole,
+            // and the "South" pole of the internal magnet is at the geographic North pole.
+            const N_pole_internal_magnet = { x: magNorthPoleGeoSouthX, y: magNorthPoleGeoSouthY }; // This is where field lines originate
+            const S_pole_internal_magnet = { x: magSouthPoleGeoNorthX, y: magSouthPoleGeoNorthY }; // This is where field lines terminate
+
+            ({ Bx, By } = calculateDipoleField(compassX, compassY, N_pole_internal_magnet, S_pole_internal_magnet, strength));
+
+        } else if (simType === 'electricFields') {
+            // Compass does not react to electric fields, so Bx, By are 0
+            Bx = 0;
+            By = 0;
+        }
+
+        return { Bx, By };
+    }
+
+
+    /**
+     * Updates the information panel for the currently active tab.
+     */
+    function updateInfoPanel() {
+      const activeTabId = document.querySelector('.tab-btn.active').dataset.tab;
+
+      // Hide all info panels first
+      document.querySelectorAll('.info-panel .info-item').forEach(item => {
+          // Only hide items that are specific to a simulator, not general ones like 'Field Lines Visible'
+          const isGeneralInfo = item.id.includes('Status') || item.id.includes('TotalCharges');
+          if (!isGeneralInfo) {
+              item.style.display = 'none';
+          }
+      });
+
+      // Update specific info based on active tab
+      if (activeTabId === 'magneticFields') {
+        const source = magnetFieldSourceSelect.value;
+        const strength = parseFloat(magnetStrengthInput.value);
+        const wireDirection = wireDirectionSelect.value;
+        const solenoidTurns = parseFloat(solenoidTurnsInput.value);
+        const solenoidCurrent = parseFloat(solenoidCurrentInput.value);
+        const electromagnetCore = electromagnetCoreSelect.value;
+
+
+        document.getElementById('infoMagnetFieldSource').style.display = 'block';
+        document.getElementById('infoMagnetStrength').style.display = 'block';
+        magnetFieldLinesStatus.style.display = 'block';
+
+        infoMagnetStrength.textContent = strength;
+        magnetFieldLinesStatus.textContent = magneticFieldSim.showFieldLines ? 'Yes' : 'No';
+
+        if (source === 'bar_magnet') {
+          infoMagnetFieldSource.textContent = 'Bar Magnet';
+        } else if (source === 'two_bar_magnets_attract') {
+          infoMagnetFieldSource.textContent = 'Two Bar Magnets (Attraction)';
+        } else if (source === 'two_bar_magnets_repel') {
+          infoMagnetFieldSource.textContent = 'Two Bar Magnets (Repulsion)';
+        } else if (source === 'horseshoe_magnet') {
+          infoMagnetFieldSource.textContent = 'Horseshoe Magnet';
+        } else if (source === 'electromagnet') {
+          infoMagnetFieldSource.textContent = 'Electromagnet';
+          document.getElementById('infoElectromagnetCore').style.display = 'block';
+          electromagnetInfoCore.textContent = electromagnetCore;
+        } else if (source === 'current_wire') {
+          infoMagnetFieldSource.textContent = 'Current-Carrying Wire';
+          document.getElementById('infoMagnetWireDirection').style.display = 'block';
+          currentMagnetWireDirection.textContent = wireDirection === 'up' ? 'Up' : 'Down';
+        } else if (source === 'solenoid') {
+          infoMagnetFieldSource.textContent = 'Solenoid';
+          document.getElementById('infoMagnetSolenoidTurns').style.display = 'block';
+          document.getElementById('infoMagnetSolenoidCurrent').style.display = 'block';
+          solenoidMagnetInfoTurns.textContent = solenoidTurns;
+          solenoidMagnetInfoCurrent.textContent = solenoidCurrent;
+        }
+      } else if (activeTabId === 'electricFields') {
+          totalChargesSpan.textContent = electricFieldSim.charges.length;
+          electricFieldLinesStatus.textContent = electricFieldSim.showFieldLines ? 'Yes' : 'No';
+          totalChargesSpan.closest('.info-item').style.display = 'block';
+          electricFieldLinesStatus.closest('.info-item').style.display = 'block';
+      } else if (activeTabId === 'magneticForceCurrent') {
+          document.getElementById('currentForceResult').closest('.info-item').style.display = 'block';
+          document.getElementById('currentForceMagnitude').closest('.info-item').style.display = 'block';
+          currentForceResultSpan.textContent = magneticForceCurrentSim.forceDirection;
+          currentForceMagnitudeSpan.textContent = magneticForceCurrentSim.forceMagnitude.toFixed(2);
+      } else if (activeTabId === 'magneticForceCharge') {
+          document.getElementById('chargeForceResult').closest('.info-item').style.display = 'block';
+          document.getElementById('chargeForceMagnitude').closest('.info-item').style.display = 'block';
+          chargeForceResultSpan.textContent = magneticForceChargeSim.forceDirection;
+          chargeForceMagnitudeSpan.textContent = magneticForceChargeSim.forceMagnitude.toFixed(2);
+      } else if (activeTabId === 'induction') {
+          inducedCurrentSpan.closest('.info-item').style.display = 'block';
+          inducedVoltageSpan.closest('.info-item').style.display = 'block';
+          inducedCurrentSpan.textContent = inductionSim.inducedCurrentStatus;
+          inducedVoltageSpan.textContent = inductionSim.inducedVoltage.toFixed(2);
+      } else if (activeTabId === 'earthMagneticField') {
+          document.getElementById('infoEarthTilt').closest('.info-item').style.display = 'block';
+          document.getElementById('infoEarthFieldStrength').closest('.info-item').style.display = 'block';
+          document.getElementById('earthFieldLinesStatus').closest('.info-item').style.display = 'block';
+          infoEarthTilt.textContent = earthMagneticFieldSim.tilt.toFixed(1);
+          infoEarthFieldStrength.textContent = earthMagneticFieldSim.strength;
+          earthFieldLinesStatus.textContent = earthMagneticFieldSim.showFieldLines ? 'Yes' : 'No';
+      } else if (activeTabId === 'magneticResonance') {
+          document.getElementById('infoB0Strength').closest('.info-item').style.display = 'block';
+          document.getElementById('infoRfPulseStrength').closest('.info-item').style.display = 'block';
+          infoB0Strength.textContent = magneticResonanceSim.b0Strength;
+          infoRfPulseStrength.textContent = magneticResonanceSim.rfPulseStrength;
+          document.getElementById('mrStage').textContent = magneticResonanceSim.currentStage;
+      } else if (activeTabId === 'quantumTunneling') {
+          transmissionProbSpan.closest('.info-item').style.display = 'block';
+          reflectionProbSpan.closest('.info-item').style.display = 'block';
+          transmissionProbSpan.textContent = quantumTunnelingSim.transmissionProb.toFixed(2);
+          reflectionProbSpan.textContent = quantumTunnelingSim.reflectionProb.toFixed(2);
+      }
+    }
+
+    /**
+     * Resizes the canvas of the currently active simulator to fit its parent container.
+     */
+    function resizeCanvas() {
+      if (currentCanvas) {
+        const parentContainer = currentCanvas.closest('.simulation-area');
+        if (parentContainer) {
+          currentCanvas.width = parentContainer.offsetWidth;
+          currentCanvas.height = parentContainer.offsetHeight;
+        }
+      }
+      // Redraw the current simulation after resize
+      const activeTabId = document.querySelector('.tab-btn.active').dataset.tab;
+      if (activeTabId === 'magneticFields') magneticFieldSim.draw();
+      else if (activeTabId === 'electricFields') electricFieldSim.draw();
+      else if (activeTabId === 'magneticForceCurrent') magneticForceCurrentSim.draw();
+      else if (activeTabId === 'magneticForceCharge') magneticForceChargeSim.draw();
+      else if (activeTabId === 'induction') inductionSim.draw();
+      else if (activeTabId === 'earthMagneticField') earthMagneticFieldSim.draw();
+      else if (activeTabId === 'magneticResonance') magneticResonanceSim.draw();
+      else if (activeTabId === 'quantumTunneling') quantumTunnelingSim.draw();
+    }
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations
+        cancelAnimationFrame(animationFrameId);
+        if (inductionSim.animationId) cancelAnimationFrame(inductionSim.animationId);
+        if (quantumTunnelingSim.animationId) cancelAnimationFrame(quantumTunnelingSim.animationId);
+        if (magneticForceChargeSim.animationId) cancelAnimationFrame(magneticForceChargeSim.animationId);
+        if (magneticResonanceSim.animationId) cancelAnimationFrame(magneticResonanceSim.animationId);
+
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Set up the current canvas and context for the new tab
+        const newCanvas = document.querySelector(`#${tabId} canvas`);
+        if (newCanvas) {
+            currentCanvas = newCanvas;
+            currentCtx = newCanvas.getContext('2d');
+            resizeCanvas(); // Ensure canvas is sized correctly
+        } else {
+            currentCanvas = null;
+            currentCtx = null;
+        }
+
+        // Initialize/Reset specific simulator based on tabId
+        if (tabId === 'magneticFields') {
+            magneticFieldSim.init(); // Re-draws
+        } else if (tabId === 'electricFields') {
+            electricFieldSim.init(); // Re-draws
+        } else if (tabId === 'magneticForceCurrent') {
+            magneticForceCurrentSim.init();
+        } else if (tabId === 'magneticForceCharge') {
+            magneticForceChargeSim.init();
+        } else if (tabId === 'induction') {
+            inductionSim.init(); // Resets and draws
+        } else if (tabId === 'earthMagneticField') {
+            earthMagneticFieldSim.init();
+        } else if (tabId === 'magneticResonance') {
+            magneticResonanceSim.init();
+        } else if (tabId === 'quantumTunneling') {
+            quantumTunnelingSim.init(); // Resets and draws
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+
+    // --- Magnetic Fields Simulation ---
+    const magnetFieldSourceSelect = document.getElementById('magnetFieldSource');
+    const magnetStrengthInput = document.getElementById('magnetStrengthInput');
+    const resetMagnetFieldBtn = document.getElementById('resetMagnetFieldBtn');
+    const toggleMagnetFieldLines = document.getElementById('toggleMagnetFieldLines');
+
+    const wireDirectionGroup = document.getElementById('wireDirectionGroup');
+    const wireDirectionSelect = document.getElementById('wireDirection');
+    const solenoidTurnsGroup = document.getElementById('solenoidTurnsGroup');
+    const solenoidTurnsInput = document.getElementById('solenoidTurns');
+    const solenoidCurrentGroup = document.getElementById('solenoidCurrentGroup');
+    const solenoidCurrentInput = document.getElementById('solenoidCurrent');
+    const electromagnetCoreGroup = document.getElementById('electromagnetCoreGroup');
+    const electromagnetCoreSelect = document.getElementById('electromagnetCore');
+
+    const togglePortableCompass_magneticFields = document.getElementById('togglePortableCompass_magneticFields');
+    const portableCompassType_magneticFields = document.getElementById('portableCompassType_magneticFields');
+
+
+    const infoMagnetFieldSource = document.getElementById('infoMagnetFieldSource');
+    const infoMagnetStrength = document.getElementById('infoMagnetStrength');
+    const infoMagnetWireDirection = document.getElementById('infoMagnetWireDirection');
+    const currentMagnetWireDirection = document.getElementById('currentMagnetWireDirection');
+    const infoMagnetSolenoidTurns = document.getElementById('infoMagnetSolenoidTurns');
+    const solenoidMagnetInfoTurns = document.getElementById('solenoidMagnetInfoTurns');
+    const infoMagnetSolenoidCurrent = document.getElementById('infoMagnetSolenoidCurrent');
+    const solenoidMagnetInfoCurrent = document.getElementById('solenoidMagnetInfoCurrent');
+    const infoElectromagnetCore = document.getElementById('infoElectromagnetCore');
+    const electromagnetInfoCore = document.getElementById('electromagnetInfoCore');
+    const magnetFieldLinesStatus = document.getElementById('magnetFieldLinesStatus');
+
+    const magneticFieldSim = {
+        canvas: null,
+        ctx: null,
+        showFieldLines: true,
+        portableCompass: {
+            x: 0,
+            y: 0,
+            visible: false,
+            type: 'N-S', // 'N-S' (red tip North) or 'S-N' (blue tip North)
+            angle: 0, // Radians, 0 is right, Math.PI/2 is down
+            width: 60,
+            height: 20
+        },
+        init: function() {
+            this.canvas = document.getElementById('magneticFieldCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            // Initialize portable compass position to center
+            this.portableCompass.x = this.canvas.width / 2;
+            this.portableCompass.y = this.canvas.height / 2;
+            setupDraggable(this.canvas, this, 'portableCompass'); // Setup dragging
+            this.draw();
+        },
+        /**
+         * Draws the magnetic field lines for bar magnets as arcs.
+         * @param {number} strength - Overall strength for field line density/spread.
+         * @param {Array<Object>} magnets - Array of magnet objects {x, y, width, height, type ('N-S', 'S-N', 'N', 'S')}.
+         */
+        drawBarMagnetFieldLines: function(strength, magnets) {
+            const numLines = 8; // Number of field lines to draw per pole
+            const poleOffset = 15; // How far outside the pole to start/end the lines
+            const arrowSize = 8; // Size of arrows on field lines
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)'; // Semi-transparent black
+
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            magnets.forEach(magnet => {
+                const magnetX = magnet.x;
+                const magnetY = magnet.y;
+                const magnetWidth = magnet.width;
+                const magnetHeight = magnet.height;
+
+                const N_pole_center_X = magnetX - magnetWidth / 2; // Left side of magnet
+                const S_pole_center_X = magnetX + magnetWidth / 2; // Right side of magnet
+
+                // Initialize variables to prevent ReferenceError
+                let startPointX = 0;
+                let startPointY = 0;
+                let endPointX = 0;
+                let endPointY = 0;
+                let controlX1 = 0;
+                let controlY1 = 0;
+                let controlX2 = 0;
+                let controlY2 = 0;
+                let arrowAngle = 0;
+
+                for (let i = 0; i < numLines; i++) {
+                    // Calculate start/end Y offsets along the magnet's height
+                    const yOffset = (i - (numLines - 1) / 2) * (magnetHeight * 0.8 / numLines);
+
+                    if (magnet.type === 'N-S') { // Standard N-S magnet
+                        startPointX = N_pole_center_X - poleOffset;
+                        startPointY = magnetY + yOffset;
+
+                        endPointX = S_pole_center_X + poleOffset;
+                        endPointY = magnetY + yOffset;
+
+                        // Control points to create outward curving arcs
+                        controlX1 = startPointX - strength * 0.8;
+                        controlY1 = startPointY + yOffset * 2;
+                        controlX2 = endPointX + strength * 0.8;
+                        controlY2 = endPointY + yOffset * 2;
+
+                        // Adjust control points for lines near the center to be straighter
+                        if (Math.abs(yOffset) < magnetHeight * 0.2) { // Near the center
+                            controlX1 = N_pole_center_X + magnetWidth * 0.1;
+                            controlY1 = startPointY;
+                            controlX2 = S_pole_center_X - magnetWidth * 0.1;
+                            controlY2 = endPointY;
+                        }
+
+                        arrowAngle = Math.atan2(endPointY - startPointY, endPointX - startPointX);
+
+                    } else if (magnet.type === 'S-N') { // Reversed S-N magnet (for attraction)
+                        startPointX = S_pole_center_X + poleOffset; // Field effectively starts from S (right)
+                        startPointY = magnetY + yOffset;
+
+                        endPointX = N_pole_center_X - poleOffset; // Field goes to N (left)
+                        endPointY = magnetY + yOffset;
+
+                        // Control points for outward curving arcs, reversed
+                        controlX1 = startPointX + strength * 0.8;
+                        controlY1 = startPointY + yOffset * 2;
+                        controlX2 = endPointX - strength * 0.8;
+                        controlY2 = endPointY + yOffset * 2;
+
+                        // Adjust control points for lines near the center to be straighter
+                        if (Math.abs(yOffset) < magnetHeight * 0.2) { // Near the center
+                            controlX1 = S_pole_center_X - magnetWidth * 0.1;
+                            controlY1 = startPointY;
+                            controlX2 = N_pole_center_X + magnetWidth * 0.1;
+                            controlY2 = endPointY;
+                        }
+
+                        arrowAngle = Math.atan2(endPointY - startPointY, endPointX - startPointX); // Still S to N
+                    } else if (magnet.type === 'N') { // Repelling N pole
+                        startPointX = N_pole_center_X - poleOffset;
+                        startPointY = magnetY + yOffset;
+
+                        // Lines diverge outwards from N pole
+                        const divergenceAngle = yOffset / (magnetHeight / 2) * Math.PI / 4; // Angle of divergence
+                        const lineLength = strength * 3;
+                        endPointX = startPointX - lineLength * Math.cos(divergenceAngle);
+                        endPointY = startPointY + lineLength * Math.sin(divergenceAngle);
+
+                        controlX1 = startPointX - strength * 0.5;
+                        controlY1 = startPointY + yOffset;
+                        controlX2 = endPointX; // No second control point for diverging lines
+                        controlY2 = endPointY;
+
+                        arrowAngle = Math.atan2(endPointY - startPointY, endPointX - startPointX);
+                    } else if (magnet.type === 'S') { // Repelling S pole
+                        startPointX = S_pole_center_X + poleOffset;
+                        startPointY = magnetY + yOffset;
+
+                        // Lines diverge outwards from S pole (field direction into S pole)
+                        const divergenceAngle = yOffset / (magnetHeight / 2) * Math.PI / 4;
+                        const lineLength = strength * 3;
+                        endPointX = startPointX + lineLength * Math.cos(divergenceAngle);
+                        endPointY = startPointY + lineLength * Math.sin(divergenceAngle);
+
+                        controlX1 = startPointX + strength * 0.5;
+                        controlY1 = startPointY + yOffset;
+                        controlX2 = endPointX; // No second control point for diverging lines
+                        controlY2 = endPointY;
+
+                        arrowAngle = Math.atan2(endPointY - startPointY, endPointX - startPointX) + Math.PI; // Field points INTO S pole
+                    }
+
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startPointX, startPointY);
+
+                    if (magnet.type.includes('-')) {
+                        this.ctx.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, endPointX, endPointY);
+                    } else {
+                        this.ctx.lineTo(endPointX, endPointY); // Simple line for diverging fields
+                    }
+                    this.ctx.stroke();
+
+                    // Draw arrowhead on the line
+                    // For bezier curves, approximate midpoint for arrow placement
+                    const arrowMidPointX = (startPointX + endPointX) / 2;
+                    const arrowMidPointY = (startPointY + endPointY) / 2;
+                    drawArrowhead(this.ctx, arrowMidPointX, arrowMidPointY, arrowAngle, arrowSize, fieldLineColor);
+                }
+            });
+        },
+        /**
+         * Draws field lines for two interacting bar magnets (attraction or repulsion).
+         * @param {number} strength - Overall strength.
+         * @param {string} interactionType - 'attract' or 'repel'.
+         */
+        drawPairedMagnetFieldLines: function(strength, interactionType) {
+            const numLines = 10;
+            const arrowSize = 8;
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)';
+            const magnetWidth = 80;
+            const magnetHeight = 30;
+            const gap = 50;
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+
+            // Define pole positions for drawing lines, slightly outside the magnet faces
+            const N1_line_X = centerX - magnetWidth - gap / 2 - 15; // N pole of left magnet (start point for lines)
+            const S1_line_X = centerX - gap / 2 + 15; // S pole of left magnet (end point for lines)
+            const N2_line_X = centerX + magnetWidth / 2 + gap / 2 - 15; // N pole of right magnet (start point for lines)
+            const S2_line_X = centerX + magnetWidth + gap / 2 + 15; // S pole of right magnet (end point for lines)
+
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            for (let i = 0; i < numLines; i++) {
+                // Wider spread for interaction lines
+                const yOffset = (i - (numLines - 1) / 2) * (magnetHeight * 1.5 / numLines);
+
+                let startX, startY, endX, endY;
+                let control1X, control1Y, control2X, control2Y;
+                let arrowAngle;
+
+                if (interactionType === 'attract') {
+                    // Lines from N of left magnet to S of right magnet
+                    startX = N1_line_X;
+                    startY = centerY + yOffset;
+                    endX = S2_line_X;
+                    endY = centerY + yOffset;
+
+                    // Control points to create smooth, non-crossing arcs
+                    const curveFactor = strength * 0.5;
+                    control1X = startX + curveFactor;
+                    control1Y = startY - yOffset * 0.5;
+                    control2X = endX - curveFactor;
+                    control2Y = endY - yOffset * 0.5;
+
+                    // For lines near the center, make them straighter
+                    if (Math.abs(yOffset) < magnetHeight * 0.2) {
+                        control1X = startX + (endX - startX) / 3;
+                        control2X = startX + (endX - startX) * 2 / 3;
+                        control1Y = startY;
+                        control2Y = endY;
+                    }
+
+
+                    arrowAngle = Math.atan2(endY - startY, endX - startX);
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, (startX + endX) / 2, (startY + endY) / 2, arrowAngle, arrowSize, fieldLineColor);
+
+                } else { // repel (N-N or S-S)
+                    // Lines diverging from facing poles
+                    // Left magnet (N pole on right face)
+                    startX = S1_line_X; // Lines effectively "start" from here, going right
+                    startY = centerY + yOffset;
+
+                    const divergenceFactor = strength * 0.8;
+                    const lineLength = 100 + Math.abs(yOffset) * 2; // Longer lines further from center
+                    const angleOffset = Math.atan2(yOffset, 0); // Angle based on yOffset
+
+                    // Control point to push lines away
+                    control1X = startX + divergenceFactor;
+                    control1Y = startY + yOffset * 0.5;
+
+                    endX = startX + lineLength * Math.cos(angleOffset);
+                    endY = startY + lineLength * Math.sin(angleOffset);
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.quadraticCurveTo(control1X, control1Y, endX, endY);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, (startX + endX) / 2, (startY + endY) / 2, Math.atan2(endY - startY, endX - startX), arrowSize, fieldLineColor);
+
+
+                    // Right magnet (N pole on left face)
+                    startX = N2_line_X; // Lines effectively "start" from here, going left
+                    startY = centerY + yOffset;
+
+                    endX = startX - lineLength * Math.cos(angleOffset);
+                    endY = startY + lineLength * Math.sin(angleOffset);
+
+                    // Control point to push lines away
+                    control1X = startX - divergenceFactor;
+                    control1Y = startY + yOffset * 0.5;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.quadraticCurveTo(control1X, control1Y, endX, endY);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, (startX + endX) / 2, (startY + endY) / 2, Math.atan2(endY - startY, endX - startX) + Math.PI, arrowSize, fieldLineColor); // Opposite direction
+                }
+            }
+        },
+        /**
+         * Draws the magnetic field lines for a current-carrying wire as concentric circles.
+         * @param {number} wireX - X-coordinate of the wire.
+         * @param {number} wireY - Y-coordinate of the wire.
+         * @param {string} direction - 'up' or 'down' for current direction.
+         * @param {number} strength - Strength of the field (influences density/radius).
+         */
+        drawWireFieldLines: function(wireX, wireY, direction, strength) {
+            const numCircles = 10;
+            const maxRadius = Math.min(this.canvas.width, this.canvas.height) / 2 * 0.8;
+            const arrowSize = 8;
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)';
+
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            for (let i = 1; i <= numCircles; i++) {
+                const radius = i * (maxRadius / numCircles) * (strength / 50); // Scale radius by strength
+                if (radius < 5) continue; // Avoid drawing tiny circles
+
+                this.ctx.beginPath();
+                this.ctx.arc(wireX, wireY, radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+
+                // Draw arrowheads on the circle
+                let arrowAngle;
+                // Position arrow at 3 o'clock (rightmost point)
+                const arrowX = wireX + radius;
+                const arrowY = wireY;
+
+                if (direction === 'up') { // Clockwise
+                    arrowAngle = Math.PI / 2; // Points downwards
+                } else { // 'down' (Counter-clockwise)
+                    arrowAngle = -Math.PI / 2; // Points upwards
+                }
+                drawArrowhead(this.ctx, arrowX, arrowY, arrowAngle, arrowSize, fieldLineColor);
+            }
+        },
+        /**
+         * Draws the magnetic field lines for a solenoid.
+         * @param {number} solenoidX - X-coordinate of the solenoid center.
+         * @param {number} solenoidY - Y-coordinate of the solenoid center.
+         * @param {number} solenoidLength - Length of the solenoid.
+         * @param {number} solenoidRadius - Radius of the solenoid.
+         * @param {number} strength - Overall strength scaling.
+         */
+        drawSolenoidFieldLines: function(solenoidX, solenoidY, solenoidLength, solenoidRadius, strength) {
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)';
+            const arrowSize = 8;
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            const halfLength = solenoidLength / 2;
+            const startX = solenoidX - halfLength;
+            const endX = solenoidX + halfLength;
+            const topY = solenoidY - solenoidRadius;
+            const bottomY = solenoidY + solenoidRadius;
+
+            const numInternalLines = 5;
+            const internalLineSpacing = (bottomY - topY) / (numInternalLines + 1);
+
+            // Internal field lines (uniform, parallel)
+            for (let i = 1; i <= numInternalLines; i++) {
+                const y = topY + i * internalLineSpacing;
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX, y);
+                this.ctx.lineTo(endX, y);
+                this.ctx.stroke();
+                // Arrow pointing right (N pole on right, S on left for standard winding)
+                drawArrowhead(this.ctx, startX + (endX - startX) / 2, y, 0, arrowSize, fieldLineColor);
+            }
+
+            // External field lines (looping, like a bar magnet)
+            const numExternalLines = 6;
+            const externalStartOffset = solenoidRadius + 10; // Start lines outside solenoid
+            const externalControlFactor = strength * 0.5; // Controls how wide the loops are
+
+            for (let i = 0; i < numExternalLines; i++) {
+                const yOffset = (i - (numExternalLines - 1) / 2) * (solenoidRadius * 1.5 / numExternalLines);
+
+                // Top half of the loop (from N pole to S pole)
+                this.ctx.beginPath();
+                this.ctx.moveTo(endX, solenoidY + yOffset); // Start at N pole end
+                this.ctx.bezierCurveTo(
+                    endX + externalControlFactor, solenoidY + yOffset - externalStartOffset, // Control 1
+                    startX - externalControlFactor, solenoidY + yOffset - externalStartOffset, // Control 2
+                    startX, solenoidY + yOffset // End at S pole end
+                );
+                this.ctx.stroke();
+                // Arrow on top half (right to left)
+                drawArrowhead(this.ctx, solenoidX, solenoidY + yOffset - externalStartOffset * 0.5, Math.PI, arrowSize, fieldLineColor);
+
+                // Bottom half of the loop (from N pole to S pole)
+                this.ctx.beginPath();
+                this.ctx.moveTo(endX, solenoidY + yOffset); // Start at N pole end
+                this.ctx.bezierCurveTo(
+                    endX + externalControlFactor, solenoidY + yOffset + externalStartOffset, // Control 1
+                    startX - externalControlFactor, solenoidY + yOffset + externalStartOffset, // Control 2
+                    startX, solenoidY + yOffset // End at S pole end
+                );
+                this.ctx.stroke();
+                // Arrow on bottom half (right to left)
+                drawArrowhead(this.ctx, solenoidX, solenoidY + yOffset + externalStartOffset * 0.5, Math.PI, arrowSize, fieldLineColor);
+            }
+        },
+        /**
+         * Draws the magnetic field lines for a horseshoe magnet.
+         * @param {number} strength - Overall strength scaling.
+         */
+        drawHorseshoeMagnetFieldLines: function(strength) {
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)';
+            const arrowSize = 8;
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const magnetWidth = 150;
+            const magnetHeight = 100; // Total height of the 'U' shape
+            const poleWidth = 40;
+            const poleGap = 50;
+
+            const N_pole_X = centerX - poleGap / 2 - poleWidth; // N pole right edge
+            const S_pole_X = centerX + poleGap / 2 + poleWidth; // S pole left edge
+            const topY = centerY - magnetHeight / 2;
+            const bottomY = centerY + magnetHeight / 2;
+
+            const numStraightLines = 7;
+            const straightLineSpacing = (bottomY - topY) / (numStraightLines + 1);
+
+            // Straight lines between poles (N to S)
+            for (let i = 1; i <= numStraightLines; i++) {
+                const y = topY + i * straightLineSpacing;
+                this.ctx.beginPath();
+                this.ctx.moveTo(N_pole_X + 5, y); // Start slightly inside N pole
+                this.ctx.lineTo(S_pole_X - 5, y); // End slightly inside S pole
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, N_pole_X + (S_pole_X - N_pole_X) / 2, y, 0, arrowSize, fieldLineColor);
+            }
+
+            // Outer looping lines
+            const numOuterLines = 5;
+            const outerControlFactor = strength * 0.8;
+            const startEndOffset = 10; // Offset from pole edge for field lines
+
+            for (let i = 0; i < numOuterLines; i++) {
+                const yOffset = (i - (numOuterLines - 1) / 2) * (magnetHeight * 0.5 / numOuterLines);
+
+                // Top outer loop (from N to S)
+                this.ctx.beginPath();
+                this.ctx.moveTo(N_pole_X - startEndOffset, topY + yOffset);
+                this.ctx.bezierCurveTo(
+                    N_pole_X - outerControlFactor, topY + yOffset - outerControlFactor,
+                    S_pole_X + outerControlFactor, topY + yOffset - outerControlFactor,
+                    S_pole_X + startEndOffset, topY + yOffset
+                );
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, centerX, topY + yOffset - outerControlFactor * 0.5, 0, arrowSize, fieldLineColor);
+
+                // Bottom outer loop (from N to S)
+                this.ctx.beginPath();
+                this.ctx.moveTo(N_pole_X - startEndOffset, bottomY - yOffset);
+                this.ctx.bezierCurveTo(
+                    N_pole_X - outerControlFactor, bottomY - yOffset + outerControlFactor,
+                    S_pole_X + outerControlFactor, bottomY - yOffset + outerControlFactor,
+                    S_pole_X + startEndOffset, bottomY - yOffset
+                );
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, centerX, bottomY - yOffset + outerControlFactor * 0.5, 0, arrowSize, fieldLineColor);
+            }
+        },
+        /**
+         * Draws the magnetic field lines for an electromagnet.
+         * Behaves like a solenoid, but strength depends on core.
+         * @param {number} strength - Overall strength scaling.
+         * @param {number} solenoidTurns - Number of turns.
+         * @param {number} solenoidCurrent - Current.
+         * @param {string} coreMaterial - 'air' or 'iron'.
+         */
+        drawElectromagnetFieldLines: function(strength, solenoidTurns, solenoidCurrent, coreMaterial) {
+            // Electromagnet field lines are essentially solenoid field lines, but scaled by core material.
+            const coreFactor = coreMaterial === 'iron' ? 3 : 1; // Iron core makes field stronger
+            const effectiveStrength = strength * coreFactor;
+            this.drawSolenoidFieldLines(this.canvas.width / 2, this.canvas.height / 2, 200, 40, effectiveStrength);
+        },
+        draw: function() {
+            if (!this.ctx) return;
+
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const source = magnetFieldSourceSelect.value;
+            const strength = parseFloat(magnetStrengthInput.value);
+            const wireDirection = wireDirectionSelect.value;
+            const solenoidTurns = parseFloat(solenoidTurnsInput.value);
+            const solenoidCurrent = parseFloat(solenoidCurrentInput.value);
+            const electromagnetCore = electromagnetCoreSelect.value;
+
+            // Update info panel and control group visibility
+            this.updateControlVisibility(source);
+            updateInfoPanel();
+
+            // Draw the magnetic field source
+            this.drawSource(source, strength, wireDirection, solenoidTurns, solenoidCurrent, electromagnetCore);
+
+            if (this.showFieldLines) {
+                // Draw field lines based on source type
+                if (source === 'bar_magnet') {
+                    this.drawBarMagnetFieldLines(strength, [{
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2,
+                        width: 150,
+                        height: 40,
+                        type: 'N-S'
+                    }]);
+                } else if (source === 'two_bar_magnets_attract') {
+                    this.drawPairedMagnetFieldLines(strength, 'attract');
+                } else if (source === 'two_bar_magnets_repel') {
+                    this.drawPairedMagnetFieldLines(strength, 'repel');
+                } else if (source === 'horseshoe_magnet') {
+                    this.drawHorseshoeMagnetFieldLines(strength);
+                } else if (source === 'electromagnet') {
+                    this.drawElectromagnetFieldLines(strength, solenoidTurns, solenoidCurrent, electromagnetCore);
+                } else if (source === 'current_wire') {
+                    this.drawWireFieldLines(this.canvas.width / 2, this.canvas.height / 2, wireDirection, strength);
+                } else if (source === 'solenoid') {
+                    const solenoidLength = 200;
+                    const solenoidRadius = 40;
+                    this.drawSolenoidFieldLines(this.canvas.width / 2, this.canvas.height / 2, solenoidLength, solenoidRadius, strength);
+                }
+            }
+
+            // Update and draw portable compass
+            if (this.portableCompass.visible) {
+                const { Bx, By } = calculateMagneticFieldVector('magneticFields', this.portableCompass.x, this.portableCompass.y);
+                // Compass angle should point its North end towards the magnetic North.
+                // atan2(By, Bx) gives the angle of the vector (Bx, By).
+                // If compass type is N-S, red (North) points to (Bx, By).
+                // If compass type is S-N, blue (North) points to (Bx, By), so needle is reversed.
+                this.portableCompass.angle = Math.atan2(By, Bx);
+                drawPortableCompass(this.ctx, this.portableCompass);
+            }
+        },
+        drawSource: function(source, strength, wireDirection, solenoidTurns, solenoidCurrent, electromagnetCore) {
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+
+            if (source === 'bar_magnet') {
+                const magnetWidth = 150;
+                const magnetHeight = 40;
+                const magnetX = centerX - magnetWidth / 2;
+                const magnetY = centerY - magnetHeight / 2;
+
+                // North pole (red)
+                this.ctx.fillStyle = 'red';
+                this.ctx.fillRect(magnetX, magnetY, magnetWidth / 2, magnetHeight);
+                // South pole (blue)
+                this.ctx.fillStyle = 'blue';
+                this.ctx.fillRect(magnetX + magnetWidth / 2, magnetY, magnetWidth / 2, magnetHeight);
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(magnetX, magnetY, magnetWidth, magnetHeight);
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '20px Inter';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('N', magnetX + magnetWidth / 4, magnetY + magnetHeight / 2);
+                this.ctx.fillText('S', magnetX + 3 * magnetWidth / 4, magnetY + magnetHeight / 2);
+            } else if (source.includes('two_bar_magnets')) {
+                const magnetWidth = 80;
+                const magnetHeight = 30;
+                const gap = 50;
+
+                // Magnet 1
+                this.ctx.fillStyle = 'red';
+                this.ctx.fillRect(centerX - magnetWidth - gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                this.ctx.fillStyle = 'blue';
+                this.ctx.fillRect(centerX - magnetWidth / 2 - gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(centerX - magnetWidth - gap / 2, centerY - magnetHeight / 2, magnetWidth, magnetHeight);
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '16px Inter';
+                this.ctx.fillText('N', centerX - magnetWidth * 0.75 - gap / 2, centerY);
+                this.ctx.fillText('S', centerX - magnetWidth * 0.25 - gap / 2, centerY);
+
+                // Magnet 2
+                if (source === 'two_bar_magnets_attract') {
+                    this.ctx.fillStyle = 'blue'; // South pole facing left
+                    this.ctx.fillRect(centerX + gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                    this.ctx.fillStyle = 'red'; // North pole facing right
+                    this.ctx.fillRect(centerX + magnetWidth / 2 + gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                    this.ctx.strokeRect(centerX + gap / 2, centerY - magnetHeight / 2, magnetWidth, magnetHeight);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.fillText('S', centerX + magnetWidth * 0.25 + gap / 2, centerY);
+                    this.ctx.fillText('N', centerX + magnetWidth * 0.75 + gap / 2, centerY);
+                } else { // two_bar_magnets_repel
+                    this.ctx.fillStyle = 'red'; // North pole facing left
+                    this.ctx.fillRect(centerX + gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                    this.ctx.fillStyle = 'blue'; // South pole facing right
+                    this.ctx.fillRect(centerX + magnetWidth / 2 + gap / 2, centerY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+                    this.ctx.strokeRect(centerX + gap / 2, centerY - magnetHeight / 2, magnetWidth, magnetHeight);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.fillText('N', centerX + magnetWidth * 0.25 + gap / 2, centerY);
+                    this.ctx.fillText('S', centerX + magnetWidth * 0.75 + gap / 2, centerY);
+                }
+            } else if (source === 'horseshoe_magnet') {
+                const magnetWidth = 150;
+                const magnetHeight = 100; // Total height of the 'U' shape
+                const poleWidth = 40;
+                const poleGap = 50;
+
+                // Left pole (N)
+                this.ctx.fillStyle = 'red';
+                this.ctx.fillRect(centerX - poleGap / 2 - poleWidth, centerY - magnetHeight / 2, poleWidth, magnetHeight);
+                // Right pole (S)
+                this.ctx.fillStyle = 'blue';
+                this.ctx.fillRect(centerX + poleGap / 2, centerY - magnetHeight / 2, poleWidth, magnetHeight);
+
+                // Connecting bar
+                this.ctx.fillStyle = '#555';
+                this.ctx.fillRect(centerX - poleGap / 2 - poleWidth, centerY - magnetHeight / 2 - poleWidth, poleWidth + poleGap + poleWidth, poleWidth);
+
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(centerX - poleGap / 2 - poleWidth, centerY - magnetHeight / 2, poleWidth, magnetHeight);
+                this.ctx.strokeRect(centerX + poleGap / 2, centerY - magnetHeight / 2, poleWidth, magnetHeight);
+                this.ctx.strokeRect(centerX - poleGap / 2 - poleWidth, centerY - magnetHeight / 2 - poleWidth, poleWidth + poleGap + poleWidth, poleWidth);
+
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '20px Inter';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('N', centerX - poleGap / 2 - poleWidth / 2, centerY);
+                this.ctx.fillText('S', centerX + poleGap / 2 + poleWidth / 2, centerY);
+
+            } else if (source === 'electromagnet') {
+                const solenoidLength = 200;
+                const solenoidRadius = 40;
+                const coilWidth = 5;
+                const numTurns = solenoidTurns;
+
+                const startX = centerX - solenoidLength / 2;
+                const endX = centerX + solenoidLength / 2;
+
+                // Draw core
+                this.ctx.fillStyle = electromagnetCore === 'iron' ? '#8B4513' : '#E0E0E0'; // Brown for iron, light gray for air
+                this.ctx.fillRect(startX, centerY - solenoidRadius, solenoidLength, solenoidRadius * 2);
+
+                this.ctx.strokeStyle = '#555';
+                this.ctx.lineWidth = 2;
+
+                // Draw solenoid coils
+                for (let i = 0; i < numTurns; i++) {
+                    const x = startX + (i / (numTurns - 1)) * solenoidLength;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, centerY - solenoidRadius, coilWidth, Math.PI, 0, false);
+                    this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, centerY + solenoidRadius, coilWidth, 0, Math.PI, false);
+                    this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x - coilWidth, centerY - solenoidRadius);
+                    this.ctx.lineTo(x - coilWidth, centerY + solenoidRadius);
+                    this.ctx.stroke();
+                }
+
+                this.ctx.strokeStyle = '#333';
+                this.ctx.strokeRect(startX, centerY - solenoidRadius, solenoidLength, solenoidRadius * 2);
+
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Inter';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('I', startX - 10, centerY - solenoidRadius - 10);
+                this.ctx.fillText('I', endX + 10, centerY - solenoidRadius - 10);
+
+                this.ctx.fillStyle = 'red'; // North
+                this.ctx.font = '24px Inter';
+                this.ctx.fillText('N', endX + 30, centerY);
+                this.ctx.fillStyle = 'blue'; // South
+                this.ctx.fillText('S', startX - 30, centerY);
+
+            } else if (source === 'current_wire') {
+                const wireX = centerX;
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 5;
+                this.ctx.beginPath();
+                this.ctx.moveTo(wireX, 0);
+                this.ctx.lineTo(wireX, this.canvas.height);
+                this.ctx.stroke();
+
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '24px Inter';
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('I', wireX + 10, centerY); // Current direction indicator
+
+                // Draw arrow for current direction
+                const arrowY = wireDirection === 'up' ? centerY - 50 : centerY + 50;
+                const arrowAngle = wireDirection === 'up' ? -Math.PI / 2 : Math.PI / 2;
+                drawArrowhead(this.ctx, wireX, arrowY, arrowAngle, 15, 'black');
+
+            } else if (source === 'solenoid') {
+                const solenoidLength = 200;
+                const solenoidRadius = 40;
+                const coilWidth = 5; // Visual width of each coil segment
+                const numTurns = solenoidTurns;
+                const current = solenoidCurrent;
+
+                const startX = centerX - solenoidLength / 2;
+                const endX = centerX + solenoidLength / 2;
+
+                this.ctx.strokeStyle = '#555';
+                this.ctx.lineWidth = 2;
+
+                // Draw solenoid coils
+                for (let i = 0; i < numTurns; i++) {
+                    const x = startX + (i / (numTurns - 1)) * solenoidLength;
+                    // Draw top half of coil
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, centerY - solenoidRadius / 2, coilWidth, Math.PI, 0, false);
+                    this.ctx.stroke();
+                    // Draw bottom half of coil
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, centerY + solenoidRadius / 2, coilWidth, 0, Math.PI, false);
+                    this.ctx.stroke();
+                    // Draw vertical connections
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x - coilWidth, centerY - solenoidRadius / 2);
+                    this.ctx.lineTo(x - coilWidth, centerY + solenoidRadius / 2);
+                    this.ctx.stroke();
+                }
+
+                // Draw the main axis of the solenoid
+                this.ctx.strokeStyle = '#aaa';
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX - 20, centerY);
+                this.ctx.lineTo(endX + 20, centerY);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+
+                // Indicate current flow (simplified)
+                this.ctx.fillStyle = 'black';
+                this.ctx.font = '16px Inter';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('I', startX - 10, centerY - solenoidRadius - 10);
+                this.ctx.fillText('I', endX + 10, centerY - solenoidRadius - 10);
+
+                // Indicate North/South poles based on right-hand rule
+                // Assuming current flows into the screen at the top and out at the bottom,
+                // the field inside points to the right (N pole on right, S pole on left).
+                this.ctx.fillStyle = 'red'; // North
+                this.ctx.font = '24px Inter';
+                this.ctx.fillText('N', endX + 30, centerY);
+                this.ctx.fillStyle = 'blue'; // South
+                this.ctx.fillText('S', startX - 30, centerY);
+            }
+        },
+        updateControlVisibility: function(source) {
+            wireDirectionGroup.style.display = 'none';
+            solenoidTurnsGroup.style.display = 'none';
+            solenoidCurrentGroup.style.display = 'none';
+            electromagnetCoreGroup.style.display = 'none';
+
+            if (source === 'current_wire') {
+                wireDirectionGroup.style.display = 'grid';
+            } else if (source === 'solenoid') {
+                solenoidTurnsGroup.style.display = 'grid';
+                solenoidCurrentGroup.style.display = 'grid';
+            } else if (source === 'electromagnet') {
+                solenoidTurnsGroup.style.display = 'grid'; // Electromagnet uses turns
+                solenoidCurrentGroup.style.display = 'grid'; // Electromagnet uses current
+                electromagnetCoreGroup.style.display = 'grid';
+            }
+        }
+    };
+
+    // Magnetic Field Event Listeners
+    magnetFieldSourceSelect.addEventListener('change', () => magneticFieldSim.draw());
+    magnetStrengthInput.addEventListener('input', () => magneticFieldSim.draw());
+    wireDirectionSelect.addEventListener('change', () => magneticFieldSim.draw());
+    solenoidTurnsInput.addEventListener('input', () => magneticFieldSim.draw());
+    solenoidCurrentInput.addEventListener('input', () => magneticFieldSim.draw());
+    electromagnetCoreSelect.addEventListener('change', () => magneticFieldSim.draw());
+
+
+    resetMagnetFieldBtn.addEventListener('click', () => {
+      magnetFieldSourceSelect.value = 'bar_magnet';
+      magnetStrengthInput.value = 50;
+      wireDirectionSelect.value = 'up';
+      solenoidTurnsInput.value = 15;
+      solenoidCurrentInput.value = 2;
+      electromagnetCoreSelect.value = 'air';
+      magneticFieldSim.showFieldLines = true;
+      magneticFieldSim.portableCompass.visible = false;
+      magneticFieldSim.draw();
+    });
+
+    toggleMagnetFieldLines.addEventListener('click', () => {
+      magneticFieldSim.showFieldLines = !magneticFieldSim.showFieldLines;
+      magneticFieldSim.draw();
+    });
+
+    togglePortableCompass_magneticFields.addEventListener('click', () => {
+        magneticFieldSim.portableCompass.visible = !magneticFieldSim.portableCompass.visible;
+        if (!magneticFieldSim.portableCompass.visible) {
+            // Reset position if hidden
+            magneticFieldSim.portableCompass.x = magneticFieldSim.canvas.width / 2;
+            magneticFieldSim.portableCompass.y = magneticFieldSim.canvas.height / 2;
+        }
+        magneticFieldSim.draw();
+    });
+    portableCompassType_magneticFields.addEventListener('change', () => {
+        magneticFieldSim.portableCompass.type = portableCompassType_magneticFields.value;
+        magneticFieldSim.draw();
+    });
+
+
+    // --- Electric Fields Simulation ---
+    const electricFieldCanvas = document.getElementById('electricFieldCanvas');
+    const electricFieldArea = document.getElementById('electricFieldArea');
+    const chargeTypeSelect = document.getElementById('chargeType');
+    const chargeMagnitudeInput = document.getElementById('chargeMagnitude');
+    const addChargeBtn = document.getElementById('addChargeBtn');
+    const clearChargesBtn = document.getElementById('clearChargesBtn');
+    const toggleElectricFieldLinesBtn = document.getElementById('toggleElectricFieldLines');
+    const totalChargesSpan = document.getElementById('totalCharges');
+    const electricFieldLinesStatus = document.getElementById('electricFieldLinesStatus');
+
+    // Removed portable compass controls from Electric Fields tab
+    // const togglePortableCompass_electricFields = document.getElementById('togglePortableCompass_electricFields');
+    // const portableCompassType_electricFields = document.getElementById('portableCompassType_electricFields');
+
+
+    const electricFieldSim = {
+        canvas: null,
+        ctx: null,
+        charges: [], // {x, y, type: 'positive'/'negative', magnitude}
+        showFieldLines: true,
+        // Removed portableCompass property
+        init: function() {
+            this.canvas = electricFieldCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.draw();
+        },
+        addCharge: function(x, y) {
+            const type = chargeTypeSelect.value;
+            const magnitude = parseFloat(chargeMagnitudeInput.value);
+            this.charges.push({ x, y, type, magnitude });
+            this.draw();
+        },
+        clearCharges: function() {
+            this.charges = [];
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Draw charges
+            this.charges.forEach(charge => {
+                this.ctx.beginPath();
+                this.ctx.arc(charge.x, charge.y, 15, 0, Math.PI * 2);
+                this.ctx.fillStyle = charge.type === 'positive' ? 'red' : 'blue';
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '16px Inter';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(charge.type === 'positive' ? '+' : '-', charge.x, charge.y);
+            });
+
+            if (this.showFieldLines) {
+                this.drawElectricFieldLines();
+            }
+            // Removed portable compass drawing
+            updateInfoPanel();
+        },
+        drawElectricFieldLines: function() {
+            const density = 25; // Spacing between field vectors
+            const arrowSize = 6;
+            const fieldLineColor = 'rgba(0, 0, 0, 0.3)';
+
+            for (let i = 0; i < this.canvas.width; i += density) {
+                for (let j = 0; j < this.canvas.height; j += density) {
+                    let totalEx = 0;
+                    let totalEy = 0;
+
+                    this.charges.forEach(charge => {
+                        const k = 1000; // Coulomb's constant (scaled for visualization)
+                        const dx = i - charge.x;
+                        const dy = j - charge.y;
+                        const rSq = dx * dx + dy * dy;
+                        const r = Math.sqrt(rSq);
+
+                        if (r < 20) return; // Avoid drawing field lines too close to charges
+
+                        let E_magnitude = (k * charge.magnitude) / rSq;
+                        if (charge.type === 'negative') E_magnitude *= -1; // Field points towards negative charge
+
+                        totalEx += E_magnitude * (dx / r);
+                        totalEy += E_magnitude * (dy / r);
+                    });
+
+                    const totalMagnitude = Math.sqrt(totalEx * totalEx + totalEy * totalEy);
+                    if (totalMagnitude > 0.1) {
+                        const angle = Math.atan2(totalEy, totalEx);
+                        const lineLength = Math.min(totalMagnitude * 0.005, density / 2); // Scale by magnitude
+                        const startX = i - lineLength * Math.cos(angle) / 2;
+                        const startY = j - lineLength * Math.sin(angle) / 2;
+                        const endX = i + lineLength * Math.cos(angle) / 2;
+                        const endY = j + lineLength * Math.sin(angle) / 2;
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(startX, startY);
+                        this.ctx.lineTo(endX, endY);
+                        this.ctx.strokeStyle = fieldLineColor;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.stroke();
+                        drawArrowhead(this.ctx, (startX + endX) / 2, (startY + endY) / 2, angle, arrowSize, fieldLineColor);
+                    }
+                }
+            }
+        }
+    };
+
+    // Electric Field Event Listeners
+    let isDragging = false;
+    let activeDraggable = null;
+    let dragOffsetX, dragOffsetY;
+
+    electricFieldCanvas.addEventListener('mousedown', (e) => {
+        const rect = electricFieldCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Check if clicking on a charge
+        for (let i = 0; i < electricFieldSim.charges.length; i++) {
+            const charge = electricFieldSim.charges[i];
+            const dist = Math.sqrt((mouseX - charge.x)**2 + (mouseY - charge.y)**2);
+            if (dist < 15) { // Within charge radius
+                isDragging = true;
+                activeDraggable = charge;
+                dragOffsetX = mouseX - charge.x;
+                dragOffsetY = mouseY - charge.y;
+                electricFieldCanvas.style.cursor = 'grabbing';
+                return;
+            }
+        }
+
+        // Removed portable compass dragging logic
+        // if (electricFieldSim.portableCompass.visible) {
+        //     const compass = electricFieldSim.portableCompass;
+        //     const compassRect = {
+        //         x: compass.x - compass.width / 2,
+        //         y: compass.y - compass.height / 2,
+        //         width: compass.width,
+        //         height: compass.height
+        //     };
+        //     if (mouseX >= compassRect.x && mouseX <= compassRect.x + compassRect.width &&
+        //         mouseY >= compassRect.y && mouseY <= compassRect.y + compassRect.height) {
+        //         isDragging = true;
+        //         activeDraggable = compass;
+        //         dragOffsetX = mouseX - compass.x;
+        //         dragOffsetY = mouseY - compass.y;
+        //         electricFieldCanvas.style.cursor = 'grabbing';
+        //         return;
+        //     }
+        // }
+
+        // If not dragging an existing element, and addChargeBtn is active, add new charge
+        if (addChargeBtn.classList.contains('primary')) {
+            electricFieldSim.addCharge(mouseX, mouseY);
+        }
+    });
+
+    electricFieldCanvas.addEventListener('mousemove', (e) => {
+        if (!isDragging || !activeDraggable) return;
+        const rect = electricFieldCanvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        activeDraggable.x = mouseX - dragOffsetX;
+        activeDraggable.y = mouseY - dragOffsetY;
+
+        electricFieldSim.draw();
+    });
+
+    electricFieldCanvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        activeDraggable = null;
+        electricFieldCanvas.style.cursor = 'grab';
+    });
+
+    electricFieldCanvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+        activeDraggable = null;
+        electricFieldCanvas.style.cursor = 'grab';
+    });
+
+    addChargeBtn.addEventListener('click', () => {
+        // Toggle active state for visual feedback
+        addChargeBtn.classList.toggle('primary');
+        addChargeBtn.classList.toggle('secondary');
+        if (addChargeBtn.classList.contains('primary')) {
+            addChargeBtn.textContent = 'Click Canvas to Add Charge';
+        } else {
+            addChargeBtn.textContent = 'Add Charge (Click Canvas)';
+        }
+    });
+
+    clearChargesBtn.addEventListener('click', () => electricFieldSim.clearCharges());
+    toggleElectricFieldLinesBtn.addEventListener('click', () => {
+        electricFieldSim.showFieldLines = !electricFieldSim.showFieldLines;
+        electricFieldSim.draw();
+    });
+    chargeTypeSelect.addEventListener('change', () => electricFieldSim.draw());
+    chargeMagnitudeInput.addEventListener('input', () => electricFieldSim.draw());
+
+    // Removed portable compass toggle and type change event listeners
+    // togglePortableCompass_electricFields.addEventListener('click', () => {
+    //     electricFieldSim.portableCompass.visible = !electricFieldSim.portableCompass.visible;
+    //     if (!electricFieldSim.portableCompass.visible) {
+    //         electricFieldSim.portableCompass.x = electricFieldSim.canvas.width / 2;
+    //         electricFieldSim.portableCompass.y = electricFieldSim.canvas.height / 2;
+    //     }
+    //     electricFieldSim.draw();
+    // });
+    // portableCompassType_electricFields.addEventListener('change', () => {
+    //     electricFieldSim.portableCompass.type = portableCompassType_electricFields.value;
+    //     electricFieldSim.draw();
+    // });
+
+
+    // --- Magnetic Force on Current Simulation ---
+    const magneticForceCurrentCanvas = document.getElementById('magneticForceCurrentCanvas');
+    const currentForceDirectionSelect = document.getElementById('currentForceDirection');
+    const magneticFieldDirectionSelect = document.getElementById('magneticFieldDirection');
+    const currentWireStrengthInput = document.getElementById('currentWireStrength');
+    const magneticFieldStrengthInput = document.getElementById('magneticFieldStrength');
+    const resetCurrentForceBtn = document.getElementById('resetCurrentForceBtn');
+    const currentForceResultSpan = document.getElementById('currentForceResult');
+    const currentForceMagnitudeSpan = document.getElementById('currentForceMagnitude');
+
+    const magneticForceCurrentSim = {
+        canvas: null,
+        ctx: null,
+        forceDirection: 'None',
+        forceMagnitude: 0,
+        init: function() {
+            this.canvas = magneticForceCurrentCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.reset();
+        },
+        reset: function() {
+            currentForceDirectionSelect.value = 'right';
+            magneticFieldDirectionSelect.value = 'up';
+            currentWireStrengthInput.value = 5;
+            magneticFieldStrengthInput.value = 1;
+            this.forceDirection = 'None';
+            this.forceMagnitude = 0;
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const wireLength = 200;
+            const fieldSize = 150;
+
+            const currentDirection = currentForceDirectionSelect.value;
+            const fieldDirection = magneticFieldDirectionSelect.value;
+            const currentStrength = parseFloat(currentWireStrengthInput.value);
+            const fieldStrength = parseFloat(magneticFieldStrengthInput.value);
+
+            // Draw Magnetic Field (B)
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 2;
+            const fieldArrowSize = 10;
+
+            if (fieldDirection === 'in' || fieldDirection === 'out') {
+                for (let x = centerX - fieldSize / 2; x <= centerX + fieldSize / 2; x += 30) {
+                    for (let y = centerY - fieldSize / 2; y <= centerY + fieldSize / 2; y += 30) {
+                        drawDepthIndicator(this.ctx, x, y, fieldDirection, 'green', 8);
+                    }
+                }
+                this.ctx.fillText('B', centerX + fieldSize / 2 + 20, centerY);
+            } else {
+                let fieldAngle = 0;
+                if (fieldDirection === 'up') fieldAngle = -Math.PI / 2;
+                else if (fieldDirection === 'down') fieldAngle = Math.PI / 2;
+                else if (fieldDirection === 'left') fieldAngle = Math.PI;
+                else if (fieldDirection === 'right') fieldAngle = 0;
+
+                for (let y = centerY - fieldSize / 2; y <= centerY + fieldSize / 2; y += 30) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(centerX - fieldSize / 2, y);
+                    this.ctx.lineTo(centerX + fieldSize / 2, y);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, centerX + fieldSize / 2, y, fieldAngle, fieldArrowSize, 'green');
+                }
+                this.ctx.fillText('B', centerX + fieldSize / 2 + 20, centerY);
+            }
+
+
+            // Draw Current-Carrying Wire (I)
+            this.ctx.strokeStyle = 'blue';
+            this.ctx.lineWidth = 4;
+            const currentArrowSize = 12;
+
+            if (currentDirection === 'in' || currentDirection === 'out') {
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
+                this.ctx.stroke();
+                drawDepthIndicator(this.ctx, centerX, centerY, currentDirection, 'blue', 10);
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('I', centerX + 25, centerY - 25);
+            } else {
+                let currentAngle = 0;
+                if (currentDirection === 'up') currentAngle = -Math.PI / 2;
+                else if (currentDirection === 'down') currentAngle = Math.PI / 2;
+                else if (currentDirection === 'left') currentAngle = Math.PI;
+                else if (currentDirection === 'right') currentAngle = 0;
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX - wireLength / 2 * Math.cos(currentAngle), centerY - wireLength / 2 * Math.sin(currentAngle));
+                this.ctx.lineTo(centerX + wireLength / 2 * Math.cos(currentAngle), centerY + wireLength / 2 * Math.sin(currentAngle));
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, centerX + wireLength / 2 * Math.cos(currentAngle), centerY + wireLength / 2 * Math.sin(currentAngle), currentAngle, currentArrowSize, 'blue');
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('I', centerX + wireLength / 2 * Math.cos(currentAngle) + 20, centerY + wireLength / 2 * Math.sin(currentAngle) + 20);
+            }
+
+            // Calculate Force (F) using Right-Hand Rule (I x B)
+            // Represent directions as vectors for cross product
+            let I_vec = { x: 0, y: 0, z: 0 }; // z is into screen
+            if (currentDirection === 'right') I_vec.x = 1;
+            else if (currentDirection === 'left') I_vec.x = -1;
+            else if (currentDirection === 'up') I_vec.y = -1;
+            else if (currentDirection === 'down') I_vec.y = 1;
+            else if (currentDirection === 'in') I_vec.z = 1;
+            else if (currentDirection === 'out') I_vec.z = -1;
+
+            let B_vec = { x: 0, y: 0, z: 0 };
+            if (fieldDirection === 'right') B_vec.x = 1;
+            else if (fieldDirection === 'left') B_vec.x = -1;
+            else if (fieldDirection === 'up') B_vec.y = -1;
+            else if (fieldDirection === 'down') B_vec.y = 1;
+            else if (fieldDirection === 'in') B_vec.z = 1;
+            else if (fieldDirection === 'out') B_vec.z = -1;
+
+            // F = I x B (cross product)
+            const Fx = I_vec.y * B_vec.z - I_vec.z * B_vec.y;
+            const Fy = I_vec.z * B_vec.x - I_vec.x * B_vec.z;
+            const Fz = I_vec.x * B_vec.y - I_vec.y * B_vec.x;
+
+            let forceAngle = 0;
+            let forceType = 'None';
+            if (Fz > 0.1) forceType = 'in';
+            else if (Fz < -0.1) forceType = 'out';
+            else if (Fy > 0.1) { forceType = 'down'; forceAngle = Math.PI / 2; }
+            else if (Fy < -0.1) { forceType = 'up'; forceAngle = -Math.PI / 2; }
+            else if (Fx > 0.1) { forceType = 'right'; forceAngle = 0; }
+            else if (Fx < -0.1) { forceType = 'left'; forceAngle = Math.PI; }
+
+            this.forceDirection = forceType;
+            // F = BILsin(theta). Here, we use magnitude of vectors.
+            // Assuming perpendicular for max force visualization
+            this.forceMagnitude = currentStrength * fieldStrength * 10; // Scale for display
+
+            // Draw Force (F)
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            const forceArrowSize = 15;
+
+            if (this.forceDirection !== 'None') {
+                if (this.forceDirection === 'in' || this.forceDirection === 'out') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    drawDepthIndicator(this.ctx, centerX, centerY, this.forceDirection, 'red', 12);
+                } else {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(centerX, centerY);
+                    this.ctx.lineTo(centerX + 50 * Math.cos(forceAngle), centerY + 50 * Math.sin(forceAngle));
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, centerX + 50 * Math.cos(forceAngle), centerY + 50 * Math.sin(forceAngle), forceAngle, forceArrowSize, 'red');
+                }
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('F', centerX + 50 * Math.cos(forceAngle) + 20, centerY + 50 * Math.sin(forceAngle) + 20);
+            }
+            updateInfoPanel();
+        }
+    };
+
+    // Magnetic Force on Current Event Listeners
+    currentForceDirectionSelect.addEventListener('change', () => magneticForceCurrentSim.draw());
+    magneticFieldDirectionSelect.addEventListener('change', () => magneticForceCurrentSim.draw());
+    currentWireStrengthInput.addEventListener('input', () => magneticForceCurrentSim.draw());
+    magneticFieldStrengthInput.addEventListener('input', () => magneticForceCurrentSim.draw());
+    resetCurrentForceBtn.addEventListener('click', () => magneticForceCurrentSim.reset());
+
+
+    // --- Magnetic Force on Charge Simulation ---
+    const magneticForceChargeCanvas = document.getElementById('magneticForceChargeCanvas');
+    const chargeParticleTypeSelect = document.getElementById('chargeParticleType');
+    const particleVelocityInput = document.getElementById('particleVelocity');
+    const chargeFieldDirectionSelect = document.getElementById('chargeFieldDirection');
+    const chargeFieldStrengthInput = document.getElementById('chargeFieldStrength');
+    const startChargeForceBtn = document.getElementById('startChargeForceBtn');
+    const resetChargeForceBtn = document.getElementById('resetChargeForceBtn');
+    const chargeForceResultSpan = document.getElementById('chargeForceResult');
+    const chargeForceMagnitudeSpan = document.getElementById('chargeForceMagnitude');
+
+    const magneticForceChargeSim = {
+        canvas: null,
+        ctx: null,
+        particle: { x: 0, y: 0, vx: 0, vy: 0, type: 'positive' },
+        forceDirection: 'None',
+        forceMagnitude: 0,
+        animationId: null,
+        init: function() {
+            this.canvas = magneticForceChargeCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.particle = { x: 50, y: this.canvas.height / 2, vx: 0, vy: 0, type: chargeParticleTypeSelect.value };
+            this.forceDirection = 'None';
+            this.forceMagnitude = 0;
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const fieldSize = 150;
+
+            const chargeType = chargeParticleTypeSelect.value;
+            const particleVelocity = parseFloat(particleVelocityInput.value);
+            const fieldDirection = chargeFieldDirectionSelect.value;
+            const fieldStrength = parseFloat(chargeFieldStrengthInput.value);
+
+            // Draw Magnetic Field (B)
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 2;
+            const fieldArrowSize = 10;
+
+            if (fieldDirection === 'in' || fieldDirection === 'out') {
+                for (let x = centerX - fieldSize / 2; x <= centerX + fieldSize / 2; x += 30) {
+                    for (let y = centerY - fieldSize / 2; y <= centerY + fieldSize / 2; y += 30) {
+                        drawDepthIndicator(this.ctx, x, y, fieldDirection, 'green', 8);
+                    }
+                }
+                this.ctx.fillText('B', centerX + fieldSize / 2 + 20, centerY);
+            } else {
+                let fieldAngle = 0;
+                if (fieldDirection === 'up') fieldAngle = -Math.PI / 2;
+                else if (fieldDirection === 'down') fieldAngle = Math.PI / 2;
+                else if (fieldDirection === 'left') fieldAngle = Math.PI;
+                else if (fieldDirection === 'right') fieldAngle = 0;
+
+                for (let y = centerY - fieldSize / 2; y <= centerY + fieldSize / 2; y += 30) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(centerX - fieldSize / 2, y);
+                    this.ctx.lineTo(centerX + fieldSize / 2, y);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, centerX + fieldSize / 2, y, fieldAngle, fieldArrowSize, 'green');
+                }
+                this.ctx.fillText('B', centerX + fieldSize / 2 + 20, centerY);
+            }
+
+            // Draw Particle
+            this.ctx.beginPath();
+            this.ctx.arc(this.particle.x, this.particle.y, 10, 0, Math.PI * 2);
+            this.ctx.fillStyle = this.particle.type === 'positive' ? 'red' : 'blue';
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#333';
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '14px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(this.particle.type === 'positive' ? '+' : '-', this.particle.x, this.particle.y);
+
+            // Draw Velocity Vector
+            this.ctx.strokeStyle = 'purple';
+            this.ctx.lineWidth = 2;
+            const velocityArrowSize = 10;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.particle.x, this.particle.y);
+            this.ctx.lineTo(this.particle.x + this.particle.vx * 10, this.particle.y + this.particle.vy * 10);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, this.particle.x + this.particle.vx * 10, this.particle.y + this.particle.vy * 10, Math.atan2(this.particle.vy, this.particle.vx), velocityArrowSize, 'purple');
+            this.ctx.fillStyle = 'black';
+            this.ctx.fillText('v', this.particle.x + this.particle.vx * 10 + 15, this.particle.y + this.particle.vy * 10 + 15);
+
+            // Calculate Force (F = qv x B)
+            let v_vec = { x: this.particle.vx, y: this.particle.vy, z: 0 };
+            let B_vec = { x: 0, y: 0, z: 0 };
+            if (fieldDirection === 'right') B_vec.x = 1;
+            else if (fieldDirection === 'left') B_vec.x = -1;
+            else if (fieldDirection === 'up') B_vec.y = -1;
+            else if (fieldDirection === 'down') B_vec.y = 1;
+            else if (fieldDirection === 'in') B_vec.z = 1;
+            else if (fieldDirection === 'out') B_vec.z = -1;
+
+            const Fx = v_vec.y * B_vec.z - v_vec.z * B_vec.y;
+            const Fy = v_vec.z * B_vec.x - v_vec.x * B_vec.z;
+            const Fz = v_vec.x * B_vec.y - v_vec.y * B_vec.x;
+
+            let forceAngle = 0;
+            let forceType = 'None';
+            if (Fz > 0.1) forceType = 'in';
+            else if (Fz < -0.1) forceType = 'out';
+            else if (Fy > 0.1) { forceType = 'down'; forceAngle = Math.PI / 2; }
+            else if (Fy < -0.1) { forceType = 'up'; forceAngle = -Math.PI / 2; }
+            else if (Fx > 0.1) { forceType = 'right'; forceAngle = 0; }
+            else if (Fx < -0.1) { forceType = 'left'; forceAngle = Math.PI; }
+
+            if (chargeType === 'negative') { // Reverse force direction for negative charge
+                if (forceType === 'in') forceType = 'out';
+                else if (forceType === 'out') forceType = 'in';
+                else forceAngle += Math.PI;
+            }
+
+            this.forceDirection = forceType;
+            this.forceMagnitude = particleVelocity * fieldStrength * 5; // Scale for display
+
+            // Draw Force (F)
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            const forceArrowSize = 15;
+
+            if (this.forceDirection !== 'None') {
+                if (this.forceDirection === 'in' || this.forceDirection === 'out') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    drawDepthIndicator(this.ctx, centerX, centerY, this.forceDirection, 'red', 12);
+                } else {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(centerX, centerY);
+                    this.ctx.lineTo(centerX + 50 * Math.cos(forceAngle), centerY + 50 * Math.sin(forceAngle));
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, centerX + 50 * Math.cos(forceAngle), centerY + 50 * Math.sin(forceAngle), forceAngle, forceArrowSize, 'red');
+                }
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('F', centerX + 50 * Math.cos(forceAngle) + 20, centerY + 50 * Math.sin(forceAngle) + 20);
+            }
+            updateInfoPanel();
+        },
+        animate: function() {
+            const velocity = parseFloat(particleVelocityInput.value);
+            const fieldStrength = parseFloat(chargeFieldStrengthInput.value);
+            const chargeType = chargeParticleTypeSelect.value;
+            const fieldDirection = chargeFieldDirectionSelect.value;
+
+            // Set initial velocity based on current input
+            if (this.particle.vx === 0 && this.particle.vy === 0) {
+                this.particle.vx = velocity;
+                this.particle.vy = 0;
+            }
+
+            // Calculate Lorentz force components (F = q(v x B))
+            let v_vec = { x: this.particle.vx, y: this.particle.vy, z: 0 };
+            let B_vec = { x: 0, y: 0, z: 0 };
+            if (fieldDirection === 'right') B_vec.x = 1;
+            else if (fieldDirection === 'left') B_vec.x = -1;
+            else if (fieldDirection === 'up') B_vec.y = -1;
+            else if (fieldDirection === 'down') B_vec.y = 1;
+            else if (fieldDirection === 'in') B_vec.z = 1;
+            else if (fieldDirection === 'out') B_vec.z = -1;
+
+            let Fx = v_vec.y * B_vec.z - v_vec.z * B_vec.y;
+            let Fy = v_vec.z * B_vec.x - v_vec.x * B_vec.z;
+            let Fz = v_vec.x * B_vec.y - v_vec.y * B_vec.x;
+
+            if (chargeType === 'negative') {
+                Fx *= -1;
+                Fy *= -1;
+            }
+
+            // Apply force to change velocity (simplified: force directly affects velocity)
+            const forceScale = fieldStrength * 0.05; // Adjust for visual effect
+            this.particle.vx += Fx * forceScale;
+            this.particle.vy += Fy * forceScale;
+
+            // Update position
+            this.particle.x += this.particle.vx;
+            this.particle.y += this.particle.vy;
+
+            // Keep particle within bounds (wrap around or bounce)
+            if (this.particle.x > this.canvas.width) this.particle.x = 0;
+            if (this.particle.x < 0) this.particle.x = this.canvas.width;
+            if (this.particle.y > this.canvas.height) this.particle.y = 0;
+            if (this.particle.y < 0) this.particle.y = this.canvas.height;
+
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.animate());
+        }
+    };
+
+    // Magnetic Force on Charge Event Listeners
+    chargeParticleTypeSelect.addEventListener('change', () => magneticForceChargeSim.reset());
+    particleVelocityInput.addEventListener('input', () => magneticForceChargeSim.reset());
+    chargeFieldDirectionSelect.addEventListener('change', () => magneticForceChargeSim.reset());
+    chargeFieldStrengthInput.addEventListener('input', () => magneticForceChargeSim.reset());
+    startChargeForceBtn.addEventListener('click', () => {
+        magneticForceChargeSim.reset(); // Reset to initial state
+        // Set initial velocity based on current input
+        magneticForceChargeSim.particle.vx = parseFloat(particleVelocityInput.value);
+        magneticForceChargeSim.particle.vy = 0; // Start moving right
+        magneticForceChargeSim.animate();
+    });
+    resetChargeForceBtn.addEventListener('click', () => magneticForceChargeSim.reset());
+
+
+    // --- Electromagnetic Induction Simulation ---
+    const inductionCanvas = document.getElementById('inductionCanvas');
+    const magnetSpeedInput = document.getElementById('magnetSpeed');
+    const coilTurnsInput = document.getElementById('coilTurns');
+    const startInductionBtn = document.getElementById('startInductionBtn');
+    const resetInductionBtn = document.getElementById('resetInductionBtn');
+    const inducedCurrentSpan = document.getElementById('inducedCurrent');
+    const inducedVoltageSpan = document.getElementById('inducedVoltage');
+
+    const inductionSim = {
+        canvas: null,
+        ctx: null,
+        magnetX: 0,
+        magnetY: 0,
+        magnetDirection: 1, // 1 for right, -1 for left
+        animationId: null,
+        inducedCurrentStatus: 'None',
+        inducedVoltage: 0,
+        init: function() {
+            this.canvas = inductionCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.magnetX = 50; // Start magnet on left
+            this.magnetY = this.canvas.height / 2;
+            this.magnetDirection = 1;
+            this.inducedCurrentStatus = 'None';
+            this.inducedVoltage = 0;
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const coilX = this.canvas.width - 150;
+            const coilY = this.canvas.height / 2 - 40;
+            const coilWidth = 40;
+            const coilHeight = 80;
+            const coilTurns = parseInt(coilTurnsInput.value);
+
+            // Draw Coil
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(coilX, coilY, coilWidth, coilHeight);
+            // Draw coil turns
+            for (let i = 0; i < coilTurns; i++) {
+                this.ctx.beginPath();
+                this.ctx.arc(coilX + coilWidth / 2, coilY + (i / (coilTurns - 1)) * coilHeight, coilWidth / 2, Math.PI / 2, 3 * Math.PI / 2);
+                this.ctx.stroke();
+            }
+
+            // Draw Magnet
+            const magnetWidth = 80;
+            const magnetHeight = 30;
+            this.ctx.fillStyle = 'red'; // North pole
+            this.ctx.fillRect(this.magnetX, this.magnetY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+            this.ctx.fillStyle = 'blue'; // South pole
+            this.ctx.fillRect(this.magnetX + magnetWidth / 2, this.magnetY - magnetHeight / 2, magnetWidth / 2, magnetHeight);
+            this.ctx.strokeStyle = '#333';
+            this.ctx.strokeRect(this.magnetX, this.magnetY - magnetHeight / 2, magnetWidth, magnetHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '16px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('N', this.magnetX + magnetWidth / 4, this.magnetY);
+            this.ctx.fillText('S', this.magnetX + 3 * magnetWidth / 4, this.magnetY);
+
+            // Draw Galvanometer / LED (simple indicator)
+            this.ctx.beginPath();
+            this.ctx.arc(coilX + coilWidth / 2, coilY + coilHeight + 40, 20, 0, Math.PI * 2);
+            this.ctx.strokeStyle = '#333';
+            this.ctx.stroke();
+            this.ctx.fillStyle = this.inducedCurrentStatus === 'Clockwise' ? 'green' : (this.inducedCurrentStatus === 'Counter-Clockwise' ? 'orange' : 'gray');
+            this.ctx.fill();
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('I', coilX + coilWidth / 2, coilY + coilHeight + 40);
+
+            updateInfoPanel();
+        },
+        animate: function() {
+            const magnetSpeed = parseFloat(magnetSpeedInput.value);
+            const coilX = this.canvas.width - 150;
+            const coilWidth = 40;
+            const magnetWidth = 80;
+
+            this.magnetX += magnetSpeed * this.magnetDirection;
+
+            // Simple induction logic: induced current when magnet is moving near coil
+            const magnetCenter = this.magnetX + magnetWidth / 2;
+            const coilCenter = coilX + coilWidth / 2;
+            const distance = Math.abs(magnetCenter - coilCenter);
+            const interactionZone = 150; // Distance over which induction occurs
+
+            if (distance < interactionZone) {
+                // Determine induced voltage based on proximity and speed
+                this.inducedVoltage = (interactionZone - distance) / interactionZone * magnetSpeed * 10 * (parseInt(coilTurnsInput.value) / 10);
+                if (this.inducedVoltage < 0.1) this.inducedVoltage = 0; // Threshold
+
+                // Determine direction based on relative motion and pole facing coil
+                // If N pole approaches coil from left, flux increases right -> induced field left -> current counter-clockwise (top wire out, bottom in)
+                // If N pole recedes from coil to left, flux decreases right -> induced field right -> current clockwise
+                // If S pole approaches coil from left, flux increases left -> induced field right -> current clockwise
+                // If S pole recedes from coil to left, flux decreases left -> induced field left -> current counter-clockwise
+
+                // Simplified: current direction changes based on entry/exit
+                if (this.magnetDirection === 1) { // Moving right (approaching coil)
+                    if (magnetCenter < coilCenter) { // N pole approaching from left
+                        this.inducedCurrentStatus = 'Counter-Clockwise';
+                    } else { // S pole moving away from left (or N pole moving away from right)
+                        this.inducedCurrentStatus = 'Clockwise';
+                    }
+                } else { // Moving left (receding from coil)
+                    if (magnetCenter < coilCenter) { // N pole receding to left
+                        this.inducedCurrentStatus = 'Clockwise';
+                    } else { // S pole approaching from right
+                        this.inducedCurrentStatus = 'Counter-Clockwise';
+                    }
+                }
+            } else {
+                this.inducedCurrentStatus = 'None';
+                this.inducedVoltage = 0;
+            }
+
+            // Reverse direction when hitting canvas edges
+            if (this.magnetX + magnetWidth > this.canvas.width || this.magnetX < 0) {
+                this.magnetDirection *= -1;
+            }
+
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.animate());
+        }
+    };
+
+    // Induction Event Listeners
+    startInductionBtn.addEventListener('click', () => {
+        inductionSim.reset();
+        inductionSim.animate();
+    });
+    resetInductionBtn.addEventListener('click', () => inductionSim.reset());
+    magnetSpeedInput.addEventListener('input', () => updateInfoPanel());
+    coilTurnsInput.addEventListener('input', () => updateInfoPanel());
+
+
+    // --- Earth's Magnetic Field Simulation ---
+    const earthMagneticFieldCanvas = document.getElementById('earthMagneticFieldCanvas');
+    const earthTiltInput = document.getElementById('earthTilt');
+    const earthFieldStrengthInput = document.getElementById('earthFieldStrength');
+    const resetEarthFieldBtn = document.getElementById('resetEarthFieldBtn');
+    const toggleEarthFieldLinesBtn = document.getElementById('toggleEarthFieldLines');
+    const infoEarthTilt = document.getElementById('infoEarthTilt');
+    const infoEarthFieldStrength = document.getElementById('infoEarthFieldStrength');
+    const earthFieldLinesStatus = document.getElementById('earthFieldLinesStatus');
+
+    const togglePortableCompass_earthMagneticField = document.getElementById('togglePortableCompass_earthMagneticField');
+    const portableCompassType_earthMagneticField = document.getElementById('portableCompassType_earthMagneticField');
+
+
+    const earthMagneticFieldSim = {
+        canvas: null,
+        ctx: null,
+        tilt: 11.3, // degrees
+        strength: 50,
+        showFieldLines: true,
+        portableCompass: {
+            x: 0,
+            y: 0,
+            visible: false,
+            type: 'N-S',
+            angle: 0,
+            width: 60,
+            height: 20
+        },
+        init: function() {
+            this.canvas = earthMagneticFieldCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.portableCompass.x = this.canvas.width / 2;
+            this.portableCompass.y = this.canvas.height / 2;
+            setupDraggable(this.canvas, this, 'portableCompass'); // Setup dragging
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const earthRadius = 150;
+
+            this.tilt = parseFloat(earthTiltInput.value);
+            this.strength = parseFloat(earthFieldStrengthInput.value);
+
+            // Draw Earth
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, earthRadius, 0, Math.PI * 2);
+            this.ctx.fillStyle = '#ADD8E6'; // Light blue for Earth
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Draw Geographic Axis (vertical)
+            this.ctx.strokeStyle = '#888';
+            this.ctx.lineWidth = 1;
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, centerY - earthRadius - 20);
+            this.ctx.lineTo(centerX, centerY + earthRadius + 20);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '14px Inter';
+            this.ctx.fillText('N (Geo)', centerX + 30, centerY - earthRadius - 10);
+            this.ctx.fillText('S (Geo)', centerX + 30, centerY + earthRadius + 10);
+
+
+            // Draw Magnetic Axis (tilted)
+            const tiltRad = this.tilt * Math.PI / 180;
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - (earthRadius + 20) * Math.sin(tiltRad), centerY - (earthRadius + 20) * Math.cos(tiltRad));
+            this.ctx.lineTo(centerX + (earthRadius + 20) * Math.sin(tiltRad), centerY + (earthRadius + 20) * Math.cos(tiltRad));
+            this.ctx.stroke();
+
+            // Draw Magnetic Poles (simplified as points)
+            const magneticNorthX = centerX - earthRadius * Math.sin(tiltRad);
+            const magneticNorthY = centerY - earthRadius * Math.cos(tiltRad);
+            const magneticSouthX = centerX + earthRadius * Math.sin(tiltRad);
+            const magneticSouthY = centerY + earthRadius * Math.cos(tiltRad);
+
+            this.ctx.fillStyle = 'blue'; // Magnetic North is South pole of internal magnet
+            this.ctx.beginPath();
+            this.ctx.arc(magneticNorthX, magneticNorthY, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillText('MN', magneticNorthX - 25, magneticNorthY - 15);
+
+            this.ctx.fillStyle = 'red'; // Magnetic South is North pole of internal magnet
+            this.ctx.beginPath();
+            this.ctx.arc(magneticSouthX, magneticSouthY, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillText('MS', magneticSouthX + 15, magneticSouthY + 15);
+
+
+            if (this.showFieldLines) {
+                this.drawEarthFieldLines(centerX, centerY, earthRadius, this.tilt, this.strength);
+            }
+            // Update and draw portable compass
+            if (this.portableCompass.visible) {
+                const { Bx, By } = calculateMagneticFieldVector('earthMagneticField', this.portableCompass.x, this.portableCompass.y);
+                this.portableCompass.angle = Math.atan2(By, Bx);
+                drawPortableCompass(this.ctx, this.portableCompass);
+            }
+            updateInfoPanel();
+        },
+        drawEarthFieldLines: function(centerX, centerY, earthRadius, tiltDegrees, strength) {
+            const numLines = 10; // Number of field lines on each side of the axis
+            const arrowSize = 8;
+            const fieldLineColor = 'rgba(0, 0, 0, 0.4)';
+            this.ctx.strokeStyle = fieldLineColor;
+            this.ctx.lineWidth = 1;
+
+            const tiltRad = tiltDegrees * Math.PI / 180;
+
+            // Draw central line (along magnetic axis)
+            const magSouthPoleX = centerX - earthRadius * Math.sin(tiltRad);
+            const magSouthPoleY = centerY - earthRadius * Math.cos(tiltRad);
+            const magNorthPoleX = centerX + earthRadius * Math.sin(tiltRad);
+            const magNorthPoleY = centerY + earthRadius * Math.cos(tiltRad);
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(magSouthPoleX, magSouthPoleY);
+            this.ctx.lineTo(magNorthPoleX, magNorthPoleY);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, (magSouthPoleX + magNorthPoleX) / 2, (magSouthPoleY + magNorthPoleY) / 2, tiltRad + Math.PI / 2, arrowSize, fieldLineColor);
+
+
+            const fieldExtentScale = strength / 100; // Scale for how far lines extend
+
+            for (let i = 1; i <= numLines; i++) {
+                const offsetFactor = i / numLines; // 0 to 1
+
+                // Lines on one side of the magnetic axis
+                this.drawSingleDipoleLine(centerX, centerY, earthRadius, tiltRad, offsetFactor, fieldExtentScale, 1, arrowSize, fieldLineColor);
+                // Lines on the other side (symmetric)
+                this.drawSingleDipoleLine(centerX, centerY, earthRadius, tiltRad, offsetFactor, fieldExtentScale, -1, arrowSize, fieldLineColor);
+            }
+        },
+
+        drawSingleDipoleLine: function(centerX, centerY, earthRadius, tiltRad, offsetFactor, fieldExtentScale, sideMultiplier, arrowSize, fieldLineColor) {
+            // Start point near Magnetic South Pole
+            const startAngle = tiltRad + Math.PI / 2 + offsetFactor * Math.PI / 2 * sideMultiplier;
+            const startX = centerX + earthRadius * Math.cos(startAngle);
+            const startY = centerY + earthRadius * Math.sin(startAngle);
+
+            // End point near Magnetic North Pole
+            const endAngle = tiltRad - Math.PI / 2 + offsetFactor * Math.PI / 2 * sideMultiplier;
+            const endX = centerX + earthRadius * Math.cos(endAngle);
+            const endY = centerY + earthRadius * Math.sin(endAngle);
+
+            // Control points for the Bezier curve
+            const controlOffset = earthRadius * (1.5 + offsetFactor * 1.0) * fieldExtentScale; // How far out the curve goes
+            const controlAngleOffset = offsetFactor * Math.PI / 4; // Angle for curvature
+
+            let cp1x, cp1y, cp2x, cp2y;
+
+            if (sideMultiplier === 1) { // Upper lines
+                cp1x = startX + controlOffset * Math.cos(startAngle - controlAngleOffset);
+                cp1y = startY + controlOffset * Math.sin(startAngle - controlAngleOffset);
+                cp2x = endX + controlOffset * Math.cos(endAngle + controlAngleOffset);
+                cp2y = endY + controlOffset * Math.sin(endAngle + controlAngleOffset);
+            } else { // Lower lines
+                cp1x = startX + controlOffset * Math.cos(startAngle + controlAngleOffset);
+                cp1y = startY + controlOffset * Math.sin(startAngle + controlAngleOffset);
+                cp2x = endX + controlOffset * Math.cos(endAngle - controlAngleOffset);
+                cp2y = endY + controlOffset * Math.sin(endAngle - controlAngleOffset);
+            }
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+            this.ctx.stroke();
+
+            // Arrowhead at midpoint
+            const u = 0.5;
+            const tangentX = 3 * (1-u)**2 * (cp1x - startX) + 6 * (1-u) * u * (cp2x - cp1x) + 3 * u**2 * (endX - cp2x);
+            const tangentY = 3 * (1-u)**2 * (cp1y - startY) + 6 * (1-u) * u * (cp2y - cp1y) + 3 * u**2 * (endY - cp2y);
+            let arrowAngle = Math.atan2(tangentY, tangentX);
+
+            const midX = (startX + cp1x + cp2x + endX) / 4;
+            const midY = (startY + cp1y + cp2y + endY) / 4;
+
+            drawArrowhead(this.ctx, midX, midY, arrowAngle, arrowSize, fieldLineColor);
+        }
+    };
+
+    // Earth's Magnetic Field Event Listeners
+    earthTiltInput.addEventListener('input', () => earthMagneticFieldSim.draw());
+    earthFieldStrengthInput.addEventListener('input', () => earthMagneticFieldSim.draw());
+    resetEarthFieldBtn.addEventListener('click', () => {
+        earthTiltInput.value = 11.3;
+        earthFieldStrengthInput.value = 50;
+        earthMagneticFieldSim.showFieldLines = true;
+        earthMagneticFieldSim.portableCompass.visible = false;
+        earthMagneticFieldSim.draw();
+    });
+    toggleEarthFieldLinesBtn.addEventListener('click', () => {
+        earthMagneticFieldSim.showFieldLines = !earthMagneticFieldSim.showFieldLines;
+        earthMagneticFieldSim.draw();
+    });
+
+    togglePortableCompass_earthMagneticField.addEventListener('click', () => {
+        earthMagneticFieldSim.portableCompass.visible = !earthMagneticFieldSim.portableCompass.visible;
+        if (!earthMagneticFieldSim.portableCompass.visible) {
+            earthMagneticFieldSim.portableCompass.x = earthMagneticFieldSim.canvas.width / 2;
+            earthMagneticFieldSim.portableCompass.y = earthMagneticFieldSim.canvas.height / 2;
+        }
+        earthMagneticFieldSim.draw();
+    });
+    portableCompassType_earthMagneticField.addEventListener('change', () => {
+        earthMagneticFieldSim.portableCompass.type = portableCompassType_earthMagneticField.value;
+        earthMagneticFieldSim.draw();
+    });
+
+
+    // --- Magnetic Resonance Simulation ---
+    const magneticResonanceCanvas = document.getElementById('magneticResonanceCanvas');
+    const b0StrengthInput = document.getElementById('b0Strength');
+    const rfPulseStrengthInput = document.getElementById('rfPulseStrength');
+    const startMrSimBtn = document.getElementById('startMrSimBtn');
+    const nextMrStepBtn = document.getElementById('nextMrStepBtn');
+    const resetMrSimBtn = document.getElementById('resetMrSimBtn');
+    const mrStageSpan = document.getElementById('mrStage');
+    const infoB0Strength = document.getElementById('infoB0Strength');
+    const infoRfPulseStrength = document.getElementById('infoRfPulseStrength');
+
+    const magneticResonanceSim = {
+        canvas: null,
+        ctx: null,
+        b0Strength: 5,
+        rfPulseStrength: 2,
+        currentStage: 'Initial Alignment', // Stages: Initial Alignment, RF Pulse, Precession, Signal Detection, Relaxation
+        nucleusAngle: Math.PI / 2, // Initial angle (aligned with Y axis)
+        precessionAngle: 0, // For rotation around B0
+        animationId: null,
+        init: function() {
+            this.canvas = magneticResonanceCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.b0Strength = parseFloat(b0StrengthInput.value);
+            this.rfPulseStrength = parseFloat(rfPulseStrengthInput.value);
+            this.currentStage = 'Initial Alignment';
+            this.nucleusAngle = Math.PI / 2; // Aligned with Y-axis (vertical)
+            this.precessionAngle = 0;
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const nucleusRadius = 15;
+
+            // Draw B0 field (main magnetic field, vertical)
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, 50);
+            this.ctx.lineTo(centerX, this.canvas.height - 50);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, centerX, this.canvas.height - 50, Math.PI / 2, 10, 'green'); // Arrow pointing down (B0 is typically along Z-axis)
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Inter';
+            this.ctx.fillText('B₀', centerX + 25, centerY);
+
+            // Draw Nucleus (spinning proton/magnet)
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, nucleusRadius, 0, Math.PI * 2);
+            this.ctx.fillStyle = '#8B0000'; // Dark red for nucleus
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#333';
+            this.ctx.stroke();
+
+            // Draw Nucleus Magnetic Moment Vector (tilted)
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, centerY);
+            const vecLength = nucleusRadius * 2;
+            const vecX = centerX + vecLength * Math.cos(this.nucleusAngle);
+            const vecY = centerY + vecLength * Math.sin(this.nucleusAngle);
+            this.ctx.lineTo(vecX, vecY);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, vecX, vecY, this.nucleusAngle, 8, 'red');
+            this.ctx.fillStyle = 'black';
+            this.ctx.fillText('μ', vecX + 15, vecY + 15); // Magnetic moment symbol
+
+            // Draw RF Pulse (B1) if active
+            if (this.currentStage === 'RF Pulse') {
+                this.ctx.strokeStyle = 'orange';
+                this.ctx.lineWidth = 4;
+                this.ctx.setLineDash([8, 8]);
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, nucleusRadius + 20, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('B₁ (RF)', centerX + 60, centerY);
+            }
+
+            // Draw Signal Detection if active
+            if (this.currentStage === 'Signal Detection') {
+                this.ctx.strokeStyle = 'purple';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, nucleusRadius + 30, this.precessionAngle, this.precessionAngle + Math.PI / 4);
+                this.ctx.stroke();
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillText('Signal', centerX + 70, centerY + 20);
+            }
+
+            mrStageSpan.textContent = this.currentStage;
+            updateInfoPanel();
+        },
+        animatePrecession: function() {
+            if (this.currentStage !== 'Precession' && this.currentStage !== 'Signal Detection') {
+                cancelAnimationFrame(this.animationId);
+                return;
+            }
+
+            this.precessionAngle += 0.05 * this.b0Strength; // Speed depends on B0 strength
+            this.nucleusAngle = Math.PI / 2 + Math.sin(this.precessionAngle) * 0.2; // Small wobble for precession visual
+
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.animatePrecession());
+        },
+        nextStep: function() {
+            if (this.currentStage === 'Initial Alignment') {
+                this.currentStage = 'RF Pulse';
+                this.nucleusAngle = Math.PI / 2; // Still aligned
+            } else if (this.currentStage === 'RF Pulse') {
+                this.currentStage = 'Precession';
+                this.nucleusAngle = Math.PI / 2 - (this.rfPulseStrength / 10) * Math.PI / 2; // Flip angle based on RF strength
+                this.animatePrecession();
+            } else if (this.currentStage === 'Precession') {
+                this.currentStage = 'Signal Detection';
+                // Continue precession, but now show signal
+            } else if (this.currentStage === 'Signal Detection') {
+                this.currentStage = 'Relaxation';
+                cancelAnimationFrame(this.animationId); // Stop precession
+                this.nucleusAngle = Math.PI / 2; // Relax back to alignment
+            } else if (this.currentStage === 'Relaxation') {
+                this.currentStage = 'Initial Alignment'; // Loop back
+                this.nucleusAngle = Math.PI / 2;
+                this.precessionAngle = 0;
+            }
+            this.draw();
+        }
+    };
+
+    // Magnetic Resonance Event Listeners
+    b0StrengthInput.addEventListener('input', () => magneticResonanceSim.draw());
+    rfPulseStrengthInput.addEventListener('input', () => magneticResonanceSim.draw());
+    startMrSimBtn.addEventListener('click', () => magneticResonanceSim.reset());
+    nextMrStepBtn.addEventListener('click', () => magneticResonanceSim.nextStep());
+    resetMrSimBtn.addEventListener('click', () => magneticResonanceSim.reset());
+
+
+    // --- Quantum Tunneling Simulation ---
+    const quantumTunnelingCanvas = document.getElementById('quantumTunnelingCanvas');
+    const particleEnergyInput = document.getElementById('particleEnergy');
+    const barrierHeightInput = document.getElementById('barrierHeight');
+    const barrierWidthInput = document.getElementById('barrierWidth');
+    const startTunnelingBtn = document.getElementById('startTunnelingBtn');
+    const resetTunnelingBtn = document.getElementById('resetTunnelingBtn');
+    const transmissionProbSpan = document.getElementById('transmissionProb');
+    const reflectionProbSpan = document.getElementById('reflectionProb');
+
+    const quantumTunnelingSim = {
+        canvas: null,
+        ctx: null,
+        particleX: 0,
+        animationId: null,
+        transmissionProb: 0,
+        reflectionProb: 0,
+        isAnimating: false,
+        init: function() {
+            this.canvas = quantumTunnelingCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.isAnimating = false;
+            this.particleX = 0;
+            this.transmissionProb = 0;
+            this.reflectionProb = 0;
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const barrierWidth = parseFloat(barrierWidthInput.value);
+            const barrierHeight = parseFloat(barrierHeightInput.value);
+            const particleEnergy = parseFloat(particleEnergyInput.value);
+
+            const barrierX = this.canvas.width / 2 - barrierWidth / 2;
+            const barrierY = this.canvas.height / 2 - barrierHeight * 10; // Scale height for visualization
+            const barrierVisualHeight = barrierHeight * 20; // Visual height of the barrier
+
+            // Draw Barrier
+            this.ctx.fillStyle = '#666';
+            this.ctx.fillRect(barrierX, barrierY, barrierWidth, barrierVisualHeight);
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(barrierX, barrierY, barrierWidth, barrierVisualHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '14px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(`V₀ = ${barrierHeight} (relative)`, barrierX + barrierWidth / 2, barrierY - 15);
+
+            // Draw Particle Wave Packet
+            const waveAmplitude = 20;
+            const waveLength = 50; // Visual wavelength
+            const waveY = this.canvas.height / 2;
+
+            this.ctx.strokeStyle = 'blue';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            for (let x = 0; x < this.particleX + 100; x++) { // Draw a segment of the wave
+                const y = waveY + waveAmplitude * Math.sin(x / waveLength * Math.PI * 2);
+                if (x === 0) this.ctx.moveTo(x, y);
+                else this.ctx.lineTo(x, y);
+            }
+            this.ctx.stroke();
+
+            // Calculate probabilities (conceptual based on inputs)
+            // Simplified tunneling probability (qualitative): increases with energy, decreases with barrier height/width
+            let transmission = 0;
+            if (particleEnergy >= barrierHeight) { // Particle has enough energy to go over
+                transmission = 100;
+            } else { // Tunneling
+                // Exponential decay with barrier height and width, inverse with energy
+                const exponent = -2 * barrierWidth * (barrierHeight - particleEnergy); // Simplified
+                transmission = Math.exp(exponent / 50) * 100; // Scale for visualization
+                if (transmission > 99) transmission = 99; // Cap
+                if (transmission < 0.1) transmission = 0.1; // Min
+            }
+            this.transmissionProb = transmission;
+            this.reflectionProb = 100 - transmission;
+
+            updateInfoPanel();
+        },
+        animate: function() {
+            if (!this.isAnimating) return;
+
+            this.particleX += 2; // Move particle
+            if (this.particleX > this.canvas.width) {
+                this.particleX = 0; // Loop animation
+            }
+
+            this.draw();
+            this.animationId = requestAnimationFrame(() => this.animate());
+        }
+    };
+
+    // Quantum Tunneling Event Listeners
+    startTunnelingBtn.addEventListener('click', () => {
+        quantumTunnelingSim.reset();
+        quantumTunnelingSim.isAnimating = true;
+        quantumTunnelingSim.animate();
+    });
+    resetTunnelingBtn.addEventListener('click', () => quantumTunnelingSim.reset());
+    particleEnergyInput.addEventListener('input', () => quantumTunnelingSim.draw());
+    barrierHeightInput.addEventListener('input', () => quantumTunnelingSim.draw());
+    barrierWidthInput.addEventListener('input', () => quantumTunnelingSim.draw());
+
+    /**
+     * Sets up dragging functionality for a portable object (magnet or compass) on a given canvas.
+     * @param {HTMLCanvasElement} canvas - The canvas element.
+     * @param {Object} simObject - The simulation object that contains the draggable object.
+     * @param {string} draggableProperty - The name of the property in simObject that holds the draggable object (e.g., 'portableCompass').
+     */
+    function setupDraggable(canvas, simObject, draggableProperty) {
+        let isDragging = false;
+        let activeDraggable = null;
+        let dragOffsetX, dragOffsetY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (simObject[draggableProperty] && simObject[draggableProperty].visible) {
+                const draggable = simObject[draggableProperty];
+                const draggableRect = {
+                    x: draggable.x - draggable.width / 2,
+                    y: draggable.y - draggable.height / 2,
+                    width: draggable.width,
+                    height: draggable.height
+                };
+                if (mouseX >= draggableRect.x && mouseX <= draggableRect.x + draggableRect.width &&
+                    mouseY >= draggableRect.y && mouseY <= draggableRect.y + draggableRect.height) {
+                    isDragging = true;
+                    activeDraggable = draggable;
+                    dragOffsetX = mouseX - draggable.x;
+                    dragOffsetY = mouseY - draggable.y;
+                    canvas.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || !activeDraggable) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            activeDraggable.x = mouseX - dragOffsetX;
+            activeDraggable.y = mouseY - dragOffsetY;
+
+            simObject.draw(); // Redraw the specific simulator
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            activeDraggable = null;
+            canvas.style.cursor = 'grab';
+        });
+
+        canvas.addEventListener('mouseleave', () => { // Stop dragging if mouse leaves canvas
+            isDragging = false;
+            activeDraggable = null;
+            canvas.style.cursor = 'grab';
+        });
+    }
+
+
+    // --- Initial Setup on Document Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set the initial active tab and its canvas
+      const initialActiveTabBtn = document.querySelector('.tab-btn.active');
+      if (initialActiveTabBtn) {
+        const tabId = initialActiveTabBtn.dataset.tab;
+        const initialCanvasElement = document.querySelector(`#${tabId} canvas`);
+        if (initialCanvasElement) {
+          currentCanvas = initialCanvasElement;
+          currentCtx = initialCanvasElement.getContext('2d');
+          resizeCanvas(); // Set initial size
+        }
+      }
+
+      // Initialize all simulators
+      magneticFieldSim.init();
+      electricFieldSim.init();
+      magneticForceCurrentSim.init();
+      magneticForceChargeSim.init();
+      inductionSim.init();
+      earthMagneticFieldSim.init();
+      magneticResonanceSim.init();
+      quantumTunnelingSim.init();
+
+      // Trigger initial update for the active tab's info panel
+      updateInfoPanel();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+</html>

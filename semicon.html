@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Semiconductor Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Root variables for consistent theming */
+    :root {
+      --primary-color: #007bff; /* Blue */
+      --secondary-color: #6c757d; /* Gray */
+      --accent-color: #28a745; /* Green */
+      --dark-color: #212121;
+      --light-color: #f5f5f5;
+      --background-gradient: linear-gradient(135deg, #e0f2f7 0%, #cce7f0 100%);
+      --panel-bg: #ffffff;
+      --border-radius: 12px;
+      --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    /* Global reset and body styling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top */
+      min-height: 100vh;
+    }
+
+    /* Main container for the application */
+    .container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* Header styling */
+    header {
+      text-align: center;
+      padding: 25px;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.3rem;
+    }
+
+    /* Tab navigation styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tab-btn {
+      padding: 14px 28px;
+      background: var(--panel-bg);
+      border: none;
+      border-radius: 30px;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      color: var(--dark-color);
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+    }
+
+    /* Tab content area styling */
+    .tab-content {
+      display: none;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    /* Fade-in animation for tab content */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Simulation specific container and title */
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    /* Controls grid layout */
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Individual control group styling */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    /* Input field styling (number and select) */
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    /* Button group styling */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* General button styling */
+    button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    /* Simulation area for canvas or other visuals */
+    .simulation-area {
+      width: 100%;
+      max-width: 900px;
+      height: 550px; /* Increased height for more visual space */
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+    }
+
+    /* Info panel styling */
+    .info-panel {
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .info-item {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee;
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-item strong {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .info-item span {
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    /* Specific styles for Semiconductor particles */
+    .electron, .hole {
+      position: absolute;
+      border-radius: 50%;
+      animation: moveParticle linear infinite;
+    }
+    .electron {
+      background-color: #007bff; /* Blue */
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 5px #007bff;
+    }
+    .hole {
+      background-color: #dc3545; /* Red */
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 5px #dc3545;
+    }
+    @keyframes moveParticle {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        gap: 15px;
+      }
+      header {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+      }
+      .tabs {
+        gap: 8px;
+      }
+      .tab-btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+      .tab-content {
+        padding: 25px;
+      }
+      .simulation-title {
+        font-size: 1.8rem;
+      }
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 15px;
+      }
+      .control-group label {
+        font-size: 0.9rem;
+      }
+      .control-group input[type="number"],
+      .control-group select {
+        padding: 10px;
+        font-size: 0.95rem;
+      }
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 450px;
+      }
+      .info-panel {
+        padding: 20px;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      .simulation-area {
+        height: 380px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Semiconductor Simulator</h1>
+      <p class="subtitle">Exploring the Fundamentals of Diodes and Transistors</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="semiconductors">Semiconductors</button>
+      <button class="tab-btn" data-tab="diodes">Diodes</button>
+      <button class="tab-btn" data-tab="transistors">Transistors</button>
+    </div>
+
+    <!-- Semiconductors Tab -->
+    <div id="semiconductors" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">N-type and P-type Semiconductors</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="semiconductorType">Semiconductor Type:</label>
+            <select id="semiconductorType">
+              <option value="intrinsic">Intrinsic</option>
+              <option value="n-type">N-type</option>
+              <option value="p-type">P-type</option>
+            </select>
+          </div>
+          <div class="control-group" id="dopingLevelControl">
+            <label for="dopingLevel">Doping Level (atoms/cm³):</label>
+            <input type="number" id="dopingLevel" min="1e14" max="1e19" value="1e16" step="1e14">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="semiconductorCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Type:</strong> <span id="infoSemiconductorType">Intrinsic</span></div>
+          <div class="info-item"><strong>Doping Level:</strong> <span id="infoDopingLevel">0 atoms/cm³</span></div>
+          <div class="info-item"><strong>Majority Carriers:</strong> <span id="infoMajorityCarriers">Electrons & Holes</span></div>
+          <div class="info-item"><strong>Minority Carriers:</strong> <span id="infoMinorityCarriers">N/A</span></div>
+          <div class="info-item"><strong>Fermi Level:</strong> <span id="infoFermiLevel">Mid-gap</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diodes Tab -->
+    <div id="diodes" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">PN Junction Diode</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="diodeVoltage">Applied Voltage (V):</label>
+            <input type="number" id="diodeVoltage" min="-5" max="5" value="0" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="temperatureDiode">Temperature (K):</label>
+            <input type="number" id="temperatureDiode" min="200" max="400" value="300" step="10">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="diodeCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Applied Voltage:</strong> <span id="infoDiodeVoltage">0.0 V</span></div>
+          <div class="info-item"><strong>Current (I):</strong> <span id="infoDiodeCurrent">0.00 mA</span></div>
+          <div class="info-item"><strong>Depletion Region Width:</strong> <span id="infoDepletionWidth">Normal</span></div>
+          <div class="info-item"><strong>Bias:</strong> <span id="infoDiodeBias">No Bias</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transistors Tab -->
+    <div id="transistors" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">NPN Bipolar Junction Transistor (BJT)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="baseCurrent">Base Current (μA):</label>
+            <input type="number" id="baseCurrent" min="0" max="100" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="vceVoltage">Collector-Emitter Voltage (V):</label>
+            <input type="number" id="vceVoltage" min="0" max="10" value="5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="transistorType">Transistor Type:</label>
+            <select id="transistorType">
+              <option value="npn">NPN</option>
+              <option value="pnp">PNP</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="transistorCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Base Current (I_B):</strong> <span id="infoBaseCurrent">0 μA</span></div>
+          <div class="info-item"><strong>Collector-Emitter Voltage (V_CE):</strong> <span id="infoVceVoltage">5.0 V</span></div>
+          <div class="info-item"><strong>Collector Current (I_C):</strong> <span id="infoCollectorCurrent">0.00 mA</span></div>
+          <div class="info-item"><strong>Operating Region:</strong> <span id="infoOperatingRegion">Cutoff</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId;
+    let currentTabMode = 'semiconductors'; // Initial active tab
+    let simulationCanvas = null; // Reference to the currently active canvas
+    let simulationCtx = null; // Reference to the currently active canvas context
+
+    // --- Utility Functions ---
+
+    /**
+     * Updates the info panel based on the current simulation mode and its parameters.
+     */
+    function updateInfoPanel() {
+      // Semiconductor Info
+      if (currentTabMode === 'semiconductors') {
+        const type = document.getElementById('semiconductorType').value;
+        const dopingLevel = parseFloat(document.getElementById('dopingLevel').value);
+
+        let majority = 'Electrons & Holes';
+        let minority = 'N/A';
+        let fermi = 'Mid-gap';
+        let dopingDisplay = '0 atoms/cm³';
+
+        if (type === 'n-type') {
+          majority = 'Electrons';
+          minority = 'Holes';
+          fermi = 'Near Conduction Band';
+          dopingDisplay = `${dopingLevel.toExponential(1)} atoms/cm³`;
+        } else if (type === 'p-type') {
+          majority = 'Holes';
+          minority = 'Electrons';
+          fermi = 'Near Valence Band';
+          dopingDisplay = `${dopingLevel.toExponential(1)} atoms/cm³`;
+        }
+
+        document.getElementById('infoSemiconductorType').textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        document.getElementById('infoDopingLevel').textContent = dopingDisplay;
+        document.getElementById('infoMajorityCarriers').textContent = majority;
+        document.getElementById('infoMinorityCarriers').textContent = minority;
+        document.getElementById('infoFermiLevel').textContent = fermi;
+
+        // Show/hide doping level control based on type
+        document.getElementById('dopingLevelControl').style.display = (type === 'intrinsic') ? 'none' : 'flex';
+
+      }
+      // Diode Info
+      else if (currentTabMode === 'diodes') {
+        const voltage = parseFloat(document.getElementById('diodeVoltage').value);
+        const temperature = parseFloat(document.getElementById('temperatureDiode').value);
+
+        // Simplified Diode Equation (Shockley Diode Equation)
+        // I = I_s * (exp(V / (n * V_T)) - 1)
+        // I_s: Reverse saturation current (very small, depends on material and temp)
+        // n: Ideality factor (1 to 2)
+        // V_T: Thermal voltage = kT/q
+        const q = 1.602e-19; // Elementary charge
+        const k = 1.380e-23; // Boltzmann constant
+        const n = 1.5; // Ideality factor
+        const Is = 1e-12; // Simplified reverse saturation current (A)
+
+        const Vt = (k * temperature) / q;
+        let current = Is * (Math.exp(voltage / (n * Vt)) - 1);
+
+        let bias = 'No Bias';
+        let depletionWidth = 'Normal';
+
+        if (voltage > 0.3) { // Forward bias threshold for silicon
+          bias = 'Forward Bias';
+          depletionWidth = 'Narrow';
+          if (current > 0.001) current *= 1000; // Scale up for visual effect
+        } else if (voltage < -0.1) { // Reverse bias threshold
+          bias = 'Reverse Bias';
+          depletionWidth = 'Wide';
+          current = -Is; // Reverse current is typically saturation current
+        } else {
+          current = 0; // Near zero voltage
+        }
+
+        document.getElementById('infoDiodeVoltage').textContent = `${voltage.toFixed(1)} V`;
+        document.getElementById('infoDiodeCurrent').textContent = `${(current * 1000).toFixed(2)} mA`; // Display in mA
+        document.getElementById('infoDepletionWidth').textContent = depletionWidth;
+        document.getElementById('infoDiodeBias').textContent = bias;
+      }
+      // Transistor Info
+      else if (currentTabMode === 'transistors') {
+        const baseCurrent = parseFloat(document.getElementById('baseCurrent').value); // microAmps
+        const vceVoltage = parseFloat(document.getElementById('vceVoltage').value);
+        const transistorType = document.getElementById('transistorType').value;
+
+        const beta = 100; // Common-emitter current gain (h_FE)
+        let collectorCurrent = 0; // mA
+        let operatingRegion = 'Cutoff';
+
+        if (baseCurrent > 0) {
+          collectorCurrent = (baseCurrent / 1000) * beta; // Convert baseCurrent to mA, then apply beta
+          if (collectorCurrent * 1000 > 0.7 && vceVoltage < 0.2) { // Simplified saturation condition
+            operatingRegion = 'Saturation';
+            collectorCurrent = vceVoltage / 0.1; // Arbitrary saturation current based on Vce
+          } else if (vceVoltage >= 0.2) {
+            operatingRegion = 'Active';
+          }
+        } else {
+          operatingRegion = 'Cutoff';
+        }
+
+        document.getElementById('infoBaseCurrent').textContent = `${baseCurrent.toFixed(0)} μA`;
+        document.getElementById('infoVceVoltage').textContent = `${vceVoltage.toFixed(1)} V`;
+        document.getElementById('infoCollectorCurrent').textContent = `${collectorCurrent.toFixed(2)} mA`;
+        document.getElementById('infoOperatingRegion').textContent = operatingRegion;
+      }
+    }
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations
+        cancelAnimationFrame(animationId);
+        semiconductorSim.stopParticles(); // Stop particle animation
+        diodeSim.stopAnimation(); // Stop diode animation
+        transistorSim.stopAnimation(); // Stop transistor animation
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Update global mode
+        currentTabMode = tabId;
+
+        // Initialize canvas and context for the active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set for drawing
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Specific initializations/resets for each tab
+        if (currentTabMode === 'semiconductors') {
+            semiconductorSim.init();
+            semiconductorSim.startParticles();
+        } else if (currentTabMode === 'diodes') {
+            diodeSim.init();
+            diodeSim.startAnimation();
+        } else if (currentTabMode === 'transistors') {
+            transistorSim.init();
+            transistorSim.startAnimation();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- Semiconductor Simulation ---
+    const semiconductorCanvas = document.getElementById('semiconductorCanvas');
+    const semiconductorTypeInput = document.getElementById('semiconductorType');
+    const dopingLevelInput = document.getElementById('dopingLevel');
+
+    const semiconductorSim = {
+        ctx: null,
+        canvas: null,
+        particles: [],
+        animationFrameId: null,
+        init: function() {
+            this.canvas = semiconductorCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.generateParticles();
+            this.draw();
+        },
+        generateParticles: function() {
+            this.particles = [];
+            const type = semiconductorTypeInput.value;
+            const dopingLevel = parseFloat(dopingLevelInput.value);
+            const numParticles = 200; // Total particles for visualization
+
+            let numElectrons = 0;
+            let numHoles = 0;
+
+            if (type === 'intrinsic') {
+                numElectrons = numParticles / 2;
+                numHoles = numParticles / 2;
+            } else if (type === 'n-type') {
+                numElectrons = numParticles * 0.8 + (dopingLevel / 1e19) * numParticles * 0.2; // More electrons with doping
+                numHoles = numParticles * 0.2 - (dopingLevel / 1e19) * numParticles * 0.1; // Fewer holes
+                numElectrons = Math.min(numParticles, numElectrons);
+                numHoles = Math.max(0, numHoles);
+            } else if (type === 'p-type') {
+                numHoles = numParticles * 0.8 + (dopingLevel / 1e19) * numParticles * 0.2; // More holes with doping
+                numElectrons = numParticles * 0.2 - (dopingLevel / 1e19) * numParticles * 0.1; // Fewer electrons
+                numHoles = Math.min(numParticles, numHoles);
+                numElectrons = Math.max(0, numElectrons);
+            }
+
+            for (let i = 0; i < numElectrons; i++) {
+                this.particles.push({
+                    type: 'electron',
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 2, // Small random velocity
+                    vy: (Math.random() - 0.5) * 2
+                });
+            }
+            for (let i = 0; i < numHoles; i++) {
+                this.particles.push({
+                    type: 'hole',
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2
+                });
+            }
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            // Draw energy bands
+            const bandGap = 100; // Visual representation of band gap in pixels
+            const conductionBandY = height / 2 - bandGap / 2 - 20;
+            const valenceBandY = height / 2 + bandGap / 2 + 20;
+            const fermiLevelY = height / 2; // Intrinsic
+
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+            this.ctx.font = '16px Inter';
+            this.ctx.fillStyle = '#333';
+
+            // Conduction Band
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, conductionBandY);
+            this.ctx.lineTo(width, conductionBandY);
+            this.ctx.stroke();
+            this.ctx.fillText('Conduction Band (Ec)', 10, conductionBandY - 10);
+
+            // Valence Band
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, valenceBandY);
+            this.ctx.lineTo(width, valenceBandY);
+            this.ctx.stroke();
+            this.ctx.fillText('Valence Band (Ev)', 10, valenceBandY + 25);
+
+            // Fermi Level
+            const type = semiconductorTypeInput.value;
+            let currentFermiLevelY = fermiLevelY;
+            if (type === 'n-type') {
+                currentFermiLevelY = conductionBandY + 20; // Closer to conduction band
+            } else if (type === 'p-type') {
+                currentFermiLevelY = valenceBandY - 20; // Closer to valence band
+            }
+            this.ctx.strokeStyle = varToRgb('--accent-color');
+            this.ctx.setLineDash([5, 5]); // Dashed line
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, currentFermiLevelY);
+            this.ctx.lineTo(width, currentFermiLevelY);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]); // Reset line dash
+            this.ctx.fillStyle = varToRgb('--accent-color');
+            this.ctx.fillText('Fermi Level (Ef)', 10, currentFermiLevelY - 10);
+            this.ctx.fillStyle = '#333'; // Reset fill style
+
+            // Update and draw particles
+            this.particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounce off walls
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                this.ctx.fillStyle = (p.type === 'electron') ? varToRgb('--primary-color') : '#dc3545';
+                this.ctx.fill();
+            });
+
+            updateInfoPanel();
+            this.animationFrameId = requestAnimationFrame(() => this.draw());
+        },
+        startParticles: function() {
+            if (!this.animationFrameId) {
+                this.animationFrameId = requestAnimationFrame(() => this.draw());
+            }
+        },
+        stopParticles: function() {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+        }
+    };
+
+    semiconductorTypeInput.addEventListener('change', () => { semiconductorSim.generateParticles(); semiconductorSim.draw(); updateInfoPanel(); });
+    dopingLevelInput.addEventListener('input', () => { semiconductorSim.generateParticles(); semiconductorSim.draw(); updateInfoPanel(); });
+
+    // --- Diode Simulation ---
+    const diodeCanvas = document.getElementById('diodeCanvas');
+    const diodeVoltageInput = document.getElementById('diodeVoltage');
+    const temperatureDiodeInput = document.getElementById('temperatureDiode');
+
+    const diodeSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null,
+        init: function() {
+            this.canvas = diodeCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const voltage = parseFloat(diodeVoltageInput.value);
+            const depletionWidthFactor = 50; // Base width for depletion region
+            let currentDepletionWidth = depletionWidthFactor;
+
+            // Adjust depletion width based on voltage
+            if (voltage > 0) { // Forward Bias
+                currentDepletionWidth = Math.max(5, depletionWidthFactor * (1 - voltage / 0.7)); // Shrinks
+            } else if (voltage < 0) { // Reverse Bias
+                currentDepletionWidth = depletionWidthFactor * (1 + Math.abs(voltage) / 5); // Widens
+            }
+
+            const pSideX = width * 0.25;
+            const nSideX = width * 0.75;
+            const junctionX = width / 2;
+
+            // Draw P-side
+            this.ctx.fillStyle = '#dc3545'; // Red for P-type (holes)
+            this.ctx.fillRect(0, 0, junctionX, height);
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '24px Inter';
+            this.ctx.fillText('P-type', pSideX - 40, height / 2);
+
+            // Draw N-side
+            this.ctx.fillStyle = '#007bff'; // Blue for N-type (electrons)
+            this.ctx.fillRect(junctionX, 0, width / 2, height);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('N-type', nSideX - 40, height / 2);
+
+            // Draw Depletion Region
+            this.ctx.fillStyle = 'rgba(100, 100, 100, 0.5)'; // Semi-transparent gray
+            this.ctx.fillRect(junctionX - currentDepletionWidth / 2, 0, currentDepletionWidth, height);
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(junctionX - currentDepletionWidth / 2, 0, currentDepletionWidth, height);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('Depletion Region', junctionX - 90, height / 2 + 50);
+
+            // Visualize carrier flow
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeStyle = '#28a745'; // Green for current flow
+
+            if (voltage > 0.3) { // Forward bias, show current flow
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, height / 4);
+                this.ctx.lineTo(width, height / 4);
+                this.ctx.stroke();
+                this.ctx.fillText('Current Flow', width / 2 - 50, height / 4 - 10);
+            } else if (voltage < -0.1) { // Reverse bias, show minimal current
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, height / 4);
+                this.ctx.lineTo(width, height / 4);
+                this.ctx.stroke();
+                this.ctx.fillText('Small Reverse Current', width / 2 - 100, height / 4 - 10);
+            }
+
+            updateInfoPanel();
+            this.animationFrameId = requestAnimationFrame(() => this.draw());
+        },
+        startAnimation: function() {
+            if (!this.animationFrameId) {
+                this.animationFrameId = requestAnimationFrame(() => this.draw());
+            }
+        },
+        stopAnimation: function() {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+        }
+    };
+
+    diodeVoltageInput.addEventListener('input', () => { diodeSim.draw(); updateInfoPanel(); });
+    temperatureDiodeInput.addEventListener('input', () => { diodeSim.draw(); updateInfoPanel(); });
+
+    // --- Transistor Simulation ---
+    const transistorCanvas = document.getElementById('transistorCanvas');
+    const baseCurrentInput = document.getElementById('baseCurrent');
+    const vceVoltageInput = document.getElementById('vceVoltage');
+    const transistorTypeInput = document.getElementById('transistorType');
+
+    const transistorSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null,
+        init: function() {
+            this.canvas = transistorCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const type = transistorTypeInput.value;
+            const baseCurrent = parseFloat(baseCurrentInput.value);
+            const vceVoltage = parseFloat(vceVoltageInput.value);
+
+            const emitterX = width * 0.2;
+            const baseX = width * 0.5;
+            const collectorX = width * 0.8;
+            const yCenter = height / 2;
+
+            const sectionWidth = (collectorX - emitterX) / 3;
+            const sectionHeight = height * 0.6;
+            const sectionY = yCenter - sectionHeight / 2;
+
+            // Draw transistor layers
+            // Emitter
+            this.ctx.fillStyle = (type === 'npn') ? '#007bff' : '#dc3545'; // N or P
+            this.ctx.fillRect(emitterX - sectionWidth / 2, sectionY, sectionWidth, sectionHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(type === 'npn' ? 'N (Emitter)' : 'P (Emitter)', emitterX - 50, sectionY + sectionHeight / 2);
+
+            // Base
+            this.ctx.fillStyle = (type === 'npn') ? '#dc3545' : '#007bff'; // P or N (thin)
+            this.ctx.fillRect(baseX - sectionWidth / 4, sectionY, sectionWidth / 2, sectionHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(type === 'npn' ? 'P (Base)' : 'N (Base)', baseX - 40, sectionY + sectionHeight / 2);
+
+            // Collector
+            this.ctx.fillStyle = (type === 'npn') ? '#007bff' : '#dc3545'; // N or P (wider)
+            this.ctx.fillRect(collectorX - sectionWidth / 2, sectionY, sectionWidth, sectionHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(type === 'npn' ? 'N (Collector)' : 'P (Collector)', collectorX - 50, sectionY + sectionHeight / 2);
+
+            // Draw connections
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            // Emitter connection
+            this.ctx.moveTo(emitterX, sectionY + sectionHeight);
+            this.ctx.lineTo(emitterX, height - 20);
+            // Base connection
+            this.ctx.moveTo(baseX, sectionY + sectionHeight / 2);
+            this.ctx.lineTo(baseX, height - 20);
+            // Collector connection
+            this.ctx.moveTo(collectorX, sectionY);
+            this.ctx.lineTo(collectorX, 20);
+            this.ctx.stroke();
+
+            // Labels for connections
+            this.ctx.fillStyle = '#333';
+            this.ctx.font = '16px Inter';
+            this.ctx.fillText('Emitter', emitterX - 30, height - 5);
+            this.ctx.fillText('Base', baseX - 20, height - 5);
+            this.ctx.fillText('Collector', collectorX - 35, 15);
+
+            // Visualize current flow based on operating region
+            const collectorCurrent = parseFloat(document.getElementById('infoCollectorCurrent').textContent); // Get calculated value
+            const operatingRegion = document.getElementById('infoOperatingRegion').textContent;
+
+            this.ctx.strokeStyle = varToRgb('--accent-color'); // Green for current
+            this.ctx.lineWidth = 4;
+
+            if (operatingRegion === 'Active' || operatingRegion === 'Saturation') {
+                // Base current flow
+                this.ctx.beginPath();
+                this.ctx.moveTo(baseX, yCenter + 50); // From base connection
+                this.ctx.lineTo(baseX, yCenter + 10);
+                this.ctx.stroke();
+                // Arrow for base current
+                this.drawArrow(this.ctx, baseX, yCenter + 20, Math.PI / 2, varToRgb('--accent-color'));
+
+                // Collector current flow
+                this.ctx.beginPath();
+                this.ctx.moveTo(collectorX, yCenter - 50); // From collector connection
+                this.ctx.lineTo(collectorX, yCenter + 50);
+                this.ctx.stroke();
+                // Arrow for collector current
+                this.drawArrow(this.ctx, collectorX, yCenter, Math.PI / 2, varToRgb('--accent-color'));
+
+                // Emitter current flow (sum of base and collector)
+                this.ctx.beginPath();
+                this.ctx.moveTo(emitterX, yCenter + 50); // Towards emitter connection
+                this.ctx.lineTo(emitterX, yCenter - 50);
+                this.ctx.stroke();
+                // Arrow for emitter current
+                this.drawArrow(this.ctx, emitterX, yCenter, -Math.PI / 2, varToRgb('--accent-color'));
+
+                this.ctx.fillStyle = varToRgb('--accent-color');
+                this.ctx.fillText(`I_B: ${baseCurrent.toFixed(0)}μA`, baseX + 10, yCenter + 30);
+                this.ctx.fillText(`I_C: ${collectorCurrent.toFixed(2)}mA`, collectorX + 10, yCenter - 20);
+            } else if (operatingRegion === 'Cutoff') {
+                this.ctx.fillStyle = '#666';
+                this.ctx.font = '20px Inter';
+                this.ctx.fillText('No Current Flow (Cutoff)', width / 2 - 100, height / 2);
+            }
+
+            updateInfoPanel();
+            this.animationFrameId = requestAnimationFrame(() => this.draw());
+        },
+        drawArrow: function(ctx, x, y, angle, color, size = 10) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-size, -size / 2);
+            ctx.lineTo(-size, size / 2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        },
+        startAnimation: function() {
+            if (!this.animationFrameId) {
+                this.animationFrameId = requestAnimationFrame(() => this.draw());
+            }
+        },
+        stopAnimation: function() {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+        }
+    };
+
+    baseCurrentInput.addEventListener('input', () => { transistorSim.draw(); updateInfoPanel(); });
+    vceVoltageInput.addEventListener('input', () => { transistorSim.draw(); updateInfoPanel(); });
+    transistorTypeInput.addEventListener('change', () => { transistorSim.draw(); updateInfoPanel(); });
+
+    // Helper to get CSS variable color
+    function varToRgb(variable) {
+        const style = getComputedStyle(document.documentElement);
+        return style.getPropertyValue(variable).trim();
+    }
+
+    // Main animation loop - this function runs repeatedly and calls the drawing function
+    // for the currently active simulation tab if it's a canvas-based animation.
+    function animate() {
+      if (!simulationCtx && currentTabMode !== 'massEnergy' && currentTabMode !== 'quantumTunneling') {
+          animationId = requestAnimationFrame(animate); // Keep trying until ctx is set for canvas-based sims
+          return;
+      }
+
+      // Resize canvas if container size changes
+      if (simulationCanvas) {
+          const parentContainer = simulationCanvas.closest('.simulation-area');
+          if (parentContainer && (simulationCanvas.width !== parentContainer.offsetWidth || simulationCanvas.height !== parentContainer.offsetHeight)) {
+              simulationCanvas.width = parentContainer.offsetWidth;
+              simulationCanvas.height = parentContainer.offsetHeight;
+              // Redraw after resize
+              if (currentTabMode === 'semiconductors') {
+                  semiconductorSim.draw();
+              } else if (currentTabMode === 'diodes') {
+                  diodeSim.draw();
+              } else if (currentTabMode === 'transistors') {
+                  transistorSim.draw();
+              }
+          }
+      }
+
+      // The individual simulation objects manage their own animation loops (requestAnimationFrame)
+      // so this global animate loop is primarily for canvas resizing checks.
+      // We can remove this global animate loop entirely if all animations are self-managed.
+      // For now, keeping it for consistency with the provided template, but it's redundant.
+      // The individual sim.draw() methods already call requestAnimationFrame.
+      // To avoid multiple animation loops, we should ensure only one is active.
+      // The stopAnimation/stopParticles calls in tab switching handle this.
+      // So, this global animate() can be removed or simplified if not strictly needed.
+      // For now, it's not strictly necessary as individual sims handle their own rAF.
+      // I'll leave it in but comment on its redundancy.
+      // animationId = requestAnimationFrame(animate); // This line makes it a continuous loop.
+                                                  // It's better for each sim to manage its own.
+                                                  // Removing this to prevent multiple rAF calls.
+    }
+
+    // Initialize the simulators that need an initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            currentTabMode = tabId; // Set initial mode
+        }
+
+        // Initialize all simulators
+        semiconductorSim.init();
+        semiconductorSim.startParticles(); // Start particles for the initial tab
+
+        diodeSim.init(); // Initialize but don't start animation yet
+        transistorSim.init(); // Initialize but don't start animation yet
+
+        updateInfoPanel(); // Initial update of the info panel for the active tab
+    });
+
+  </script>
+</body>
+</html>

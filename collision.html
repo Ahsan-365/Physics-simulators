@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collision Simulation Suite</title>
+    <style>
+        /* CSS Variables for consistent styling */
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #ff6b6b;
+            --accent-color: #6bff6b;
+            --dark-color: #333;
+            --light-color: #f8f9fa;
+            --border-radius: 10px;
+            --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --input-bg: #f0f4f8;
+            --button-hover-scale: 1.03;
+            --button-active-scale: 0.98;
+        }
+
+        /* Reset default browser styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Body styling with a gradient background and Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top */
+            min-height: 100vh; /* Ensure body takes full viewport height */
+        }
+
+        /* Main container for the simulation */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Header styling */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        /* Tabs navigation styling */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Base styling for all collision type content sections */
+        .collision-content {
+            display: none; /* Hidden by default */
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .collision-content.active {
+            display: flex; /* Show active content */
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .simulation-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        /* Controls layout using CSS Grid for responsiveness */
+        .controls {
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+        }
+
+        .control-group {
+            margin-bottom: 5px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            background: white;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Button group and individual button styling */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        button:hover {
+            transform: scale(var(--button-hover-scale));
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: scale(var(--button-active-scale));
+        }
+
+        /* Simulation area for canvas */
+        .simulation-area {
+            width: 100%;
+            max-width: 700px;
+            height: 300px; /* Adjusted height for collision */
+            margin: 20px 0;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #e0f2f7, #c1e4eb); /* Light blue background for sky */
+            border-radius: var(--border-radius);
+            /* Add a border to the canvas itself for debugging visibility */
+            border: 1px solid #ccc; 
+        }
+
+        /* Info panel styling */
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .info-item span {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .info-section-title {
+            font-size: 1.2em;
+            color: var(--dark-color);
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .simulation-title {
+                font-size: 1.5rem;
+            }
+            .info-item {
+                font-size: 1rem;
+            }
+            .simulation-area {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Collision Simulation Suite</h1>
+            <p class="subtitle">Interactive simulations of 1D elastic and inelastic collisions.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" data-concept="elastic">1D Elastic Collision</button>
+            <button class="tab-btn" data-concept="inelastic">1D Inelastic Collision</button>
+        </div>
+
+        <!-- 1D Elastic Collision Tab -->
+        <div id="elasticTab" class="collision-content active">
+            <h2 class="simulation-title">1D Elastic Collision</h2>
+            <p style="text-align: center; margin-bottom: 20px; color: #555;">
+                In an elastic collision, both momentum and kinetic energy are conserved.
+                Objects bounce off each other without any loss of energy.
+            </p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="elasticMass1">Mass 1 (kg):</label>
+                    <input type="number" id="elasticMass1" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="elasticVel1">Initial Velocity 1 (m/s):</label>
+                    <input type="number" id="elasticVel1" min="-10" max="10" value="5" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="elasticMass2">Mass 2 (kg):</label>
+                    <input type="number" id="elasticMass2" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="elasticVel2">Initial Velocity 2 (m/s):</label>
+                    <input type="number" id="elasticVel2" min="-10" max="10" value="0" step="0.1">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="primary" id="elasticStartBtn">Start Simulation</button>
+                <button class="secondary" id="elasticResetBtn">Reset</button>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="elasticCanvas"></canvas>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-section-title">Before Collision</div>
+                <div class="info-item">Object 1 Velocity: <span id="elasticVel1Before">0</span> m/s</div>
+                <div class="info-item">Object 2 Velocity: <span id="elasticVel2Before">0</span> m/s</div>
+                <div class="info-item">Total Momentum: <span id="elasticMomentumBefore">0</span> kg·m/s</div>
+                <div class="info-item">Total Kinetic Energy: <span id="elasticKEBefore">0</span> J</div>
+                <br>
+                <div class="info-section-title">After Collision</div>
+                <div class="info-item">Object 1 Velocity: <span id="elasticVel1After">0</span> m/s</div>
+                <div class="info-item">Object 2 Velocity: <span id="elasticVel2After">0</span> m/s</div>
+                <div class="info-item">Total Momentum: <span id="elasticMomentumAfter">0</span> kg·m/s</div>
+                <div class="info-item">Total Kinetic Energy: <span id="elasticKEAfter">0</span> J</div>
+            </div>
+        </div>
+
+        <!-- 1D Inelastic Collision Tab -->
+        <div id="inelasticTab" class="collision-content">
+            <h2 class="simulation-title">1D Inelastic Collision</h2>
+            <p style="text-align: center; margin-bottom: 20px; color: #555;">
+                In an inelastic collision, objects stick together after impact.
+                Momentum is conserved, but kinetic energy is *not* conserved.
+            </p>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="inelasticMass1">Mass 1 (kg):</label>
+                    <input type="number" id="inelasticMass1" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="inelasticVel1">Initial Velocity 1 (m/s):</label>
+                    <input type="number" id="inelasticVel1" min="-10" max="10" value="5" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="inelasticMass2">Mass 2 (kg):</label>
+                    <input type="number" id="inelasticMass2" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="inelasticVel2">Initial Velocity 2 (m/s):</label>
+                    <input type="number" id="inelasticVel2" min="-10" max="10" value="0" step="0.1">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="primary" id="inelasticStartBtn">Start Simulation</button>
+                <button class="secondary" id="inelasticResetBtn">Reset</button>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="inelasticCanvas"></canvas>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-section-title">Before Collision</div>
+                <div class="info-item">Object 1 Velocity: <span id="inelasticVel1Before">0</span> m/s</div>
+                <div class="info-item">Object 2 Velocity: <span id="inelasticVel2Before">0</span> m/s</div>
+                <div class="info-item">Total Momentum: <span id="inelasticMomentumBefore">0</span> kg·m/s</div>
+                <div class="info-item">Total Kinetic Energy: <span id="inelasticKEBefore">0</span> J</div>
+                <br>
+                <div class="info-section-title">After Collision</div>
+                <div class="info-item">Combined Velocity: <span id="inelasticVelCombined">0</span> m/s</div>
+                <div class="info-item">Total Momentum: <span id="inelasticMomentumAfter">0</span> kg·m/s</div>
+                <div class="info-item">Total Kinetic Energy: <span id="inelasticKEAfter">0</span> J</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Global variable to track the currently active animation ID
+        let currentAnimationId = null;
+
+        // Object to hold animation IDs for each concept to stop them individually
+        const animationLoopIds = {
+            elastic: null,
+            inelastic: null,
+        };
+
+        // --- Utility Functions ---
+
+        /**
+         * Helper function to clamp a value between a min and max.
+         * @param {number} value - The value to clamp.
+         * @param {number} min - The minimum allowed value.
+         * @param {number} max - The maximum allowed value.
+         * @returns {number} The clamped value.
+         */
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(value, max));
+        }
+
+        /**
+         * Stops all ongoing animation loops across all simulations.
+         */
+        function stopAllAnimations() {
+            for (const key in animationLoopIds) {
+                if (animationLoopIds[key]) {
+                    cancelAnimationFrame(animationLoopIds[key]);
+                    animationLoopIds[key] = null;
+                }
+            }
+        }
+
+        /**
+         * Switches between different collision simulations and manages active tab state.
+         * @param {string} conceptId - The ID of the concept to show (e.g., 'elastic', 'inelastic').
+         */
+        function showConcept(conceptId) {
+            // Stop any currently running animations from all simulations
+            stopAllAnimations();
+
+            // Remove active class from all tab buttons and content divs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.collision-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to the clicked tab button
+            const activeTabButton = document.querySelector(`.tab-btn[data-concept="${conceptId}"]`);
+            if (activeTabButton) {
+                activeTabButton.classList.add('active');
+            }
+
+            // Show the selected concept content div
+            const selectedConceptContent = document.getElementById(conceptId + 'Tab'); // Append 'Tab' to match div IDs
+            if (selectedConceptContent) {
+                selectedConceptContent.classList.add('active');
+            }
+
+            // Initialize the newly active simulation
+            if (conceptId === 'elastic') {
+                elasticCollisionSim.init();
+            } else if (conceptId === 'inelastic') {
+                inelasticCollisionSim.init();
+            }
+        }
+
+        // --- Drawing function for cars ---
+        /**
+         * Draws a car shape on the canvas.
+         * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+         * @param {object} car - The car object with x (center), y (center), width, height, and color properties.
+         * @param {boolean} isCombined - True if drawing a combined car (for inelastic collision).
+         */
+        function drawCar(ctx, car, isCombined = false) {
+            const carWidth = car.width;
+            const carHeight = car.height;
+            const x = car.x - carWidth / 2; // Calculate top-left x for drawing
+            const y = car.y - carHeight / 2; // Calculate top-left y for drawing
+
+            // Draw car body
+            ctx.fillStyle = car.color;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillRect(x, y, carWidth, carHeight);
+            ctx.shadowColor = 'transparent'; // Reset shadow
+
+            // Draw wheels
+            ctx.fillStyle = '#333';
+            const wheelRadius = carHeight / 4;
+            // Front wheel
+            ctx.beginPath();
+            ctx.arc(x + wheelRadius + 5, y + carHeight - wheelRadius, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            // Rear wheel
+            ctx.beginPath();
+            ctx.arc(x + carWidth - wheelRadius - 5, y + carHeight - wheelRadius, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw windows (simplified rectangles)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(x + carWidth * 0.15, y + carHeight * 0.2, carWidth * 0.25, carHeight * 0.4);
+            ctx.fillRect(x + carWidth * 0.6, y + carHeight * 0.2, carWidth * 0.25, carHeight * 0.4);
+
+            if (isCombined) {
+                ctx.font = '12px "Inter", sans-serif'; // Use Inter font
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Combined', car.x, car.y); // Text is centered on car.x, car.y (which is center of car)
+            }
+        }
+
+        // --- 1D Elastic Collision Simulation ---
+        const elasticCanvas = document.getElementById('elasticCanvas');
+        const elasticMass1Input = document.getElementById('elasticMass1');
+        const elasticVel1Input = document.getElementById('elasticVel1');
+        const elasticMass2Input = document.getElementById('elasticMass2');
+        const elasticVel2Input = document.getElementById('elasticVel2');
+        const elasticStartBtn = document.getElementById('elasticStartBtn');
+        const elasticResetBtn = document.getElementById('elasticResetBtn');
+
+        const elasticVel1BeforeText = document.getElementById('elasticVel1Before');
+        const elasticVel2BeforeText = document.getElementById('elasticVel2Before');
+        const elasticMomentumBeforeText = document.getElementById('elasticMomentumBefore');
+        const elasticKEBeforeText = document.getElementById('elasticKEBefore');
+        const elasticVel1AfterText = document.getElementById('elasticVel1After');
+        const elasticVel2AfterText = document.getElementById('elasticVel2After');
+        const elasticMomentumAfterText = document.getElementById('elasticMomentumAfter');
+        const elasticKEAfterText = document.getElementById('elasticKEAfter');
+
+        const elasticCollisionSim = {
+            ctx: null,
+            canvas: null,
+            // x, y are center coordinates
+            car1: { x: 0, y: 0, width: 80, height: 40, mass: 1, vx: 0, color: 'var(--primary-color)' }, /* Increased size */
+            car2: { x: 0, y: 0, width: 80, height: 40, mass: 1, vx: 0, color: 'var(--secondary-color)' }, /* Increased size */
+            pixelsPerMeter: 50, // Visual scale: 50 pixels per meter
+            animationId: null,
+            lastTime: null,
+            hasCollided: false, // Flag to ensure collision calculation happens only once
+            
+            /**
+             * Initializes the Elastic Collision simulation.
+             * Sets up canvas dimensions and calls reset.
+             */
+            init: function() {
+                this.canvas = elasticCanvas;
+                this.ctx = this.canvas.getContext('2d');
+                const parentContainer = this.canvas.closest('.simulation-area');
+                if (parentContainer) {
+                    this.canvas.width = parentContainer.offsetWidth;
+                    this.canvas.height = parentContainer.offsetHeight;
+                }
+                this.reset();
+            },
+
+            /**
+             * Resets the Elastic Collision simulation to its initial state.
+             * Stops animation, sets initial properties from inputs, and redraws.
+             */
+            reset: function() {
+                stopAllAnimations(); // Stop any previous animation
+                this.animationId = null;
+                this.lastTime = null;
+                this.hasCollided = false;
+
+                // Set initial positions to be clearly visible on the road
+                const roadHeight = 30; // Matches CSS
+                const carY = this.canvas.height - roadHeight - this.car1.height / 2; // Center of car vertically on the road
+
+                // Default starting X positions: Car1 on left, Car2 on right
+                this.car1.x = this.car1.width / 2 + 50; // 50px buffer from left edge
+                this.car1.y = carY;
+                this.car2.x = this.canvas.width - this.car2.width / 2 - 50; // 50px buffer from right edge
+                this.car2.y = carY;
+
+
+                // Get values from inputs and clamp them
+                this.car1.mass = clamp(parseFloat(elasticMass1Input.value), parseFloat(elasticMass1Input.min), parseFloat(elasticMass1Input.max));
+                this.car1.vx = clamp(parseFloat(elasticVel1Input.value), parseFloat(elasticVel1Input.min), parseFloat(elasticVel1Input.max));
+                this.car2.mass = clamp(parseFloat(elasticMass2Input.value), parseFloat(elasticMass2Input.min), parseFloat(elasticMass2Input.max));
+                this.car2.vx = clamp(parseFloat(elasticVel2Input.value), parseFloat(elasticVel2Input.min), parseFloat(elasticVel2Input.max));
+
+                // Update input fields with clamped values
+                elasticMass1Input.value = this.car1.mass;
+                elasticVel1Input.value = this.car1.vx;
+                elasticMass2Input.value = this.car2.mass;
+                elasticVel2Input.value = this.car2.vx;
+
+                this.updateInfoPanel(); // Update info panel with initial values
+                this.draw(); // Draw initial state
+            },
+
+            /**
+             * Draws the two cars on the canvas.
+             */
+            draw: function() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw Road/Ground (always draw it first)
+                this.ctx.fillStyle = '#666'; // Dark grey for the road
+                const roadHeight = 30; // height of the road
+                this.ctx.fillRect(0, this.canvas.height - roadHeight, this.canvas.width, roadHeight);
+
+                drawCar(this.ctx, this.car1);
+                drawCar(this.ctx, this.car2);
+            },
+
+            /**
+             * Main animation loop for the Elastic Collision simulation.
+             * Updates car positions and handles collision detection and response.
+             * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+             */
+            animate: function(currentTime) {
+                if (!this.lastTime) this.lastTime = currentTime;
+                const deltaTime = (currentTime - this.lastTime) / 1000; // Time in seconds
+                this.lastTime = currentTime;
+
+                // Update positions
+                this.car1.x += this.car1.vx * this.pixelsPerMeter * deltaTime;
+                this.car2.x += this.car2.vx * this.pixelsPerMeter * deltaTime;
+
+                // Collision detection (using bounding boxes and relative velocity)
+                const car1RightEdge = this.car1.x + this.car1.width / 2;
+                const car1LeftEdge = this.car1.x - this.car1.width / 2;
+                const car2RightEdge = this.car2.x + this.car2.width / 2;
+                const car2LeftEdge = this.car2.x - this.car2.width / 2;
+
+                // Check for overlap on the x-axis
+                const areOverlapping = (car1RightEdge > car2LeftEdge && car1LeftEdge < car2RightEdge);
+
+                // Check if they are approaching each other (relative velocity > 0 if car1 is to the left of car2 and moving right faster, or car2 is to the left of car1 and moving right faster)
+                const approachingEachOther = (this.car1.x < this.car2.x && this.car1.vx > this.car2.vx) ||
+                                             (this.car2.x < this.car1.x && this.car2.vx > this.car1.vx);
+                
+                // If they are overlapping AND approaching AND haven't collided yet
+                if (areOverlapping && approachingEachOther && !this.hasCollided) {
+                    // Collision occurred!
+                    this.hasCollided = true; // Set flag to prevent re-calculation
+
+                    // Store velocities BEFORE collision for info panel
+                    const v1i = this.car1.vx;
+                    const v2i = this.car2.vx;
+                    const m1 = this.car1.mass;
+                    const m2 = this.car2.mass;
+
+                    // 1D Elastic Collision Formulas
+                    const v1f = ((m1 - m2) * v1i + (2 * m2) * v2i) / (m1 + m2);
+                    const v2f = ((2 * m1) * v1i + (m2 - m1) * v2i) / (m1 + m2);
+
+                    this.car1.vx = v1f;
+                    this.car2.vx = v2f;
+
+                    // Resolve overlap: move them apart based on their velocities and overlap amount
+                    // Determine overlap
+                    let overlap = 0;
+                    if (car1RightEdge > car2LeftEdge && this.car1.vx > this.car2.vx) { // Car1 hitting car2 from left
+                        overlap = car1RightEdge - car2LeftEdge;
+                    } else if (car2RightEdge > car1LeftEdge && this.car2.vx > this.car1.vx) { // Car2 hitting car1 from left (if coming from right side originally)
+                        overlap = car2RightEdge - car1LeftEdge;
+                    }
+
+                    if (overlap > 0) {
+                        this.car1.x -= overlap / 2;
+                        this.car2.x += overlap / 2;
+                    }
+                    
+                    this.updateInfoPanel(v1i, v2i); // Update info panel with before & after values
+                }
+
+                // Boundary checks: Stop if cars go off screen significantly
+                const offScreenThreshold = 200; // pixels (more leeway for cars to move off-screen)
+                if (this.car1.x + this.car1.width / 2 < -offScreenThreshold || this.car1.x - this.car1.width / 2 > this.canvas.width + offScreenThreshold ||
+                    this.car2.x + this.car2.width / 2 < -offScreenThreshold || this.car2.x - this.car2.width / 2 > this.canvas.width + offScreenThreshold) {
+                    this.stop(); // Stop animation if objects leave visible area
+                }
+
+                this.draw(); // Redraw cars
+
+                if (this.animationId) {
+                    this.animationId = requestAnimationFrame((t) => this.animate(t));
+                    animationLoopIds.elastic = this.animationId; // Store for global stopping
+                }
+            },
+
+            /**
+             * Updates the information panel for the Elastic Collision simulation.
+             * Displays velocities, total momentum, and total kinetic energy before and after collision.
+             * @param {number} [v1i=this.car1.vx] - Initial velocity of car 1 (before collision).
+             * @param {number} [v2i=this.car2.vx] - Initial velocity of car 2 (before collision).
+             */
+            updateInfoPanel: function(v1i = this.car1.vx, v2i = this.car2.vx) {
+                const m1 = this.car1.mass;
+                const m2 = this.car2.mass;
+
+                // Before Collision
+                elasticVel1BeforeText.textContent = v1i.toFixed(2);
+                elasticVel2BeforeText.textContent = v2i.toFixed(2);
+                const momentumBefore = (m1 * v1i + m2 * v2i);
+                elasticMomentumBeforeText.textContent = momentumBefore.toFixed(2);
+                const keBefore = (0.5 * m1 * v1i * v1i + 0.5 * m2 * v2i * v2i);
+                elasticKEBeforeText.textContent = keBefore.toFixed(2);
+
+                // After Collision (use current velocities for 'after')
+                elasticVel1AfterText.textContent = this.car1.vx.toFixed(2);
+                elasticVel2AfterText.textContent = this.car2.vx.toFixed(2);
+                const momentumAfter = (m1 * this.car1.vx + m2 * this.car2.vx);
+                elasticMomentumAfterText.textContent = momentumAfter.toFixed(2);
+                const keAfter = (0.5 * m1 * this.car1.vx * this.car1.vx + 0.5 * m2 * this.car2.vx * this.car2.vx);
+                elasticKEAfterText.textContent = keAfter.toFixed(2);
+            },
+
+            /**
+             * Starts the animation loop for the Elastic Collision simulation.
+             */
+            start: function() {
+                if (!this.animationId) {
+                    this.reset(); // Always reset to initial state for consistent start
+                    this.lastTime = null; // Reset for accurate deltaTime
+                    this.animationId = requestAnimationFrame((t) => this.animate(t));
+                    animationLoopIds.elastic = this.animationId;
+                }
+            },
+
+            /**
+             * Stops the animation loop for the Elastic Collision simulation.
+             */
+            stop: function() {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        };
+
+        // Event Listeners for Elastic Collision controls
+        elasticStartBtn.addEventListener('click', () => elasticCollisionSim.start());
+        elasticResetBtn.addEventListener('click', () => elasticCollisionSim.reset());
+        elasticMass1Input.addEventListener('input', () => elasticCollisionSim.reset());
+        elasticVel1Input.addEventListener('input', () => elasticCollisionSim.reset());
+        elasticMass2Input.addEventListener('input', () => elasticCollisionSim.reset());
+        elasticVel2Input.addEventListener('input', () => elasticCollisionSim.reset());
+
+        // --- 1D Inelastic Collision Simulation ---
+        const inelasticCanvas = document.getElementById('inelasticCanvas');
+        const inelasticMass1Input = document.getElementById('inelasticMass1');
+        const inelasticVel1Input = document.getElementById('inelasticVel1');
+        const inelasticMass2Input = document.getElementById('inelasticMass2');
+        const inelasticVel2Input = document.getElementById('inelasticVel2');
+        const inelasticStartBtn = document.getElementById('inelasticStartBtn');
+        const inelasticResetBtn = document.getElementById('inelasticResetBtn');
+
+        const inelasticVel1BeforeText = document.getElementById('inelasticVel1Before');
+        const inelasticVel2BeforeText = document.getElementById('inelasticVel2Before');
+        const inelasticMomentumBeforeText = document.getElementById('inelasticMomentumBefore');
+        const inelasticKEBeforeText = document.getElementById('inelasticKEBefore');
+        const inelasticVelCombinedText = document.getElementById('inelasticVelCombined');
+        const inelasticMomentumAfterText = document.getElementById('inelasticMomentumAfter');
+        const inelasticKEAfterText = document.getElementById('inelasticKEAfter');
+
+        const inelasticCollisionSim = {
+            ctx: null,
+            canvas: null,
+            // x, y are center coordinates
+            car1: { x: 0, y: 0, width: 80, height: 40, mass: 1, vx: 0, color: 'var(--primary-color)' }, /* Increased size */
+            car2: { x: 0, y: 0, width: 80, height: 40, mass: 1, vx: 0, color: 'var(--secondary-color)' }, /* Increased size */
+            combinedCar: { x: 0, y: 0, width: 0, height: 0, mass: 0, vx: 0, visible: false, color: '#666' }, // For inelastic
+            pixelsPerMeter: 50,
+            animationId: null,
+            lastTime: null,
+            hasCollided: false,
+            
+            /**
+             * Initializes the Inelastic Collision simulation.
+             * Sets up canvas dimensions and calls reset.
+             */
+            init: function() {
+                this.canvas = inelasticCanvas;
+                this.ctx = this.canvas.getContext('2d');
+                const parentContainer = this.canvas.closest('.simulation-area');
+                if (parentContainer) {
+                    this.canvas.width = parentContainer.offsetWidth;
+                    this.canvas.height = parentContainer.offsetHeight;
+                }
+                this.reset();
+            },
+
+            /**
+             * Resets the Inelastic Collision simulation to its initial state.
+             * Stops animation, sets initial properties from inputs, and redraws.
+             */
+            reset: function() {
+                stopAllAnimations();
+                this.animationId = null;
+                this.lastTime = null;
+                this.hasCollided = false;
+                this.combinedCar.visible = false; // Hide combined car initially
+
+                const roadHeight = 30; // Matches CSS
+                const carY = this.canvas.height - roadHeight - this.car1.height / 2; // Center of car on the road
+
+                // Default starting X positions: Car1 on left, Car2 on right
+                this.car1.x = this.car1.width / 2 + 50;
+                this.car1.y = carY;
+                this.car2.x = this.canvas.width - this.car2.width / 2 - 50;
+                this.car2.y = carY;
+
+                this.car1.mass = clamp(parseFloat(inelasticMass1Input.value), parseFloat(inelasticMass1Input.min), parseFloat(inelasticMass1Input.max));
+                this.car1.vx = clamp(parseFloat(inelasticVel1Input.value), parseFloat(inelasticVel1Input.min), parseFloat(inelasticVel1Input.max));
+                this.car2.mass = clamp(parseFloat(inelasticMass2Input.value), parseFloat(inelasticMass2Input.min), parseFloat(inelasticMass2Input.max));
+                this.car2.vx = clamp(parseFloat(inelasticVel2Input.value), parseFloat(inelasticVel2Input.min), parseFloat(inelasticVel2Input.max));
+
+                inelasticMass1Input.value = this.car1.mass;
+                inelasticVel1Input.value = this.car1.vx;
+                inelasticMass2Input.value = this.car2.mass;
+                inelasticVel2Input.value = this.car2.vx;
+
+                this.updateInfoPanel();
+                this.draw();
+            },
+
+            /**
+             * Draws the cars (or combined car) on the canvas.
+             */
+            draw: function() {
+                if (!this.ctx) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw Road/Ground
+                this.ctx.fillStyle = '#666'; // Dark grey for the road
+                const roadHeight = 30; // height of the road
+                this.ctx.fillRect(0, this.canvas.height - roadHeight, this.canvas.width, roadHeight);
+
+                if (!this.combinedCar.visible) {
+                    drawCar(this.ctx, this.car1);
+                    drawCar(this.ctx, this.car2);
+                } else {
+                    drawCar(this.ctx, this.combinedCar, true); // Draw combined car
+                }
+            },
+
+            /**
+             * Main animation loop for the Inelastic Collision simulation.
+             * Updates car positions and handles collision detection and response for inelastic impact.
+             * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+             */
+            animate: function(currentTime) {
+                if (!this.lastTime) this.lastTime = currentTime;
+                const deltaTime = (currentTime - this.lastTime) / 1000;
+                this.lastTime = currentTime;
+
+                if (!this.hasCollided) {
+                    // Move individual cars before collision
+                    this.car1.x += this.car1.vx * this.pixelsPerMeter * deltaTime;
+                    this.car2.x += this.car2.vx * this.pixelsPerMeter * deltaTime;
+
+                    const car1RightEdge = this.car1.x + this.car1.width / 2;
+                    const car1LeftEdge = this.car1.x - this.car1.width / 2;
+                    const car2RightEdge = this.car2.x + this.car2.width / 2;
+                    const car2LeftEdge = this.car2.x - this.car2.width / 2;
+
+                    // Check for overlap on the x-axis
+                    const areOverlapping = (car1RightEdge > car2LeftEdge && car1LeftEdge < car2RightEdge);
+
+                    // Check if they are approaching each other
+                    const approachingEachOther = (this.car1.x < this.car2.x && this.car1.vx > this.car2.vx) ||
+                                                (this.car2.x < this.car1.x && this.car2.vx > this.car1.vx);
+                    
+                    if (areOverlapping && approachingEachOther && !this.hasCollided) {
+                        this.hasCollided = true; // Collision occurred
+
+                        const m1 = this.car1.mass;
+                        const v1i = this.car1.vx;
+                        const m2 = this.car2.mass;
+                        const v2i = this.car2.vx;
+
+                        // 1D Inelastic Collision Formula: objects stick together
+                        const vf = (m1 * v1i + m2 * v2i) / (m1 + m2);
+
+                        // Set combined car properties
+                        this.combinedCar.mass = m1 + m2;
+                        this.combinedCar.vx = vf;
+                        
+                        // Calculate combined width and height (sum of widths for visual stacking)
+                        this.combinedCar.width = this.car1.width + this.car2.width; 
+                        this.combinedCar.height = Math.max(this.car1.height, this.car2.height);
+                        
+                        const roadHeight = 30; // Matches CSS
+                        this.combinedCar.y = this.canvas.height - roadHeight - this.combinedCar.height / 2; // Position on road
+                        
+                        // Position combined car at the center of where the collision happened
+                        this.combinedCar.x = (this.car1.x + this.car2.x) / 2;
+                        this.combinedCar.color = '#666'; // A neutral color for combined object
+                        this.combinedCar.visible = true; // Make combined car visible
+
+                        this.updateInfoPanel(v1i, v2i); // Update info panel with before & after values
+                    }
+                } else if (this.hasCollided) {
+                    // Move combined car after collision
+                    this.combinedCar.x += this.combinedCar.vx * this.pixelsPerMeter * deltaTime;
+                }
+
+                // Boundary checks: Stop if objects go off screen significantly
+                const offScreenThreshold = 200; // pixels
+                if ((!this.combinedCar.visible && (this.car1.x + this.car1.width / 2 < -offScreenThreshold || this.car1.x - this.car1.width / 2 > this.canvas.width + offScreenThreshold ||
+                                                    this.car2.x + this.car2.width / 2 < -offScreenThreshold || this.car2.x - this.car2.width / 2 > this.canvas.width + offScreenThreshold)) ||
+                    (this.combinedCar.visible && (this.combinedCar.x + this.combinedCar.width / 2 < -offScreenThreshold || this.combinedCar.x - this.combinedCar.width / 2 > this.canvas.width + offScreenThreshold))) {
+                    this.stop();
+                }
+
+                this.draw();
+
+                if (this.animationId) {
+                    this.animationId = requestAnimationFrame((t) => this.animate(t));
+                    animationLoopIds.inelastic = this.animationId;
+                }
+            },
+
+            /**
+             * Updates the information panel for the Inelastic Collision simulation.
+             * Displays velocities, total momentum, and total kinetic energy before and after collision.
+             * @param {number} [v1i=this.car1.vx] - Initial velocity of car 1 (before collision).
+             * @param {number} [v2i=this.car2.vx] - Initial velocity of car 2 (before collision).
+             */
+            updateInfoPanel: function(v1i = this.car1.vx, v2i = this.car2.vx) {
+                const m1 = this.car1.mass;
+                const m2 = this.car2.mass;
+
+                // Before Collision
+                inelasticVel1BeforeText.textContent = v1i.toFixed(2);
+                inelasticVel2BeforeText.textContent = v2i.toFixed(2);
+                const momentumBefore = (m1 * v1i + m2 * v2i);
+                inelasticMomentumBeforeText.textContent = momentumBefore.toFixed(2);
+                const keBefore = (0.5 * m1 * v1i * v1i + 0.5 * m2 * v2i * v2i);
+                inelasticKEBeforeText.textContent = keBefore.toFixed(2);
+
+                // After Collision
+                inelasticVelCombinedText.textContent = this.combinedCar.vx.toFixed(2);
+                const momentumAfter = (this.combinedCar.mass * this.combinedCar.vx);
+                inelasticMomentumAfterText.textContent = momentumAfter.toFixed(2);
+                const keAfter = (0.5 * this.combinedCar.mass * this.combinedCar.vx * this.combinedCar.vx);
+                inelasticKEAfterText.textContent = keAfter.toFixed(2);
+            },
+
+            /**
+             * Starts the animation loop for the Inelastic Collision simulation.
+             */
+            start: function() {
+                if (!this.animationId) {
+                    this.reset();
+                    this.lastTime = null;
+                    this.animationId = requestAnimationFrame((t) => this.animate(t));
+                    animationLoopIds.inelastic = this.animationId;
+                }
+            },
+
+            /**
+             * Stops the animation loop for the Inelastic Collision simulation.
+             */
+            stop: function() {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        };
+
+        // Event Listeners for Inelastic Collision controls
+        inelasticStartBtn.addEventListener('click', () => inelasticCollisionSim.start());
+        inelasticResetBtn.addEventListener('click', () => inelasticCollisionSim.reset());
+        inelasticMass1Input.addEventListener('input', () => inelasticCollisionSim.reset());
+        inelasticVel1Input.addEventListener('input', () => inelasticCollisionSim.reset());
+        inelasticMass2Input.addEventListener('input', () => inelasticCollisionSim.reset());
+        inelasticVel2Input.addEventListener('input', () => inelasticCollisionSim.reset());
+
+
+        // --- Global Initialization ---
+        /**
+         * Executes when the DOM is fully loaded.
+         * Initializes all simulation objects and sets up the initial active tab.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize all simulation objects. Each init() also calls its respective reset().
+            elasticCollisionSim.init();
+            inelasticCollisionSim.init();
+
+            // Set the initial concept to display (Elastic by default) and activate its button.
+            const initialConcept = 'elastic';
+            const initialTabButton = document.querySelector(`.tab-btn[data-concept="${initialConcept}"]`);
+            if (initialTabButton) {
+                initialTabButton.click(); // Programmatically click the button
+            } else {
+                // Fallback in case the button isn't found (shouldn't happen)
+                showConcept(initialConcept);
+            }
+        });
+
+        // Event listener for the tab navigation buttons.
+        // When a tab button is clicked, it calls showConcept to switch simulations.
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const conceptId = btn.getAttribute('data-concept'); // Get the data-concept attribute directly
+                showConcept(conceptId); // Switch to the selected concept's simulation
+            });
+        });
+    </script>
+</body>
+</html>

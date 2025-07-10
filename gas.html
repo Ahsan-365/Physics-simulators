@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ideal Gas Law Simulation</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif; /* Using Inter font */
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 30px;
+      margin-top: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    /* Tabs styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 10px; /* Space between tabs */
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0; /* Prevent buttons from shrinking too much */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Tab content styling */
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* New rule to hide disabled control groups */
+    .control-group.hidden-control-group {
+      display: none !important;
+    }
+
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .simulation-area {
+        height: 350px;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+        .tabs {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .tab-btn {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Ideal Gas Law Simulation</h1>
+      <p class="subtitle">Explore the relationship between Pressure, Volume, and Temperature</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-law="ideal">Ideal Gas Law</button>
+      <button class="tab-btn" data-law="boyle">Boyle's Law</button>
+      <button class="tab-btn" data-law="charles">Charles's Law</button>
+      <button class="tab-btn" data-law="gaylussac">Gay-Lussac's Law</button>
+    </div>
+
+    <!-- Ideal Gas Law Tab -->
+    <div id="ideal" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Ideal Gas Law (P ∝ nT/V)</h2>
+        <div class="controls">
+          <div class="control-group" id="idealGasTemperature_group">
+            <label for="idealGasTemperature">Temperature (K):</label>
+            <input type="number" id="idealGasTemperature" min="50" max="500" value="273" step="10">
+          </div>
+          <div class="control-group" id="idealGasVolume_group">
+            <label for="idealGasVolume">Volume (arbitrary units):</label>
+            <input type="number" id="idealGasVolume" min="50" max="300" value="200" step="10">
+          </div>
+          <div class="control-group" id="idealGasParticles_group">
+            <label for="idealGasParticles">Number of Particles:</label>
+            <input type="number" id="idealGasParticles" min="10" max="200" value="50" step="10">
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="idealGasResetBtn">Reset Particles</button>
+        </div>
+        <div class="simulation-area">
+          <canvas id="idealGasCanvas"></canvas>
+        </div>
+        <div class="info-panel" id="idealGasInfo">
+          <div class="info-item">Pressure: <span id="idealGasPressure">?</span> (relative units)</div>
+          <div class="info-item">Temperature: <span id="idealInfoGasTemperature">?</span> K</div>
+          <div class="info-item">Volume: <span id="idealInfoGasVolume">?</span> (relative units)</div>
+          <div class="info-item">Particles: <span id="idealInfoGasParticles">?</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boyle's Law Tab -->
+    <div id="boyle" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Boyle's Law (P ∝ 1/V, T, n const)</h2>
+        <div class="controls">
+          <div class="control-group" id="boyleGasTemperature_group">
+            <label for="boyleGasTemperature">Temperature (K):</label>
+            <input type="number" id="boyleGasTemperature" min="50" max="500" value="273" step="10">
+          </div>
+          <div class="control-group" id="boyleGasVolume_group">
+            <label for="boyleGasVolume">Volume (arbitrary units):</label>
+            <input type="number" id="boyleGasVolume" min="50" max="300" value="200" step="10">
+          </div>
+          <div class="control-group" id="boyleGasParticles_group">
+            <label for="boyleGasParticles">Number of Particles:</label>
+            <input type="number" id="boyleGasParticles" min="10" max="200" value="50" step="10">
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="boyleGasResetBtn">Reset Particles</button>
+        </div>
+        <div class="simulation-area">
+          <canvas id="boyleGasCanvas"></canvas>
+        </div>
+        <div class="info-panel" id="boyleGasInfo">
+          <div class="info-item">Pressure: <span id="boyleGasPressure">?</span> (relative units)</div>
+          <div class="info-item">Temperature: <span id="boyleInfoGasTemperature">?</span> K</div>
+          <div class="info-item">Volume: <span id="boyleInfoGasVolume">?</span> (relative units)</div>
+          <div class="info-item">Particles: <span id="boyleInfoGasParticles">?</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charles's Law Tab -->
+    <div id="charles" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Charles's Law (V ∝ T, P, n const)</h2>
+        <div class="controls">
+          <div class="control-group" id="charlesGasTemperature_group">
+            <label for="charlesGasTemperature">Temperature (K):</label>
+            <input type="number" id="charlesGasTemperature" min="50" max="500" value="273" step="10">
+          </div>
+          <div class="control-group" id="charlesGasVolume_group">
+            <label for="charlesGasVolume">Volume (arbitrary units):</label>
+            <input type="number" id="charlesGasVolume" min="50" max="300" value="200" step="10">
+          </div>
+          <div class="control-group" id="charlesGasParticles_group">
+            <label for="charlesGasParticles">Number of Particles:</label>
+            <input type="number" id="charlesGasParticles" min="10" max="200" value="50" step="10">
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="charlesGasResetBtn">Reset Particles</button>
+        </div>
+        <div class="simulation-area">
+          <canvas id="charlesGasCanvas"></canvas>
+        </div>
+        <div class="info-panel" id="charlesGasInfo">
+          <div class="info-item">Pressure: <span id="charlesGasPressure">?</span> (relative units)</div>
+          <div class="info-item">Temperature: <span id="charlesInfoGasTemperature">?</span> K</div>
+          <div class="info-item">Volume: <span id="charlesInfoGasVolume">?</span> (relative units)</div>
+          <div class="info-item">Particles: <span id="charlesInfoGasParticles">?</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gay-Lussac's Law Tab -->
+    <div id="gaylussac" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Gay-Lussac's Law (P ∝ T, V, n const)</h2>
+        <div class="controls">
+          <div class="control-group" id="gaylussacGasTemperature_group">
+            <label for="gaylussacGasTemperature">Temperature (K):</label>
+            <input type="number" id="gaylussacGasTemperature" min="50" max="500" value="273" step="10">
+          </div>
+          <div class="control-group" id="gaylussacGasVolume_group">
+            <label for="gaylussacGasVolume">Volume (arbitrary units):</label>
+            <input type="number" id="gaylussacGasVolume" min="50" max="300" value="200" step="10">
+          </div>
+          <div class="control-group" id="gaylussacGasParticles_group">
+            <label for="gaylussacGasParticles">Number of Particles:</label>
+            <input type="number" id="gaylussacGasParticles" min="10" max="200" value="50" step="10">
+          </div>
+        </div>
+        <div class="button-group">
+          <button class="primary" id="gaylussacGasResetBtn">Reset Particles</button>
+        </div>
+        <div class="simulation-area">
+          <canvas id="gaylussacGasCanvas"></canvas>
+        </div>
+        <div class="info-panel" id="gaylussacGasInfo">
+          <div class="info-item">Pressure: <span id="gaylussacGasPressure">?</span> (relative units)</div>
+          <div class="info-item">Temperature: <span id="gaylussacInfoGasTemperature">?</span> K</div>
+          <div class="info-item">Volume: <span id="gaylussacInfoGasVolume">?</span> (relative units)</div>
+          <div class="info-item">Particles: <span id="gaylussacInfoGasParticles">?</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentLawType = 'ideal'; // Default active law
+    let animationFrameId;
+    let containerWidth, containerHeight; // Dimensions of the simulation area
+
+    // Store references to elements for each law
+    const lawElements = {
+        'ideal': {
+            canvas: document.getElementById('idealGasCanvas'),
+            tempInput: document.getElementById('idealGasTemperature'),
+            tempGroup: document.getElementById('idealGasTemperature_group'),
+            volumeInput: document.getElementById('idealGasVolume'),
+            volumeGroup: document.getElementById('idealGasVolume_group'),
+            particlesInput: document.getElementById('idealGasParticles'),
+            particlesGroup: document.getElementById('idealGasParticles_group'),
+            resetBtn: document.getElementById('idealGasResetBtn'),
+            pressureSpan: document.getElementById('idealGasPressure'),
+            tempInfoSpan: document.getElementById('idealInfoGasTemperature'),
+            volumeInfoSpan: document.getElementById('idealInfoGasVolume'),
+            particlesInfoSpan: document.getElementById('idealInfoGasParticles'),
+            ctx: null, // Will be initialized later
+            particles: [],
+            lawFixedValues: { temp: 273, vol: 200, particles: 50, pressure: (50 * 273) / 200 }
+        },
+        'boyle': {
+            canvas: document.getElementById('boyleGasCanvas'),
+            tempInput: document.getElementById('boyleGasTemperature'),
+            tempGroup: document.getElementById('boyleGasTemperature_group'),
+            volumeInput: document.getElementById('boyleGasVolume'),
+            volumeGroup: document.getElementById('boyleGasVolume_group'),
+            particlesInput: document.getElementById('boyleGasParticles'),
+            particlesGroup: document.getElementById('boyleGasParticles_group'),
+            resetBtn: document.getElementById('boyleGasResetBtn'),
+            pressureSpan: document.getElementById('boyleGasPressure'),
+            tempInfoSpan: document.getElementById('boyleInfoGasTemperature'),
+            volumeInfoSpan: document.getElementById('boyleInfoGasVolume'),
+            particlesInfoSpan: document.getElementById('boyleInfoGasParticles'),
+            ctx: null,
+            particles: [],
+            lawFixedValues: { temp: 273, vol: 200, particles: 50, pressure: (50 * 273) / 200 }
+        },
+        'charles': {
+            canvas: document.getElementById('charlesGasCanvas'),
+            tempInput: document.getElementById('charlesGasTemperature'),
+            tempGroup: document.getElementById('charlesGasTemperature_group'),
+            volumeInput: document.getElementById('charlesGasVolume'),
+            volumeGroup: document.getElementById('charlesGasVolume_group'),
+            particlesInput: document.getElementById('charlesGasParticles'),
+            particlesGroup: document.getElementById('charlesGasParticles_group'),
+            resetBtn: document.getElementById('charlesGasResetBtn'),
+            pressureSpan: document.getElementById('charlesGasPressure'),
+            tempInfoSpan: document.getElementById('charlesInfoGasTemperature'),
+            volumeInfoSpan: document.getElementById('charlesInfoGasVolume'),
+            particlesInfoSpan: document.getElementById('charlesInfoGasParticles'),
+            ctx: null,
+            particles: [],
+            lawFixedValues: { temp: 273, vol: 200, particles: 50, pressure: (50 * 273) / 200 }
+        },
+        'gaylussac': {
+            canvas: document.getElementById('gaylussacGasCanvas'),
+            tempInput: document.getElementById('gaylussacGasTemperature'),
+            tempGroup: document.getElementById('gaylussacGasTemperature_group'),
+            volumeInput: document.getElementById('gaylussacGasVolume'),
+            volumeGroup: document.getElementById('gaylussacGasVolume_group'),
+            particlesInput: document.getElementById('gaylussacGasParticles'),
+            particlesGroup: document.getElementById('gaylussacGasParticles_group'),
+            resetBtn: document.getElementById('gaylussacGasResetBtn'),
+            pressureSpan: document.getElementById('gaylussacGasPressure'),
+            tempInfoSpan: document.getElementById('gaylussacInfoGasTemperature'),
+            volumeInfoSpan: document.getElementById('gaylussacInfoGasVolume'),
+            particlesInfoSpan: document.getElementById('gaylussacInfoGasParticles'),
+            ctx: null,
+            particles: [],
+            lawFixedValues: { temp: 273, vol: 200, particles: 50, pressure: (50 * 273) / 200 }
+        }
+    };
+
+
+    // Particle class
+    class Particle {
+      constructor(x, y, radius, color, mass, temperature) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.mass = mass; // For collisions and kinetic energy
+        this.temperature = temperature; // Used to determine speed
+        this.vx = (Math.random() - 0.5) * 2 * this.getSpeedFromTemperature(temperature);
+        this.vy = (Math.random() - 0.5) * 2 * this.getSpeedFromTemperature(temperature);
+      }
+
+      getSpeedFromTemperature(temp) {
+        // Simple scaling: higher temperature means higher speed
+        // This is a conceptual representation, not precise physics
+        return 0.05 * Math.sqrt(temp);
+      }
+
+      draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+      }
+
+      update(volumeFactor, tempInput) {
+        // Adjust velocities based on temperature from the active tab's input
+        const speed = this.getSpeedFromTemperature(parseFloat(tempInput.value));
+        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (currentSpeed !== 0) {
+          this.vx = (this.vx / currentSpeed) * speed;
+          this.vy = (this.vy / currentSpeed) * speed;
+        } else {
+          this.vx = (Math.random() - 0.5) * 2 * speed;
+          this.vy = (Math.random() - 0.5) * 2 * speed;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Wall collisions (scaled by volumeFactor)
+        const effectiveWidth = containerWidth * volumeFactor;
+        const effectiveHeight = containerHeight * volumeFactor;
+
+        const boundaryLeft = 0;
+        const boundaryRight = effectiveWidth;
+        const boundaryTop = 0;
+        const boundaryBottom = effectiveHeight;
+
+        if (this.x - this.radius < boundaryLeft) {
+          this.x = boundaryLeft + this.radius;
+          this.vx *= -1;
+        } else if (this.x + this.radius > boundaryRight) {
+          this.x = boundaryRight - this.radius;
+          this.vx *= -1;
+        }
+
+        if (this.y - this.radius < boundaryTop) {
+          this.y = boundaryTop + this.radius;
+          this.vy *= -1;
+        } else if (this.y + this.radius > boundaryBottom) {
+          this.y = boundaryBottom - this.radius;
+          this.vy *= -1;
+        }
+      }
+    }
+
+    // GasLaws Simulation Object
+    const gasLawsSim = {
+      init() {
+        // Initialize contexts for all canvases and set initial sizes
+        for (const lawId in lawElements) {
+            const el = lawElements[lawId];
+            if (el.canvas) {
+                el.ctx = el.canvas.getContext('2d');
+                const simulationArea = el.canvas.closest('.simulation-area');
+                if (simulationArea) {
+                    el.canvas.width = simulationArea.offsetWidth;
+                    el.canvas.height = simulationArea.offsetHeight;
+                }
+            }
+        }
+        // Set global container dimensions based on the initial active canvas
+        // This is done again in activateTab, but good to have a starting point
+        const activeCanvas = lawElements[currentLawType].canvas;
+        if (activeCanvas) {
+            containerWidth = activeCanvas.width;
+            containerHeight = activeCanvas.height;
+        }
+
+
+        // Global resize listener (will reset particles for current active tab)
+        window.addEventListener('resize', () => gasLawsSim.resizeCanvas());
+
+        // Setup tab click listeners
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                gasLawsSim.activateTab(btn.getAttribute('data-law'));
+            });
+        });
+
+        // Setup input listeners for each law
+        for (const lawId in lawElements) {
+            const el = lawElements[lawId];
+            el.tempInput.addEventListener('input', () => {
+                gasLawsSim.updateParticlesSpeed(el.particles);
+                gasLawsSim.applyLawConstraints(lawId, 'temperature');
+                gasLawsSim.updateInfoPanel(lawId);
+            });
+            el.volumeInput.addEventListener('input', () => {
+                gasLawsSim.applyLawConstraints(lawId, 'volume');
+                gasLawsSim.updateInfoPanel(lawId);
+            });
+            el.particlesInput.addEventListener('input', () => {
+                gasLawsSim.applyLawConstraints(lawId, 'particles');
+                gasLawsSim.updateInfoPanel(lawId);
+            });
+            el.resetBtn.addEventListener('click', () => gasLawsSim.resetParticles(lawId));
+        }
+
+        // Activate the default tab on load
+        gasLawsSim.activateTab(currentLawType);
+        gasLawsSim.startAnimationLoop();
+      },
+
+      activateTab(lawId) {
+          // Store current values of the outgoing tab before switching
+          const prevLawId = currentLawType;
+          const prevEl = lawElements[prevLawId];
+          // Update fixed values for the previous tab based on its current input values
+          prevEl.lawFixedValues.temp = parseFloat(prevEl.tempInput.value);
+          prevEl.lawFixedValues.vol = parseFloat(prevEl.volumeInput.value);
+          prevEl.lawFixedValues.particles = parseInt(prevEl.particlesInput.value);
+          prevEl.lawFixedValues.pressure = (prevEl.lawFixedValues.particles * prevEl.lawFixedValues.temp) / prevEl.lawFixedValues.vol;
+
+
+          // Hide all tab contents and remove 'active' from buttons
+          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+          document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+          // Show the selected tab content and add 'active' to its button
+          document.getElementById(lawId).classList.add('active');
+          document.querySelector(`.tab-btn[data-law="${lawId}"]`).classList.add('active');
+          currentLawType = lawId;
+
+          const currentEl = lawElements[currentLawType];
+          // Load saved values for the incoming tab
+          currentEl.tempInput.value = currentEl.lawFixedValues.temp;
+          currentEl.volumeInput.value = currentEl.lawFixedValues.vol;
+          currentEl.particlesInput.value = currentEl.lawFixedValues.particles;
+
+          // Update global container dimensions to match the active canvas
+          // IMPORTANT: Re-set containerWidth/Height after tab switch for correct drawing
+          const simulationArea = currentEl.canvas.closest('.simulation-area');
+          if (simulationArea) {
+              currentEl.canvas.width = simulationArea.offsetWidth;
+              currentEl.canvas.height = simulationArea.offsetHeight;
+              containerWidth = currentEl.canvas.width;
+              containerHeight = currentEl.canvas.height;
+          }
+
+          gasLawsSim.applyLawConstraints(lawId, 'lawChange'); // Apply initial constraints for the new law
+          gasLawsSim.resetParticles(lawId); // Reset particles for the newly active tab
+          gasLawsSim.updateInfoPanel(lawId);
+      },
+
+      resizeCanvas() {
+        // Resize the canvas of the currently active tab
+        const currentEl = lawElements[currentLawType];
+        const simulationArea = currentEl.canvas.closest('.simulation-area');
+        if (simulationArea) {
+          currentEl.canvas.width = simulationArea.offsetWidth;
+          currentEl.canvas.height = simulationArea.offsetHeight;
+          containerWidth = currentEl.canvas.width; // Update global dimensions
+          containerHeight = currentEl.canvas.height; // Update global dimensions
+          gasLawsSim.resetParticles(currentLawType);
+        }
+      },
+
+      resetParticles(lawId) {
+        cancelAnimationFrame(animationFrameId); // Stop any existing loop
+
+        const el = lawElements[lawId];
+        el.particles = [];
+        const numParticles = parseInt(el.particlesInput.value);
+        const temperature = parseFloat(el.tempInput.value);
+
+        const currentVolume = parseFloat(el.volumeInput.value);
+        const minVol = parseFloat(el.volumeInput.min);
+        const maxVol = parseFloat(el.volumeInput.max);
+        const normalizedCurrentVolume = (currentVolume - minVol) / (maxVol - minVol);
+        const currentVolumeFactor = 0.5 + (normalizedCurrentVolume * 0.5);
+
+        const currentEffectiveWidth = containerWidth * currentVolumeFactor;
+        const currentEffectiveHeight = containerHeight * currentVolumeFactor;
+        const currentOffsetX = (containerWidth - currentEffectiveWidth) / 2;
+        const currentOffsetY = (containerHeight - currentEffectiveHeight) / 2;
+
+        for (let i = 0; i < numParticles; i++) {
+          // Initialize particles within the scaled *visible* area
+          const x = currentOffsetX + Math.random() * currentEffectiveWidth;
+          const y = currentOffsetY + Math.random() * currentEffectiveHeight;
+          el.particles.push(new Particle(x, y, 5, 'rgba(74, 107, 255, 0.7)', 1, temperature));
+        }
+        gasLawsSim.updateInfoPanel(lawId);
+        gasLawsSim.startAnimationLoop();
+      },
+
+      updateParticlesSpeed(particlesArray) {
+        const tempInput = lawElements[currentLawType].tempInput;
+        const temperature = parseFloat(tempInput.value);
+        particlesArray.forEach(p => {
+          const speed = p.getSpeedFromTemperature(temperature);
+          const currentSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if (currentSpeed !== 0) {
+            p.vx = (p.vx / currentSpeed) * speed;
+            p.vy = (p.vy / currentSpeed) * speed;
+          } else {
+            p.vx = (Math.random() - 0.5) * 2 * speed;
+            p.vy = (Math.random() - 0.5) * 2 * speed;
+          }
+        });
+      },
+
+      applyLawConstraints(lawId, changedInput) {
+        const el = lawElements[lawId];
+        let currentTemp = parseFloat(el.tempInput.value);
+        let currentVol = parseFloat(el.volumeInput.value);
+        let currentParticles = parseInt(el.particlesInput.value);
+
+        // First, enable all inputs and make all control groups visible
+        el.tempInput.disabled = false;
+        el.tempGroup.classList.remove('hidden-control-group');
+        el.volumeInput.disabled = false;
+        el.volumeGroup.classList.remove('hidden-control-group');
+        el.particlesInput.disabled = false;
+        el.particlesGroup.classList.remove('hidden-control-group');
+
+
+        // If the law type just changed, capture the current values as the new fixed values
+        if (changedInput === 'lawChange') {
+            el.lawFixedValues.temp = currentTemp;
+            el.lawFixedValues.vol = currentVol;
+            el.lawFixedValues.particles = currentParticles;
+            el.lawFixedValues.pressure = (currentParticles * currentTemp) / currentVol;
+        }
+
+        switch (lawId) {
+          case 'boyle': // P ∝ 1/V (T, n const)
+            el.tempInput.disabled = true;
+            el.tempGroup.classList.add('hidden-control-group');
+            el.particlesInput.disabled = true;
+            el.particlesGroup.classList.add('hidden-control-group');
+            
+            // Revert values if they were manually changed while law was active
+            if (changedInput === 'temperature' && currentTemp !== el.lawFixedValues.temp) {
+                el.tempInput.value = el.lawFixedValues.temp;
+                gasLawsSim.updateParticlesSpeed(el.particles);
+            }
+            if (changedInput === 'particles' && currentParticles !== el.lawFixedValues.particles) {
+                el.particlesInput.value = el.lawFixedValues.particles;
+                gasLawsSim.resetParticles(lawId);
+            }
+            break;
+
+          case 'charles': // V ∝ T (P, n const)
+            el.particlesInput.disabled = true;
+            el.particlesGroup.classList.add('hidden-control-group');
+            if (changedInput === 'particles' && currentParticles !== el.lawFixedValues.particles) {
+                 el.particlesInput.value = el.lawFixedValues.particles;
+                 gasLawsSim.resetParticles(lawId);
+            }
+
+            // If temperature changes, adjust volume proportionally
+            if (changedInput === 'temperature' && !isNaN(currentTemp) && el.lawFixedValues.temp !== 0) {
+                const newVol = el.lawFixedValues.vol * (currentTemp / el.lawFixedValues.temp);
+                el.volumeInput.value = newVol.toFixed(0);
+                gasLawsSim.resetParticles(lawId); // Reset particles to fit new volume
+            }
+            // If volume changes, adjust temperature proportionally
+            else if (changedInput === 'volume' && !isNaN(currentVol) && el.lawFixedValues.vol !== 0) {
+                const newTemp = el.lawFixedValues.temp * (currentVol / el.lawFixedValues.vol);
+                el.tempInput.value = newTemp.toFixed(0);
+                gasLawsSim.updateParticlesSpeed(el.particles);
+            }
+            break;
+
+          case 'gaylussac': // P ∝ T (V, n const)
+            el.volumeInput.disabled = true;
+            el.volumeGroup.classList.add('hidden-control-group');
+            el.particlesInput.disabled = true;
+            el.particlesGroup.classList.add('hidden-control-group');
+            if (changedInput === 'volume' && currentVol !== el.lawFixedValues.vol) {
+                el.volumeInput.value = el.lawFixedValues.vol;
+                gasLawsSim.resetParticles(lawId);
+            }
+            if (changedInput === 'particles' && currentParticles !== el.lawFixedValues.particles) {
+                el.particlesInput.value = el.lawFixedValues.particles;
+                gasLawsSim.resetParticles(lawId);
+            }
+            break;
+
+          default: // 'ideal' gas law
+            // All inputs enabled, no fixed values imposed by the law itself
+            // Update lawFixedValues for ideal gas just to track current state for info panel
+            el.lawFixedValues.temp = currentTemp;
+            el.lawFixedValues.vol = currentVol;
+            el.lawFixedValues.particles = currentParticles;
+            el.lawFixedValues.pressure = (currentParticles * currentTemp) / currentVol;
+            break;
+        }
+        gasLawsSim.updateInfoPanel(lawId); // Always update info panel after applying constraints
+      },
+
+      updateInfoPanel(lawId) {
+        const el = lawElements[lawId];
+        const temp = parseFloat(el.tempInput.value);
+        const volume = parseFloat(el.volumeInput.value);
+        const particlesCount = parseInt(el.particlesInput.value);
+
+        let calculatedPressure;
+
+        const fixedTemp = el.lawFixedValues.temp;
+        const fixedVol = el.lawFixedValues.vol;
+        const fixedParticles = el.lawFixedValues.particles;
+        const fixedPressure = el.lawFixedValues.pressure;
+
+        switch (lawId) {
+          case 'boyle':
+            // Prevent division by zero if volume is 0
+            calculatedPressure = volume !== 0 ? (fixedPressure * fixedVol) / volume : Infinity;
+            break;
+          case 'charles':
+            calculatedPressure = fixedPressure; // Pressure is fixed for Charles's
+            break;
+          case 'gaylussac':
+            // Prevent division by zero if fixedTemp is 0
+            calculatedPressure = fixedTemp !== 0 ? fixedPressure * (temp / fixedTemp) : (temp === 0 ? 0 : Infinity);
+            break;
+          default: // 'ideal' gas law
+            calculatedPressure = volume !== 0 ? (particlesCount * temp) / volume : Infinity;
+            break;
+        }
+
+        el.pressureSpan.textContent = isFinite(calculatedPressure) ? calculatedPressure.toFixed(2) : 'N/A';
+        el.tempInfoSpan.textContent = temp.toFixed(0);
+        el.volumeInfoSpan.textContent = volume.toFixed(0);
+        el.particlesInfoSpan.textContent = particlesCount.toFixed(0);
+      },
+
+      updateSimulation() {
+        const el = lawElements[currentLawType];
+        // Ensure inputs have valid numeric values before proceeding
+        const volume = parseFloat(el.volumeInput.value) || el.lawFixedValues.vol; // Fallback to fixed if invalid
+        const minVol = parseFloat(el.volumeInput.min);
+        const maxVol = parseFloat(el.volumeInput.max);
+
+        const normalizedVolume = (volume - minVol) / (maxVol - minVol);
+        const volumeFactor = 0.5 + (normalizedVolume * 0.5);
+
+        // Update particles' positions and handle wall collisions
+        el.particles.forEach(p => p.update(volumeFactor, el.tempInput)); // Pass tempInput for speed update
+
+        for (let i = 0; i < el.particles.length; i++) {
+          for (let j = i + 1; j < el.particles.length; j++) {
+            gasLawsSim.checkCollision(el.particles[i], el.particles[j]);
+          }
+        }
+      },
+
+      drawSimulation() {
+        const el = lawElements[currentLawType];
+        const ctx = el.ctx;
+        const canvas = el.canvas;
+
+        // Ensure ctx and canvas are valid before drawing
+        if (!ctx || !canvas) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const volume = parseFloat(el.volumeInput.value);
+        const minVol = parseFloat(el.volumeInput.min);
+        const maxVol = parseFloat(el.volumeInput.max);
+        const normalizedVolume = (volume - minVol) / (maxVol - minVol);
+        const scaleFactor = 0.5 + (normalizedVolume * 0.5);
+
+        const currentWidth = canvas.width * scaleFactor;
+        const currentHeight = canvas.height * scaleFactor;
+        const offsetX = (canvas.width - currentWidth) / 2;
+        const offsetY = (canvas.height - currentHeight) / 2;
+
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, currentWidth, currentHeight);
+        ctx.restore();
+
+        el.particles.forEach(p => {
+          ctx.save();
+          ctx.translate(offsetX, offsetY);
+          p.draw(ctx); // Pass context to particle draw method
+          ctx.restore();
+        });
+      },
+
+      checkCollision(p1, p2) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < p1.radius + p2.radius) {
+          const angle = Math.atan2(dy, dx);
+          const sin = Math.sin(angle);
+          const cos = Math.cos(angle);
+
+          const v1x = p1.vx * cos + p1.vy * sin;
+          const v1y = p1.vy * cos - p1.vx * sin;
+          const v2x = p2.vx * cos + p2.vy * sin;
+          const v2y = p2.vy * cos - p2.vx * sin;
+
+          const finalV1x = ((p1.mass - p2.mass) * v1x + 2 * p2.mass * v2x) / (p1.mass + p2.mass);
+          const finalV2x = ((p2.mass - p1.mass) * v2x + 2 * p1.mass * v1x) / (p1.mass + p2.mass);
+
+          p1.vx = finalV1x * cos - v1y * sin;
+          p1.vy = v1y * cos + finalV1x * sin;
+          p2.vx = finalV2x * cos - v2y * sin;
+          p2.vy = v2y * cos + finalV2x * sin;
+
+          const overlap = p1.radius + p2.radius - distance;
+          const separationX = (overlap / distance) * dx;
+          const separationY = (overlap / distance) * dy;
+          p1.x -= separationX * 0.5;
+          p1.y -= separationY * 0.5;
+          p2.x += separationX * 0.5;
+          p2.y += separationY * 0.5;
+        }
+      },
+
+      startAnimationLoop() {
+        cancelAnimationFrame(animationFrameId); // Ensure only one loop runs
+        const animate = () => {
+          gasLawsSim.updateSimulation();
+          gasLawsSim.drawSimulation();
+          animationFrameId = requestAnimationFrame(animate);
+        };
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      gasLawsSim.init();
+    });
+  </script>
+</body>
+</html>

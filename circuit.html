@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Drag-and-Drop Circuit Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --accent-color: #28a745;
+            --dark-color: #343a40; /* Reverted to original for text on dark canvas */
+            --light-color: #f8f9fa;
+            --border-radius: 10px;
+            --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            --input-bg: #e9ecef;
+            --wire-color: #343a40; /* Reverted to original dark color */
+            --component-color: #6c757d; /* Reverted to original secondary color */
+            --electron-color: yellow;
+            --bulb-off-color: #ffc107;
+            --bulb-on-color: #ffeb3b;
+            --meter-bg: rgba(255, 255, 255, 0.9);
+            --grid-color: #e0e0e0; /* Reverted to original light gray */
+            --highlight-color: #00bcd4; /* Cyan for selection/hover */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Increased gap for better spacing */
+            box-shadow: var(--box-shadow); /* Added shadow to the main container */
+            border-radius: var(--border-radius);
+            background: white; /* Ensure container background is white */
+            padding: 20px; /* Added padding to the container itself */
+        }
+
+        header {
+            text-align: center;
+            padding: 15px; /* Slightly reduced padding */
+            background: white; /* Kept white, but container now has white background */
+            border-radius: var(--border-radius);
+            /* box-shadow: var(--box-shadow); Removed redundant shadow as container has it */
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 8px; /* Adjusted margin */
+            font-size: 2.2rem; /* Slightly smaller for better balance */
+        }
+
+        .subtitle {
+            color: var(--secondary-color);
+            font-size: 1.1rem; /* Slightly smaller */
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            flex-grow: 1;
+        }
+
+        .palette-container {
+            width: 100%;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
+        }
+
+        .palette-container h3 {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 15px; /* Space between title and items */
+            text-align: center; /* Center the title */
+        }
+
+        .palette {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping */
+            gap: 12px; /* Slightly reduced gap between items */
+            align-items: center;
+            justify-content: center; /* Center items when they wrap */
+            width: 100%; /* Take full width */
+            /* overflow-x: auto; Removed overflow-x as items will wrap */
+            /* white-space: nowrap; Removed nowrap */
+        }
+
+        .component-item {
+            display: inline-flex; /* Use inline-flex for horizontal layout */
+            flex-direction: column;
+            align-items: center;
+            cursor: grab;
+            padding: 6px; /* Reduced padding for smaller icons */
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            /* min-width: 70px; Removed min-width to allow more flexible wrapping */
+            text-align: center;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            flex-shrink: 0; /* Prevent shrinking */
+            font-size: 0.8rem; /* Smaller font for component names */
+        }
+
+        .component-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .component-item.active-tool {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
+        }
+        .component-item.active-tool svg {
+            stroke: white; /* Change icon color when active */
+        }
+
+
+        .component-item svg {
+            width: 24px; /* Even Smaller icons */
+            height: 24px; /* Even Smaller icons */
+            margin-bottom: 2px; /* Adjusted margin */
+            stroke: var(--dark-color); /* Default icon color */
+        }
+
+        .circuit-area {
+            flex-grow: 1;
+            min-width: 500px;
+            height: 600px;
+            position: relative;
+            overflow: hidden; /* Hide overflow from meters */
+            background: #2c3e50; /* Darker Canvas background */
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        #circuitCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #2c3e50; /* Darker Canvas background */
+            border-radius: var(--border-radius);
+        }
+
+        .info-panel {
+            flex: 1; /* Allow it to grow and shrink */
+            min-width: 200px; /* Minimum width for the panel */
+            max-width: 300px; /* Max width to prevent it from getting too wide on large screens */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+        }
+
+        .info-panel h3 {
+            font-size: 1.2rem; /* Slightly smaller for better fit */
+            margin-bottom: 5px;
+        }
+        .info-panel h4 {
+            font-size: 1rem; /* Slightly smaller for better fit */
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: var(--secondary-color); /* Ensure readability */
+        }
+
+        .info-item {
+            font-size: 0.95rem; /* Slightly smaller font for info items */
+            white-space: nowrap; /* Prevent wrapping of info items */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
+            color: var(--secondary-color); /* Ensure info text is readable */
+        }
+
+        .info-item span {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Reduced gap for buttons */
+            margin-top: 15px; /* Reduced margin */
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px; /* Reduced padding for buttons */
+            border: none;
+            border-radius: 30px;
+            font-size: 0.9rem; /* Slightly smaller font for buttons */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        button.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .meter-display {
+            position: absolute;
+            background-color: var(--meter-bg);
+            border: 2px solid var(--dark-color); /* Border color adapts to new dark-color */
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--dark-color); /* Text color adapts to new dark-color */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: grab;
+            z-index: 10;
+            display: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .meter-display:active {
+            cursor: grabbing;
+        }
+
+        /* Component value editor */
+        .value-editor {
+            position: absolute;
+            z-index: 20;
+            background: white;
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .value-editor input {
+            width: 60px;
+            padding: 3px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 0.9rem;
+            color: var(--dark-color); /* Ensure input text is readable */
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            padding: 5px 0;
+        }
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--secondary-color); /* Ensure context menu text is readable */
+        }
+        .context-menu-item:hover {
+            background-color: var(--input-bg);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            .palette-container {
+                padding: 10px; /* Adjust padding for smaller screens */
+            }
+            .palette {
+                justify-content: center; /* Center items on smaller screens */
+            }
+            .circuit-area {
+                min-width: unset;
+                width: 100%;
+                height: 400px;
+            }
+            .info-panel {
+                min-width: unset; /* Remove fixed min-width on small screens */
+                width: 100%; /* Take full width on small screens */
+                max-width: unset; /* Remove max-width on small screens */
+            }
+        }
+
+        /* Help Modal Styling */
+        .help-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .help-modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .help-modal-overlay.visible .help-modal-content {
+            transform: translateY(0);
+        }
+
+        .help-modal-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .help-modal-content h4 {
+            color: var(--dark-color); /* Adapts to new dark-color */
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .help-modal-content p, .help-modal-content ul {
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .help-modal-content ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        .help-modal-content li {
+            margin-bottom: 5px;
+        }
+
+        .help-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+
+        .help-modal-close:hover {
+            color: var(--primary-color);
+        }
+
+        /* Message box styling */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 400px;
+        }
+        .message-box h3 {
+            margin-top: 0;
+            color: #ef4444; /* Red for error */
+            margin-bottom: 1rem;
+        }
+        .message-box p {
+            margin-bottom: 1.5rem;
+            color: #475569;
+        }
+        .message-box button {
+            background-color: #4f46e5;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .message-box button:hover {
+            background-color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Advanced Drag-and-Drop Circuit Simulator</h1>
+            <p class="subtitle">Build and simulate complex circuits with ease</p>
+        </header>
+
+        <div class="palette-container">
+            <h3>Tools & Components:</h3>
+            <div class="palette">
+                <div class="component-item active-tool" data-type="select">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mouse-pointer">
+                        <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                        <path d="m13 13 6 6"/>
+                    </svg>
+                    Select
+                </div>
+                <div class="component-item" draggable="true" data-type="battery" data-value="12">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-battery">
+                        <rect width="18" height="12" x="2" y="6" rx="2" ry="2"/>
+                        <line x1="22" x2="22" y1="11" y2="13"/>
+                    </svg>
+                    Battery (V)
+                </div>
+                <div class="component-item" draggable="true" data-type="resistor" data-value="10">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Resistor (Ω)
+                </div>
+                <div class="component-item" draggable="true" data-type="bulb" data-value="20">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb">
+                        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 6c0 1.3.5 2.6 1.5 3.5.8.7 1.3 1.5 1.5 2.5"/>
+                        <path d="M9 18h6"/>
+                        <path d="M10 22h4"/>
+                    </svg>
+                    Light Bulb (Ω)
+                </div>
+                <div class="component-item" draggable="true" data-type="ammeter">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucude-gauge">
+                        <path d="M12 14v4"/>
+                        <path d="M12 6V2"/>
+                        <path d="M22 12h-4"/>
+                        <path d="M2 12h4"/>
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    Ammeter
+                </div>
+                <div class="component-item" draggable="true" data-type="voltmeter">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gauge">
+                        <path d="M12 14v4"/>
+                        <path d="M12 6V2"/>
+                        <path d="M22 12h-4"/>
+                        <path d="M2 12h4"/>
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    Voltmeter
+                </div>
+                <div class="component-item" draggable="true" data-type="switch" data-value="open">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-toggle-right">
+                        <rect width="20" height="12" x="2" y="6" rx="6" ry="6"/>
+                        <circle cx="16" cy="12" r="2"/>
+                    </svg>
+                    Switch
+                </div>
+                <div class="component-item" draggable="true" data-type="capacitor" data-value="10">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-equal">
+                        <rect width="18" height="18" x="3" y="3" rx="2"/>
+                        <line x1="9" x2="15" y1="8" y2="8"/>
+                        <line x1="9" x2="15" y1="16" y2="16"/>
+                    </svg>
+                    Capacitor (μF)
+                </div>
+                <div class="component-item" data-type="wire-tool">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07L9.4 9.4"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    Wire
+                </div>
+                <div class="component-item" data-type="value-tool">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil">
+                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                        <path d="M15 5l4 4"/>
+                    </svg>
+                    Value
+                </div>
+                <div class="component-item" data-type="ground">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
+                        <line x1="5" x2="19" y1="12" y2="12"/>
+                    </svg>
+                    Ground
+                </div>
+                <div class="component-item" data-type="help">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-help-circle">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <path d="M12 17h.01"/>
+                    </svg>
+                    Help
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="circuit-area">
+                <canvas id="circuitCanvas"></canvas>
+                <div id="ammeterDisplay" class="meter-display">Ammeter: 0.00 A</div>
+                <div id="voltmeterDisplay" class="meter-display">Voltmeter: 0.00 V</div>
+                <div id="valueEditor" class="value-editor">
+                    <input type="number" id="editValueInput">
+                </div>
+                <div id="contextMenu" class="context-menu">
+                    <div class="context-menu-item" id="deleteComponentMenuItem">Delete Component</div>
+                    <div class="context-menu-item" id="editValueMenuItem">Edit Value</div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Circuit Info</h3>
+                <div class="info-item">Total Voltage (Source): <span id="infoTotalVoltage">0</span> V</div>
+                <div class="info-item">Total Resistance (Equivalent): <span id="infoTotalResistance">0</span> Ω</div>
+                <div class="info-item">Total Current (Source): <span id="infoTotalCurrent">0</span> A</div>
+                <div class="info-item">Total Power (Dissipated): <span id="infoTotalPower">0</span> W</div>
+                <div class="info-item">Status: <span id="circuitStatus">Open</span></div>
+                <div class="button-group">
+                    <button class="primary" id="simulateBtn">Simulate</button>
+                    <button class="secondary" id="resetCircuitBtn">Reset Circuit</button>
+                </div>
+                <div id="nodeVoltageInfo" class="mt-4">
+                    <h4 class="font-medium text-gray-600 mb-1">Node Voltages:</h4>
+                    <div id="nodeVoltageContent"></div>
+                </div>
+                <div id="componentCurrentInfo" class="mt-4">
+                    <h4 class="font-medium text-gray-600 mb-1">Component Currents:</h4>
+                    <div id="componentCurrentContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModalOverlay" class="help-modal-overlay">
+        <div class="help-modal-content">
+            <button id="helpModalClose" class="help-modal-close">&times;</button>
+            <h2>How to Use the Circuit Builder</h2>
+
+            <h4>1. Placing Components</h4>
+            <ul>
+                <li>**Drag & Drop:** Select a component (Battery, Resistor, Light Bulb, Ammeter, Voltmeter, Switch, Capacitor, Ground) from the palette and drag it onto the canvas.</li>
+            </ul>
+
+            <h4>2. Connecting Wires</h4>
+            <ul>
+                <li>**Select Wire Tool:** Click the "Wire" tool in the palette.</li>
+                <li>**Start Wire:** Click on a green connection node of any component to begin drawing a wire.</li>
+                <li>**Add Bend Points:** Click anywhere on the canvas to add intermediate "elbow" points to your wire. These points will snap to the grid for neatness.</li>
+                <li>**Finish Segment (Stub):** Double-click on the canvas to end the current wire segment without connecting it to another component (creating a wire stub).</li>
+                <li>**Connect to Component:** Click on a green connection node of another component to complete the wire connection.</li>
+            </ul>
+
+            <h4>3. Editing Component Values</h4>
+            <ul>
+                <li>**Select Value Tool:** Click the "Value" tool in the palette.</li>
+                <li>**Click Component:** Click on a Battery, Resistor, Light Bulb, or Capacitor. An input box will appear.</li>
+                <li>**Enter New Value:** Type the desired numerical value and press `Enter` to apply.</li>
+            </ul>
+
+            <h4>4. Moving Components</h4>
+            <ul>
+                <li>**Select Select Tool:** Ensure the "Select" tool is active.</li>
+                <li>**Drag Component:** Click and drag any component on the canvas. Connected wires will automatically adjust their endpoints.</li>
+            </ul>
+
+            <h4>5. Toggling Switches</h4>
+            <ul>
+                <li>**Select Select Tool:** Ensure the "Select" tool is active.</li>
+                <li>**Click Switch:** Click on a switch to toggle its state between open and closed.</li>
+            </ul>
+
+            <h4>6. Using the Context Menu (Right-Click)</h4>
+            <ul>
+                <li>**Right-Click:** Right-click on any component or wire on the canvas.</li>
+                <li>**Options:**
+                    <ul>
+                        <li>"Delete Component" / "Delete Wire": Removes the selected item.</li>
+                        <li>"Edit Value": Opens the value editor for applicable components (same as using the "Value" tool).</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>7. Simulating the Circuit</h4>
+            <ul>
+                <li>**Simulate Button:** Click the "Simulate" button in the info panel.</li>
+                <li>**Electron Flow:** If the circuit is closed and current is flowing, you'll see animated electrons.</li>
+                <li>**Info Panel:** The "Circuit Info" panel will update with calculated Total Voltage, Resistance, Current, and Power.</li>
+                <li>**Stop Simulation:** Click the "Simulate" button again to stop the simulation.</li>
+            </ul>
+
+            <h4>8. Resetting the Circuit</h4>
+            <ul>
+                <li>**Reset Circuit Button:** Click the "Reset Circuit" button to clear all components and wires from the canvas.</li>
+            </ul>
+
+            <h4>Important Notes on Simulation:</h4>
+            <ul>
+                <li>**DC Steady-State:** The simulator performs a DC (Direct Current) steady-state analysis. Capacitors act as open circuits.</li>
+                <li>**Ideal Components:** All components are treated as ideal (e.g., wires have zero resistance).</li>
+                <li>**Ground Reference:** A ground component (`-` icon) is essential. Place one on the canvas to establish a reference (Node 0).</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">
+        <h3 id="messageTitle"></h3>
+        <p id="messageText"></p>
+        <button id="messageCloseBtn">OK</button>
+    </div>
+
+    <script>
+        // Global CircuitBuilder object to encapsulate all state
+        window.CircuitBuilder = {
+            components: [], // {id, type, x, y, value, isDragging, nodeIds: [nodeId1, nodeId2], currentFlow, voltageDrop, status, mnaIndex (for VS)}
+            wires: [],      // {id, points: [{x,y}, {x,y}, ...], startNodeId, endNodeId}
+            nodes: [],      // {id, x, y, voltage: null, isGround: false}
+            electrons: [],
+            animationFrameId: null,
+            isSimulating: false,
+            isConnecting: false,
+            currentWirePoints: [], // For building multi-segment wires
+            connectionStartComponent: null, // {component, nodeIndex}
+            draggedComponent: null,
+            draggedComponentType: null,
+            draggedComponentValue: null,
+            editingComponent: null,
+            selectedComponent: null,
+            selectedWire: null,
+            currentMouseX: 0,
+            currentMouseY: 0,
+            currentTool: 'select',
+            hoveredNode: null, // {componentId, nodeIndex}
+            hoveredComponent: null, // New: For component hover highlighting
+            hoveredWire: null,      // New: For wire hover highlighting
+            nextComponentId: 1, // Separate counter for components
+            nextNodeId: 1 // Separate counter for nodes
+        };
+
+        const canvas = document.getElementById('circuitCanvas');
+        const ctx = canvas.getContext('2d');
+        const palette = document.querySelector('.palette');
+        const circuitArea = document.querySelector('.circuit-area');
+        const simulateBtn = document.getElementById('simulateBtn');
+        const resetCircuitBtn = document.getElementById('resetCircuitBtn');
+        const ammeterDisplay = document.getElementById('ammeterDisplay');
+        const voltmeterDisplay = document.getElementById('voltmeterDisplay');
+        const valueEditor = document.getElementById('valueEditor');
+        const editValueInput = document.getElementById('editValueInput');
+        const contextMenu = document.getElementById('contextMenu');
+        const deleteComponentMenuItem = document.getElementById('deleteComponentMenuItem');
+        const editValueMenuItem = document.getElementById('editValueMenuItem');
+        const nodeVoltageContent = document.getElementById('nodeVoltageContent');
+        const componentCurrentContent = document.getElementById('componentCurrentContent');
+
+
+        // Help Modal elements
+        const helpModalOverlay = document.getElementById('helpModalOverlay');
+        const helpModalCloseBtn = document.getElementById('helpModalClose');
+
+        // Message Box elements
+        const messageBox = document.getElementById('messageBox');
+        const messageTitle = document.getElementById('messageTitle');
+        const messageText = document.getElementById('messageText');
+        const messageCloseBtn = document.getElementById('messageCloseBtn');
+
+        // Component properties (for drawing and logic)
+        const COMPONENT_WIDTH = 60; // Increased width for horizontal layout
+        const COMPONENT_HEIGHT = 40; // Height
+        const NODE_RADIUS = 7; // Size of connection nodes, slightly larger for easier click
+        const GRID_SIZE = 20; // For snap-to-grid
+
+        // GMIN stamping value - a very small conductance to prevent floating nodes in MNA
+        const GMIN = 1e-12; // 1 picoSiemens
+
+        /**
+         * Displays a custom message box instead of alert().
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The message to display.
+         */
+        function showMessageBox(title, message) {
+            messageTitle.textContent = title;
+            messageText.textContent = message;
+            messageBox.style.display = 'flex';
+        }
+
+        /**
+         * Hides the custom message box.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+        messageCloseBtn.addEventListener('click', hideMessageBox);
+
+
+        /**
+         * Generates a unique ID for components or nodes.
+         * @param {string} type - 'component' or 'node'.
+         * @returns {number} A unique ID.
+         */
+        function generateId(type) {
+            if (type === 'component') {
+                return window.CircuitBuilder.nextComponentId++;
+            } else if (type === 'node') {
+                return window.CircuitBuilder.nextNodeId++;
+            }
+            return -1; // Should not happen
+        }
+
+        // Draggable meter functionality
+        function makeDraggable(element) {
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            element.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+                element.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const simAreaRect = element.closest('.circuit-area').getBoundingClientRect();
+
+                let newX = e.clientX - offsetX - simAreaRect.left;
+                let newY = e.clientY - offsetY - simAreaRect.top;
+
+                newX = Math.max(0, Math.min(simAreaRect.width - element.offsetWidth, newX));
+                newY = Math.max(0, Math.min(simAreaRect.height - element.offsetHeight, newY));
+
+                element.style.left = `${newX}px`;
+                element.style.top = `${newY}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                element.style.cursor = 'grab';
+            });
+        }
+        makeDraggable(ammeterDisplay);
+        makeDraggable(voltmeterDisplay);
+
+
+        // --- Canvas and Component Drawing ---
+
+        /**
+         * Resizes the canvas to fit its parent container.
+         */
+        function resizeCanvas() {
+            canvas.width = circuitArea.offsetWidth;
+            canvas.height = circuitArea.offsetHeight;
+            drawCircuit();
+        }
+
+        /**
+         * Draws a background grid on the canvas.
+         */
+        function drawGrid() {
+            ctx.strokeStyle = varToRgba('--grid-color', 0.5);
+            ctx.lineWidth = 0.5;
+
+            for (let x = 0; x <= canvas.width; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= canvas.height; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        /**
+         * Helper to get component type abbreviation for display.
+         * @param {string} type - The component type string.
+         * @returns {string} The abbreviated type.
+         */
+        function getComponentAbbreviation(type) {
+            switch (type) {
+                case 'battery': return 'Bat';
+                case 'resistor': return 'R';
+                case 'bulb': return 'B';
+                case 'ammeter': return 'Amm';
+                case 'voltmeter': return 'Volt';
+                case 'switch': return 'Sw';
+                case 'capacitor': return 'Cap';
+                case 'ground': return 'GND';
+                default: return '';
+            }
+        }
+
+        /**
+         * Draws a component on the canvas. All components are drawn horizontally.
+         * @param {object} component - The component object {type, x, y, value, isDragging, nodeIds, currentFlow, voltageDrop, status}.
+         */
+        function drawComponent(component) {
+            const { type, id, x, y, value, currentFlow, voltageDrop, status } = component;
+            const compCenterX = x + COMPONENT_WIDTH / 2;
+            const compCenterY = y + COMPONENT_HEIGHT / 2;
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            ctx.strokeStyle = varToRgb('--component-color');
+            ctx.lineWidth = 2;
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw component body
+            switch (type) {
+                case 'battery':
+                    // Long line for positive, short for negative
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 15, compCenterY - 15); // Negative terminal
+                    ctx.lineTo(compCenterX - 15, compCenterY + 15);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX + 15, compCenterY - 20); // Positive terminal
+                    ctx.lineTo(compCenterX + 15, compCenterY + 20);
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    ctx.fillStyle = varToRgb('--dark-color'); /* Text color for values */
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`${value}V`, compCenterX, compCenterY + 25);
+                    break;
+                case 'resistor':
+                    ctx.beginPath();
+                    ctx.rect(x, y + COMPONENT_HEIGHT / 2 - 5, COMPONENT_WIDTH, 10);
+                    ctx.stroke();
+                    ctx.fillStyle = varToRgb('--dark-color'); /* Text color for values */
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`${value}Ω`, compCenterX, compCenterY + 25);
+                    break;
+                case 'bulb':
+                    ctx.beginPath();
+                    ctx.arc(compCenterX, compCenterY, COMPONENT_HEIGHT / 2 - 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // Bulb brightness based on current flow
+                    if (currentFlow > 0.01) { // If current is flowing
+                        const brightness = Math.min(1, currentFlow / 0.5); // Scale current to brightness
+                        ctx.fillStyle = `rgba(${varToRgb('--bulb-on-color').join(',')}, ${brightness})`;
+                        ctx.fill();
+                    } else {
+                        ctx.fillStyle = varToRgb('--bulb-off-color');
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = varToRgb('--dark-color'); /* Text color for values */
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`${value}Ω`, compCenterX, compCenterY + 25);
+                    break;
+                case 'ammeter':
+                case 'voltmeter':
+                    ctx.beginPath();
+                    ctx.arc(compCenterX, compCenterY, COMPONENT_HEIGHT / 2 - 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = varToRgb('--dark-color'); /* Text color for A/V */
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText(type === 'ammeter' ? 'A' : 'V', compCenterX, compCenterY + 5);
+                    break;
+                case 'switch':
+                    ctx.beginPath();
+                    ctx.moveTo(x, compCenterY);
+                    ctx.lineTo(compCenterX - 15, compCenterY);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX + 15, compCenterY);
+                    ctx.lineTo(x + COMPONENT_WIDTH, compCenterY);
+                    ctx.stroke();
+
+                    // Switch arm
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 15, compCenterY);
+                    if (status === 'closed') {
+                        ctx.lineTo(compCenterX + 15, compCenterY);
+                    } else {
+                        ctx.lineTo(compCenterX + 15, compCenterY - 20); // Open position
+                    }
+                    ctx.stroke();
+                    break;
+                case 'capacitor':
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 10, y + 5);
+                    ctx.lineTo(compCenterX - 10, y + COMPONENT_HEIGHT - 5);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX + 10, y + 5);
+                    ctx.lineTo(compCenterX + 10, y + COMPONENT_HEIGHT - 5);
+                    ctx.stroke();
+                    ctx.fillStyle = varToRgb('--dark-color'); /* Text color for values */
+                    ctx.font = '12px Arial';
+                    ctx.fillText(`${value}μF`, compCenterX, compCenterY + 25);
+                    break;
+                case 'ground':
+                    ctx.strokeStyle = varToRgb('--dark-color'); /* Color for ground symbol */
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 15, compCenterY);
+                    ctx.lineTo(compCenterX + 15, compCenterY);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 10, compCenterY + 5);
+                    ctx.lineTo(compCenterX + 10, compCenterY + 5);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(compCenterX - 5, compCenterY + 10);
+                    ctx.lineTo(compCenterX + 5, compCenterY + 10);
+                    ctx.stroke();
+                    break;
+            }
+
+            // Restore context to remove shadows for nodes/highlights
+            ctx.restore();
+
+            // Draw connection nodes (small circles at each end)
+            ctx.fillStyle = varToRgb('--accent-color'); // Green for all nodes
+            // Left node
+            ctx.beginPath();
+            ctx.arc(x, compCenterY, NODE_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            // Right node (if not ground)
+            if (type !== 'ground') {
+                ctx.beginPath();
+                ctx.arc(x + COMPONENT_WIDTH, compCenterY, NODE_RADIUS, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw component ID label
+            ctx.fillStyle = varToRgb('--dark-color'); /* Color for component ID */
+            ctx.font = '10px Arial';
+            ctx.fillText(`${getComponentAbbreviation(type)}${id}`, compCenterX, y - 10);
+
+
+            // Highlight hovered node
+            if (window.CircuitBuilder.hoveredNode && window.CircuitBuilder.hoveredNode.componentId === component.id) {
+                ctx.strokeStyle = varToRgb('--highlight-color');
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                if (window.CircuitBuilder.hoveredNode.nodeIndex === 0) {
+                    ctx.arc(x, compCenterY, NODE_RADIUS + 3, 0, Math.PI * 2);
+                } else if (component.type !== 'ground') { // Only highlight right node if not ground
+                    ctx.arc(x + COMPONENT_WIDTH, compCenterY, NODE_RADIUS + 3, 0, Math.PI * 2);
+                }
+                ctx.stroke();
+            }
+
+            // Highlight if selected for editing or deletion (purple)
+            if (window.CircuitBuilder.selectedComponent && window.CircuitBuilder.selectedComponent.id === component.id) {
+                ctx.strokeStyle = 'purple';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - 2, y - 2, COMPONENT_WIDTH + 4, COMPONENT_HEIGHT + 4);
+            }
+            // Highlight if hovered (cyan)
+            else if (window.CircuitBuilder.hoveredComponent && window.CircuitBuilder.hoveredComponent.id === component.id) {
+                ctx.strokeStyle = varToRgb('--highlight-color');
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - 2, y - 2, COMPONENT_WIDTH + 4, COMPONENT_HEIGHT + 4);
+            }
+        }
+
+        /**
+         * Draws a multi-segment wire.
+         * @param {object} wire - The wire object {id, points: [{x, y}, ...], startNodeId, endNodeId, currentFlow}.
+         */
+        function drawWire(wire) {
+            ctx.strokeStyle = varToRgb('--wire-color');
+            ctx.lineWidth = 5; /* Reverted wire thickness to original for better visibility */
+            ctx.beginPath();
+            ctx.moveTo(wire.points[0].x, wire.points[0].y);
+            for (let i = 1; i < wire.points.length; i++) {
+                ctx.lineTo(wire.points[i].x, wire.points[i].y);
+            }
+            ctx.stroke();
+
+            // Highlight selected wire (purple)
+            if (window.CircuitBuilder.selectedWire && window.CircuitBuilder.selectedWire.id === wire.id) {
+                ctx.strokeStyle = 'purple';
+                ctx.lineWidth = 7; /* Reverted highlight thickness too */
+                ctx.beginPath();
+                ctx.moveTo(wire.points[0].x, wire.points[0].y);
+                for (let i = 1; i < wire.points.length; i++) {
+                    ctx.lineTo(wire.points[i].x, wire.points[i].y);
+                }
+                ctx.stroke();
+            }
+            // Highlight hovered wire (cyan)
+            else if (window.CircuitBuilder.hoveredWire && window.CircuitBuilder.hoveredWire.id === wire.id) {
+                ctx.strokeStyle = varToRgb('--highlight-color');
+                ctx.lineWidth = 7;
+                ctx.beginPath();
+                ctx.moveTo(wire.points[0].x, wire.points[0].y);
+                for (let i = 1; i < wire.points.length; i++) {
+                    ctx.lineTo(wire.points[i].x, wire.points[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        /**
+         * Main drawing function. Clears canvas and redraws all components and nodes.
+         */
+        function drawCircuit() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid(); // Draw grid first
+            window.CircuitBuilder.wires.forEach(drawWire);
+            window.CircuitBuilder.components.forEach(drawComponent);
+
+            // Draw temporary wire if connecting
+            if (window.CircuitBuilder.currentTool === 'wire-tool' && window.CircuitBuilder.isConnecting && window.CircuitBuilder.currentWirePoints.length > 0) {
+                ctx.strokeStyle = varToRgb('--wire-color'); /* Use standard wire color */
+                ctx.lineWidth = 5; /* Temporary wire thickness */
+                ctx.beginPath();
+                ctx.moveTo(window.CircuitBuilder.currentWirePoints[0].x, window.CircuitBuilder.currentWirePoints[0].y);
+                for (let i = 1; i < window.CircuitBuilder.currentWirePoints.length; i++) {
+                    ctx.lineTo(window.CircuitBuilder.currentWirePoints[i].x, window.CircuitBuilder.currentWirePoints[i].y);
+                }
+                ctx.lineTo(window.CircuitBuilder.currentMouseX, window.CircuitBuilder.currentMouseY); // Use global mouse coords
+                ctx.stroke();
+            }
+
+            if (window.CircuitBuilder.isSimulating) {
+                moveElectrons();
+            }
+            // updateInfoPanel() is now called explicitly when needed, not on every redraw
+        }
+
+        /**
+         * Converts a CSS variable string to an RGB array or RGBA string.
+         * @param {string} varName - The name of the CSS variable (e.g., '--primary-color').
+         * @param {number} [alpha=1] - Optional alpha value for RGBA.
+         * @returns {number[]|string} - An array [r, g, b] or "rgba(r,g,b,a)".
+         */
+        function varToRgb(varName) {
+            const style = getComputedStyle(document.documentElement);
+            const color = style.getPropertyValue(varName).trim();
+            if (color.startsWith('#')) {
+                const r = parseInt(color.substring(1, 3), 16);
+                const g = parseInt(color.substring(3, 5), 16);
+                const b = parseInt(color.substring(5, 7), 16);
+                return [r, g, b];
+            }
+            const match = color.match(/\d+/g);
+            if (match && match.length >= 3) {
+                return match.slice(0, 3).map(Number);
+            }
+            return [0, 0, 0]; // Default to black
+        }
+
+        function varToRgba(varName, alpha = 1) {
+            const rgb = varToRgb(varName);
+            return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
+        }
+
+
+        // --- Interaction Logic ---
+
+        // Palette tool selection
+        palette.addEventListener('click', (e) => {
+            // Ensure e.target is an Element before calling .closest()
+            if (!(e.target instanceof Element)) {
+                return; // Exit if not an element
+            }
+            const clickedItem = e.target.closest('.component-item');
+            if (clickedItem) {
+                // Remove active class from all tools
+                document.querySelectorAll('.component-item').forEach(item => {
+                    item.classList.remove('active-tool');
+                });
+
+                const toolType = clickedItem.dataset.type;
+                if (['select', 'wire-tool', 'value-tool', 'help', 'ground'].includes(toolType)) { // Added 'ground' to direct click tools
+                    window.CircuitBuilder.currentTool = toolType;
+                    clickedItem.classList.add('active-tool');
+                } else {
+                    // It's a draggable component, activate 'select' tool after drag
+                    window.CircuitBuilder.currentTool = 'select'; // Default to select after dragging a component
+                    document.querySelector('[data-type="select"]').classList.add('active-tool');
+                }
+
+                // Hide editor/context menu when changing tools
+                valueEditor.style.display = 'none';
+                contextMenu.style.display = 'none';
+                window.CircuitBuilder.editingComponent = null;
+                window.CircuitBuilder.selectedComponent = null;
+                window.CircuitBuilder.selectedWire = null;
+                window.CircuitBuilder.isConnecting = false; // Stop wire drawing if tool changes
+                window.CircuitBuilder.currentWirePoints = [];
+                window.CircuitBuilder.connectionStartComponent = null;
+                window.CircuitBuilder.hoveredComponent = null; // Clear hover state
+                window.CircuitBuilder.hoveredWire = null;      // Clear hover state
+
+                // Handle help tool click
+                if (toolType === 'help') {
+                    toggleHelpModal(true);
+                } else {
+                    toggleHelpModal(false); // Hide help if another tool is selected
+                }
+
+                drawCircuit();
+                updateInfoPanel(); // Update panel after tool change
+            }
+        });
+
+        // Handle component dragging from palette
+        palette.addEventListener('dragstart', (e) => {
+            // Ensure e.target is an Element before calling .closest()
+            if (!(e.target instanceof Element)) {
+                e.preventDefault(); // Prevent default drag behavior if not an element
+                return;
+            }
+            const clickedItem = e.target.closest('.component-item');
+            if (clickedItem && ['battery', 'resistor', 'bulb', 'ammeter', 'voltmeter', 'switch', 'capacitor'].includes(clickedItem.dataset.type)) {
+                window.CircuitBuilder.draggedComponentType = clickedItem.dataset.type;
+                window.CircuitBuilder.draggedComponentValue = clickedItem.dataset.value ? parseFloat(clickedItem.dataset.value) : clickedItem.dataset.value;
+                e.dataTransfer.setData('text/plain', window.CircuitBuilder.draggedComponentType);
+                window.CircuitBuilder.currentTool = 'select'; // Switch to select tool when dragging a component
+                document.querySelectorAll('.component-item').forEach(item => item.classList.remove('active-tool'));
+                document.querySelector('[data-type="select"]').classList.add('active-tool');
+            } else {
+                e.preventDefault(); // Prevent dragging tool icons
+            }
+        });
+
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Allow drop
+        });
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            let x = e.clientX - rect.left - COMPONENT_WIDTH / 2;
+            let y = e.clientY - rect.top - COMPONENT_HEIGHT / 2;
+
+            // Snap to grid
+            x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+            y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+
+
+            if (window.CircuitBuilder.draggedComponentType) {
+                window.CircuitBuilder.components.push({
+                    id: generateId('component'), // Use new component ID generator
+                    type: window.CircuitBuilder.draggedComponentType,
+                    x: x,
+                    y: y,
+                    value: window.CircuitBuilder.draggedComponentValue,
+                    isDragging: false,
+                    nodeIds: [], // Will be assigned during node identification
+                    currentFlow: 0,
+                    voltageDrop: 0,
+                    status: window.CircuitBuilder.draggedComponentType === 'switch' ? 'open' : null
+                });
+                window.CircuitBuilder.draggedComponentType = null;
+                window.CircuitBuilder.draggedComponentValue = null;
+                drawCircuit();
+                updateInfoPanel(); // Update panel after adding component
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            // Hide context menu and value editor on any new click
+            contextMenu.style.display = 'none';
+            valueEditor.style.display = 'none';
+            window.CircuitBuilder.editingComponent = null;
+            window.CircuitBuilder.selectedComponent = null;
+            window.CircuitBuilder.selectedWire = null;
+            // Do not clear hoveredComponent/Wire here, as mousedown might be the start of a drag
+            // drawCircuit() will be called at the end of this handler or by mousemove/mouseup
+            drawCircuit();
+
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Handle right-click for context menu (component or wire)
+            if (e.button === 2) {
+                e.preventDefault(); // Prevent default browser context menu
+
+                // Check for wire first
+                let clickedWire = getClickedWire(mouseX, mouseY);
+                if (clickedWire) {
+                    window.CircuitBuilder.selectedWire = clickedWire;
+                    contextMenu.style.left = `${e.clientX}px`;
+                    contextMenu.style.top = `${e.clientY}px`;
+                    contextMenu.style.display = 'flex';
+                    deleteComponentMenuItem.textContent = 'Delete Wire';
+                    editValueMenuItem.style.display = 'none';
+                    drawCircuit();
+                    return;
+                }
+
+                // Check for component if no wire was clicked
+                let clickedComp = getClickedComponent(mouseX, mouseY);
+                if (clickedComp) {
+                    window.CircuitBuilder.selectedComponent = clickedComp;
+                    contextMenu.style.left = `${e.clientX}px`;
+                    contextMenu.style.top = `${e.clientY}px`;
+                    contextMenu.style.display = 'flex';
+                    deleteComponentMenuItem.textContent = 'Delete Component';
+                    if (['battery', 'resistor', 'bulb', 'capacitor'].includes(clickedComp.type)) {
+                        editValueMenuItem.style.display = 'block';
+                    } else {
+                        editValueMenuItem.style.display = 'none';
+                    }
+                    drawCircuit();
+                    return;
+                }
+            }
+
+            // Handle left-click based on current tool
+            if (e.button === 0) { // Left-click
+                if (window.CircuitBuilder.currentTool === 'select') {
+                    // Check for component drag or switch toggle
+                    const clickedComp = getClickedComponent(mouseX, mouseY); // Use the helper function
+                    if (clickedComp) {
+                        window.CircuitBuilder.draggedComponent = clickedComp;
+                        window.CircuitBuilder.draggedComponent.isDragging = true;
+                        window.CircuitBuilder.draggedComponent.offsetX = mouseX - clickedComp.x;
+                        window.CircuitBuilder.draggedComponent.offsetY = mouseY - clickedComp.y;
+                        window.CircuitBuilder.selectedComponent = clickedComp; // Select for highlight
+
+                        if (clickedComp.type === 'switch') {
+                            clickedComp.status = (clickedComp.status === 'open') ? 'closed' : 'open';
+                            drawCircuit();
+                            updateInfoPanel(); // Update panel after switch toggle
+                            if (window.CircuitBuilder.isSimulating) {
+                                stopSimulation();
+                                simulateCircuit();
+                            }
+                        }
+                        return; // Component clicked, stop
+                    }
+                } else if (window.CircuitBuilder.currentTool === 'wire-tool') {
+                    // Start or continue drawing a wire
+                    const clickedNode = getClickedComponentNode(mouseX, mouseY);
+
+                    if (!window.CircuitBuilder.isConnecting) {
+                        // Start a new wire
+                        if (clickedNode) {
+                            window.CircuitBuilder.isConnecting = true;
+                            window.CircuitBuilder.connectionStartComponent = clickedNode;
+                            window.CircuitBuilder.currentWirePoints = [{ x: clickedNode.x, y: clickedNode.y }];
+                        }
+                    } else {
+                        // Continue or end current wire
+                        const lastPoint = window.CircuitBuilder.currentWirePoints[window.CircuitBuilder.currentWirePoints.length - 1];
+                        let newX = Math.round(mouseX / GRID_SIZE) * GRID_SIZE;
+                        let newY = Math.round(mouseY / GRID_SIZE) * GRID_SIZE;
+
+                        // Prevent adding duplicate points if mouse hasn't moved
+                        if (newX === lastPoint.x && newY === lastPoint.y) {
+                            return;
+                        }
+
+                        if (clickedNode) {
+                            // End connection to another component node
+                            if (clickedNode.componentId === window.CircuitBuilder.connectionStartComponent.componentId &&
+                                clickedNode.nodeIndex === window.CircuitBuilder.connectionStartComponent.nodeIndex) {
+                                // Cannot connect to self (same component, same node)
+                                return;
+                            }
+
+                            // Add the final point to the wire
+                            window.CircuitBuilder.currentWirePoints.push({ x: clickedNode.x, y: clickedNode.y });
+
+                            // Create the new wire object
+                            const newWire = {
+                                id: generateId('component'), // Wires also get a component ID for consistency
+                                points: [...window.CircuitBuilder.currentWirePoints],
+                                startNodeId: null, // Will be assigned during node identification
+                                endNodeId: null,   // Will be assigned during node identification
+                                startComponent: window.CircuitBuilder.connectionStartComponent, // Store ref for node identification
+                                endComponent: clickedNode, // Store ref for node identification
+                                currentFlow: 0, // For electron animation
+                                direction: 1 // 1 for start to end, -1 for end to start
+                            };
+                            window.CircuitBuilder.wires.push(newWire);
+
+                            // Reset for next wire
+                            window.CircuitBuilder.isConnecting = false;
+                            window.CircuitBuilder.currentWirePoints = [];
+                            window.CircuitBuilder.connectionStartComponent = null;
+
+                            drawCircuit();
+                            updateInfoPanel(); // Update panel after wire connection
+                            if (window.CircuitBuilder.isSimulating) {
+                                stopSimulation();
+                                simulateCircuit();
+                            }
+                        } else {
+                            // Add intermediate point
+                            window.CircuitBuilder.currentWirePoints.push({ x: newX, y: newY });
+                            drawCircuit();
+                        }
+                    }
+                } else if (window.CircuitBuilder.currentTool === 'value-tool') {
+                    // Open value editor
+                    const clickedComp = getClickedComponent(mouseX, mouseY); // Use the helper function
+                    if (clickedComp) {
+                        if (['battery', 'resistor', 'bulb', 'capacitor'].includes(clickedComp.type)) {
+                            window.CircuitBuilder.editingComponent = clickedComp;
+                            editValueInput.value = clickedComp.value;
+                            valueEditor.style.left = `${clickedComp.x + COMPONENT_WIDTH + 5}px`;
+                            valueEditor.style.top = `${clickedComp.y + COMPONENT_HEIGHT / 2 - valueEditor.offsetHeight / 2}px`;
+                            valueEditor.style.display = 'block';
+                            editValueInput.focus();
+                            window.CircuitBuilder.selectedComponent = clickedComp; // Highlight for editing
+                            drawCircuit();
+                        }
+                        return;
+                    }
+                } else if (window.CircuitBuilder.currentTool === 'ground') {
+                    const compX = Math.round(mouseX / GRID_SIZE) * GRID_SIZE;
+                    const compY = Math.round(mouseY / GRID_SIZE) * GRID_SIZE;
+
+                    // A ground component only has one node (left side)
+                    const nodeX = compX;
+                    const nodeY = compY + COMPONENT_HEIGHT / 2;
+
+                    const nodeId = findOrCreateNodeAtCoords(nodeX, nodeY);
+
+                    // Check if a ground component already exists and is connected to node 0
+                    const existingGround = window.CircuitBuilder.components.find(c => c.type === 'ground');
+                    if (existingGround) {
+                        showMessageBox("Ground Exists", "A ground connection already exists. You can only have one ground reference (Node 0).");
+                        return;
+                    }
+
+                    window.CircuitBuilder.components.push({
+                        id: generateId('component'), // Use new component ID generator
+                        type: 'ground',
+                        x: compX,
+                        y: compY,
+                        nodeIds: [nodeId, null], // Ground only has one effective connection
+                        isDragging: false,
+                        currentFlow: 0,
+                        voltageDrop: 0,
+                        status: null
+                    });
+
+                    // Explicitly set the ground node ID to 0
+                    const groundNode = window.CircuitBuilder.nodes.find(n => n.id === nodeId);
+                    if (groundNode) {
+                        groundNode.id = 0;
+                        groundNode.isGround = true;
+                        groundNode.voltage = 0;
+                    }
+
+                    // Re-sort nodes by ID to ensure 0 is first
+                    window.CircuitBuilder.nodes.sort((a, b) => a.id - b.id);
+
+                    // Update all components' nodeIds to reflect the new ground node ID
+                    window.CircuitBuilder.components.forEach(comp => {
+                        if (comp.nodeIds[0] === nodeId) comp.nodeIds[0] = 0;
+                        if (comp.nodeIds[1] === nodeId) comp.nodeIds[1] = 0;
+                    });
+                    window.CircuitBuilder.wires.forEach(wire => {
+                        if (wire.startNodeId === nodeId) wire.startNodeId = 0;
+                        if (wire.endNodeId === nodeId) wire.endNodeId = 0;
+                    });
+
+                    // Reset nextNodeId to account for potential re-indexing
+                    window.CircuitBuilder.nextNodeId = Math.max(...window.CircuitBuilder.nodes.map(n => n.id)) + 1;
+
+
+                    drawCircuit();
+                    updateInfoPanel(); // Update panel after adding ground
+                }
+            }
+        });
+
+        // Double click to finish wire segment without connecting to a component
+        canvas.addEventListener('dblclick', (e) => {
+            if (window.CircuitBuilder.currentTool === 'wire-tool' && window.CircuitBuilder.isConnecting) {
+                // Finish the current wire segment as a stub
+                const rect = canvas.getBoundingClientRect();
+                let newX = Math.round((e.clientX - rect.left) / GRID_SIZE) * GRID_SIZE;
+                let newY = Math.round((e.clientY - rect.top) / GRID_SIZE) * GRID_SIZE;
+
+                window.CircuitBuilder.currentWirePoints.push({ x: newX, y: newY });
+
+                // Create a wire that is not connected at its end (stub)
+                const newWire = {
+                    id: generateId('component'), // Wires also get a component ID for consistency
+                    points: [...window.CircuitBuilder.currentWirePoints],
+                    startNodeId: null,
+                    endNodeId: null,
+                    startComponent: window.CircuitBuilder.connectionStartComponent,
+                    endComponent: null, // No end component
+                    currentFlow: 0,
+                    direction: 1
+                };
+                window.CircuitBuilder.wires.push(newWire);
+
+                // Reset for next wire
+                window.CircuitBuilder.isConnecting = false;
+                window.CircuitBuilder.currentWirePoints = [];
+                window.CircuitBuilder.connectionStartComponent = null;
+
+                drawCircuit();
+                updateInfoPanel(); // Update panel after wire stub creation
+                if (window.CircuitBuilder.isSimulating) {
+                    stopSimulation();
+                    simulateCircuit();
+                }
+            }
+        });
+
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            window.CircuitBuilder.currentMouseX = e.clientX - rect.left;
+            window.CircuitBuilder.currentMouseY = e.clientY - rect.top;
+
+            let componentHovered = null;
+            let wireHovered = null;
+            let nodeFound = false;
+
+            // Check for hovered component
+            componentHovered = getClickedComponent(window.CircuitBuilder.currentMouseX, window.CircuitBuilder.currentMouseY);
+
+            // Check for hovered wire
+            if (!componentHovered) { // Only check wires if no component is hovered
+                wireHovered = getClickedWire(window.CircuitBuilder.currentMouseX, window.CircuitBuilder.currentMouseY);
+            }
+
+            // Update hovered states
+            if (window.CircuitBuilder.hoveredComponent !== componentHovered) {
+                window.CircuitBuilder.hoveredComponent = componentHovered;
+                drawCircuit(); // Redraw to apply/remove hover highlight
+            }
+            if (window.CircuitBuilder.hoveredWire !== wireHovered) {
+                window.CircuitBuilder.hoveredWire = wireHovered;
+                drawCircuit(); // Redraw to apply/remove hover highlight
+            }
+
+            // Update hoveredNode for visual feedback
+            if (window.CircuitBuilder.currentTool === 'wire-tool' || window.CircuitBuilder.currentTool === 'select') {
+                const hovered = getClickedComponentNode(window.CircuitBuilder.currentMouseX, window.CircuitBuilder.currentMouseY);
+                if (hovered) {
+                    window.CircuitBuilder.hoveredNode = { componentId: hovered.componentId, nodeIndex: hovered.nodeIndex };
+                    canvas.style.cursor = 'crosshair';
+                    nodeFound = true;
+                }
+            }
+
+            if (!nodeFound && !window.CircuitBuilder.draggedComponent && !window.CircuitBuilder.isConnecting) {
+                canvas.style.cursor = 'default';
+                window.CircuitBuilder.hoveredNode = null;
+            } else if (window.CircuitBuilder.currentTool === 'value-tool') {
+                canvas.style.cursor = 'pointer';
+            }
+
+            if (window.CircuitBuilder.draggedComponent && window.CircuitBuilder.draggedComponent.isDragging) {
+                let newX = window.CircuitBuilder.currentMouseX - window.CircuitBuilder.draggedComponent.offsetX;
+                let newY = window.CircuitBuilder.currentMouseY - window.CircuitBuilder.draggedComponent.offsetY;
+
+                // Snap to grid
+                newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+                newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+
+                window.CircuitBuilder.draggedComponent.x = newX;
+                window.CircuitBuilder.draggedComponent.y = newY;
+
+                // Update wire endpoints connected to this component
+                window.CircuitBuilder.wires.forEach(wire => {
+                    // Find which end of the wire is connected to the dragged component
+                    if (wire.startComponent && wire.startComponent.component.id === window.CircuitBuilder.draggedComponent.id) {
+                         const updatedTerminal = getComponentTerminalPosition(window.CircuitBuilder.draggedComponent, wire.startComponent.nodeIndex);
+                         wire.points[0] = { x: updatedTerminal.x, y: updatedTerminal.y };
+                    }
+                    if (wire.endComponent && wire.endComponent.component.id === window.CircuitBuilder.draggedComponent.id) {
+                        const updatedTerminal = getComponentTerminalPosition(window.CircuitBuilder.draggedComponent, wire.endComponent.nodeIndex);
+                        wire.points[wire.points.length - 1] = { x: updatedTerminal.x, y: updatedTerminal.y };
+                    }
+                });
+
+                drawCircuit();
+            } else if (window.CircuitBuilder.currentTool === 'wire-tool' && window.CircuitBuilder.currentWirePoints.length > 0) {
+                drawCircuit(); // Redraw to show temporary wire
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (window.CircuitBuilder.draggedComponent && window.CircuitBuilder.draggedComponent.isDragging) {
+                window.CircuitBuilder.draggedComponent.isDragging = false;
+                drawCircuit();
+                updateInfoPanel(); // Update panel after dragging component
+                if (window.CircuitBuilder.isSimulating) {
+                    stopSimulation();
+                    simulateCircuit();
+                }
+            }
+            // If wire tool is active and not connecting to a node, mouseup doesn't do anything special.
+            // Double-click is used to finish a wire segment.
+        });
+
+        /**
+         * Helper to get component by mouse coordinates.
+         * Adds a small tolerance to the bounding box for easier clicking.
+         * @param {number} mouseX - Mouse X coordinate relative to canvas.
+         * @param {number} mouseY - Mouse Y coordinate relative to canvas.
+         * @returns {object|null} The clicked component object or null if none.
+         */
+        function getClickedComponent(mouseX, mouseY) {
+            const CLICK_TOLERANCE = 5; // Pixels of extra padding around component for click detection
+            for (const comp of window.CircuitBuilder.components) {
+                // Check if mouse is within the component's padded bounding box
+                if (mouseX >= comp.x - CLICK_TOLERANCE && mouseX <= comp.x + COMPONENT_WIDTH + CLICK_TOLERANCE &&
+                    mouseY >= comp.y - CLICK_TOLERANCE && mouseY <= comp.y + COMPONENT_HEIGHT + CLICK_TOLERANCE) {
+                    return comp;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Helper to get component node by mouse coordinates.
+         * Increases the clickable radius for nodes to make them easier to select.
+         * @param {number} mouseX - Mouse X coordinate relative to canvas.
+         * @param {number} mouseY - Mouse Y coordinate relative to canvas.
+         * @returns {object|null} The clicked node object or null if none.
+         */
+        function getClickedComponentNode(mouseX, mouseY) {
+            const NODE_CLICK_RADIUS = NODE_RADIUS * 2; // Increase clickable area for nodes
+            for (const comp of window.CircuitBuilder.components) {
+                const compCenterY = comp.y + COMPONENT_HEIGHT / 2;
+                const node1X = comp.x;
+                const node1Y = compCenterY;
+                const node2X = comp.x + COMPONENT_WIDTH;
+                const node2Y = compCenterY;
+
+                // Check left node
+                if (Math.sqrt(Math.pow(mouseX - node1X, 2) + Math.pow(mouseY - node1Y, 2)) < NODE_CLICK_RADIUS) {
+                    return { component: comp, nodeIndex: 0, x: node1X, y: node1Y, componentId: comp.id };
+                }
+                // Check right node (only if not a ground component, as ground has only one effective terminal)
+                if (comp.type !== 'ground' && Math.sqrt(Math.pow(mouseX - node2X, 2) + Math.pow(mouseY - node2Y, 2)) < NODE_CLICK_RADIUS) {
+                    return { component: comp, nodeIndex: 1, x: node2X, y: node2Y, componentId: comp.id };
+                }
+            }
+            return null;
+        }
+
+        // Helper to get component terminal position
+        function getComponentTerminalPosition(component, nodeIndex) {
+            const compCenterY = component.y + COMPONENT_HEIGHT / 2;
+            if (nodeIndex === 0) {
+                return { x: component.x, y: compCenterY };
+            } else if (nodeIndex === 1 && component.type !== 'ground') { // Ground only has one terminal
+                return { x: component.x + COMPONENT_WIDTH, y: compCenterY };
+            }
+            return null; // Should not happen for valid components/nodes
+        }
+
+        // Helper to get clicked wire by mouse coordinates
+        function getClickedWire(mouseX, mouseY) {
+            for (const wire of window.CircuitBuilder.wires) {
+                for (let i = 0; i < wire.points.length - 1; i++) {
+                    const p1 = wire.points[i];
+                    const p2 = wire.points[i + 1];
+                    const dist = pointToLineDistance(mouseX, mouseY, p1.x, p1.y, p2.x, p2.y);
+                    if (dist < 5) { // 5 pixels tolerance
+                        return wire;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Hide context menu on mouseout from canvas
+        canvas.addEventListener('mouseout', () => {
+            // Only reset cursor if not dragging or connecting
+            if (!window.CircuitBuilder.draggedComponent && !window.CircuitBuilder.isConnecting) {
+                canvas.style.cursor = 'default';
+            }
+            window.CircuitBuilder.hoveredNode = null;
+            window.CircuitBuilder.hoveredComponent = null; // Clear component hover state
+            window.CircuitBuilder.hoveredWire = null;      // Clear wire hover state
+            drawCircuit(); // Redraw to remove hover highlight
+        });
+
+
+        // Context menu handling
+        // (The showContextMenu function is no longer directly used, as the right-click logic is in mousedown)
+
+        // Hide context menu on any click outside
+        document.addEventListener('click', (e) => {
+            if (!contextMenu.contains(e.target) && !canvas.contains(e.target)) {
+                contextMenu.style.display = 'none';
+                window.CircuitBuilder.selectedComponent = null;
+                window.CircuitBuilder.selectedWire = null;
+                drawCircuit();
+            }
+        });
+
+        // Context menu item actions
+        deleteComponentMenuItem.addEventListener('click', () => {
+            if (window.CircuitBuilder.selectedComponent) {
+                deleteComponent(window.CircuitBuilder.selectedComponent.id);
+            } else if (window.CircuitBuilder.selectedWire) {
+                deleteWire(window.CircuitBuilder.selectedWire.id);
+            }
+            contextMenu.style.display = 'none';
+            window.CircuitBuilder.selectedComponent = null;
+            window.CircuitBuilder.selectedWire = null;
+            drawCircuit();
+            updateInfoPanel(); // Update panel after deletion
+            if (window.CircuitBuilder.isSimulating) {
+                stopSimulation();
+                simulateCircuit();
+            }
+        });
+
+        editValueMenuItem.addEventListener('click', () => {
+            if (window.CircuitBuilder.selectedComponent && ['battery', 'resistor', 'bulb', 'capacitor'].includes(window.CircuitBuilder.selectedComponent.type)) {
+                window.CircuitBuilder.editingComponent = window.CircuitBuilder.selectedComponent;
+                editValueInput.value = window.CircuitBuilder.selectedComponent.value;
+                valueEditor.style.left = `${window.CircuitBuilder.selectedComponent.x + COMPONENT_WIDTH + 5}px`;
+                valueEditor.style.top = `${window.CircuitBuilder.selectedComponent.y + COMPONENT_HEIGHT / 2 - valueEditor.offsetHeight / 2}px`;
+                valueEditor.style.display = 'block';
+                editValueInput.focus();
+                contextMenu.style.display = 'none';
+                drawCircuit();
+            }
+        });
+
+
+        // Event listener for value editor input
+        editValueInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && window.CircuitBuilder.editingComponent) {
+                const newValue = parseFloat(editValueInput.value);
+                if (!isNaN(newValue) && newValue > 0) { // Ensure positive value
+                    window.CircuitBuilder.editingComponent.value = newValue;
+                } else {
+                    showMessageBox("Invalid Value", "Component value must be a positive number.");
+                }
+                valueEditor.style.display = 'none';
+                window.CircuitBuilder.editingComponent = null;
+                drawCircuit();
+                updateInfoPanel(); // Update panel after value change
+                if (window.CircuitBuilder.isSimulating) {
+                    stopSimulation(); // Recalculate if values change during simulation
+                    simulateCircuit();
+                }
+            }
+        });
+
+        // Hide editor when clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.CircuitBuilder.editingComponent && !valueEditor.contains(e.target) && !canvas.contains(e.target)) {
+                valueEditor.style.display = 'none';
+                window.CircuitBuilder.editingComponent = null;
+                drawCircuit();
+            }
+        });
+
+        /**
+         * Deletes a component and all associated wires.
+         * @param {number} componentId - The ID of the component to delete.
+         */
+        function deleteComponent(componentId) {
+            window.CircuitBuilder.components = window.CircuitBuilder.components.filter(comp => comp.id !== componentId);
+            window.CircuitBuilder.wires = window.CircuitBuilder.wires.filter(wire =>
+                (wire.startComponent && wire.startComponent.component.id !== componentId) &&
+                (wire.endComponent ? wire.endComponent.component.id !== componentId : true)
+            );
+
+            // Re-identify nodes and redraw
+            drawCircuit();
+            // Re-simulate if running
+            if (window.CircuitBuilder.isSimulating) {
+                stopSimulation();
+                simulateCircuit();
+            } else {
+                updateInfoPanel(); // Update panel if not simulating
+            }
+        }
+
+        /**
+         * Deletes a wire.
+         * @param {number} wireId - The ID of the wire to delete.
+         */
+        function deleteWire(wireId) {
+            window.CircuitBuilder.wires = window.CircuitBuilder.wires.filter(w => w.id !== wireId);
+            drawCircuit();
+            if (window.CircuitBuilder.isSimulating) {
+                stopSimulation();
+                simulateCircuit();
+            } else {
+                updateInfoPanel(); // Update panel if not simulating
+            }
+        }
+
+        /**
+         * Calculates the shortest distance from a point to a line segment.
+         * Used for detecting clicks on wires.
+         * @param {number} px - Point X.
+         * @param {number} py - Point Y.
+         * @param {number} x1 - Line segment start X.
+         * @param {number} y1 - Line segment start Y.
+         * @param {number} x2 - Line segment end X.
+         * @param {number} y2 - Line segment end Y.
+         * @returns {number} The distance.
+         */
+        function pointToLineDistance(px, py, x1, y1, x2, y2) {
+            const L2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+            if (L2 === 0) return Math.sqrt(Math.pow(px - x1, 2) + Math.pow(py - y1, 2)); // Point is a line
+
+            const t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / L2;
+            const t_clamped = Math.max(0, Math.min(1, t)); // Clamp t to 0-1 for segment
+
+            const closestX = x1 + t_clamped * (x2 - x1);
+            const closestY = y1 + t_clamped * (y2 - y1);
+
+            return Math.sqrt(Math.pow(px - closestX, 2) + Math.pow(py - closestY, 2));
+        }
+
+
+        // Union-Find (Disjoint Set) data structure for robust node identification
+        class UnionFind {
+            constructor() {
+                this.parent = new Map(); // Maps temporary nodeId to its parent temporary nodeId
+                this.rank = new Map();   // Maps temporary nodeId to rank (for union by rank optimization)
+            }
+
+            // Creates a new set with the given temporary nodeId as its representative
+            makeSet(nodeId) {
+                if (!this.parent.has(nodeId)) {
+                    this.parent.set(nodeId, nodeId);
+                    this.rank.set(nodeId, 0);
+                }
+            }
+
+            // Finds the representative (root) of the set containing temporary nodeId
+            find(nodeId) {
+                if (!this.parent.has(nodeId)) {
+                    // This case should ideally not happen if makeSet is called for all relevant nodes
+                    // But as a safeguard, create the set if it's not exist.
+                    this.makeSet(nodeId);
+                }
+                if (this.parent.get(nodeId) === nodeId) {
+                    return nodeId;
+                }
+                // Path compression
+                const root = this.find(this.parent.get(nodeId));
+                this.parent.set(nodeId, root);
+                return root;
+            }
+
+            // Merges the sets containing temporary nodeId1 and temporary nodeId2
+            union(nodeId1, nodeId2) {
+                this.makeSet(nodeId1); // Ensure both nodes exist in the UF structure
+                this.makeSet(nodeId2);
+
+                const root1 = this.find(nodeId1);
+                const root2 = this.find(nodeId2);
+
+                if (root1 !== root2) {
+                    // Union by rank
+                    if (this.rank.get(root1) < this.rank.get(root2)) {
+                        this.parent.set(root1, root2);
+                    } else if (this.rank.get(root1) > this.rank.get(root2)) {
+                        this.parent.set(root2, root1);
+                        this.rank.set(root1, this.rank.get(root1) + 1);
+                    } else {
+                        this.parent.set(root2, root1);
+                        this.rank.set(root1, this.rank.get(root1) + 1);
+                    }
+                    return true; // Nodes were merged
+                }
+                return false; // Nodes were already in the same set
+            }
+        }
+
+        /**
+         * Finds or creates a node at the given coordinates, ensuring it's added to the global nodes array.
+         * This version is used during component placement.
+         * @param {number} x - X coordinate.
+         * @param {number} y - Y coordinate.
+         * @returns {number} The ID of the node.
+         */
+        function findOrCreateNodeAtCoords(x, y) {
+            // Snap to grid for easier node alignment
+            const gridSize = GRID_SIZE;
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+
+            // Check if a node already exists near these coordinates in the global nodes array
+            for (let i = 0; i < window.CircuitBuilder.nodes.length; i++) {
+                if (window.CircuitBuilder.nodes[i].x === x && window.CircuitBuilder.nodes[i].y === y) {
+                    return window.CircuitBuilder.nodes[i].id;
+                }
+            }
+
+            // If not found, create a new node with a new ID
+            const newNodeId = generateId('node'); // Use new node ID generator
+            window.CircuitBuilder.nodes.push({ id: newNodeId, x, y, voltage: null, isGround: false });
+            return newNodeId;
+        }
+
+
+        /**
+         * Identifies all unique electrical nodes in the circuit using Union-Find.
+         * Assigns node IDs to component terminals and wires.
+         */
+        function identifyNodes() {
+            const uf = new UnionFind();
+            const terminalToTempNodeId = new Map(); // Maps {componentId, nodeIndex} to a temporary unique ID for UF
+            const tempNodeIdToCoords = new Map(); // Maps temporary unique ID to its (x,y) coordinates
+
+            let tempNodeIdCounter = 0;
+
+            // Step 1: Assign a temporary unique ID to each component terminal
+            // and store its coordinates.
+            window.CircuitBuilder.components.forEach(comp => {
+                comp.nodeIds = []; // Reset node IDs for this component
+
+                // Terminal 0
+                const term0Key = `${comp.id}-0`;
+                const tempId0 = tempNodeIdCounter++;
+                terminalToTempNodeId.set(term0Key, tempId0);
+                uf.makeSet(tempId0);
+                const pos0 = getComponentTerminalPosition(comp, 0);
+                if (pos0) tempNodeIdToCoords.set(tempId0, pos0);
+
+                // Terminal 1 (if not ground)
+                if (comp.type !== 'ground') {
+                    const term1Key = `${comp.id}-1`;
+                    const tempId1 = tempNodeIdCounter++;
+                    terminalToTempNodeId.set(term1Key, tempId1);
+                    uf.makeSet(tempId1);
+                    const pos1 = getComponentTerminalPosition(comp, 1);
+                    if (pos1) tempNodeIdToCoords.set(tempId1, pos1);
+                }
+            });
+
+            // Step 2: Union sets based on wires, closed switches, and ammeters
+            window.CircuitBuilder.wires.forEach(wire => {
+                if (!wire.startComponent || !wire.points.length) return;
+
+                const tempStartNodeId = terminalToTempNodeId.get(`${wire.startComponent.component.id}-${wire.startComponent.nodeIndex}`);
+
+                let tempEndNodeId = null;
+                if (wire.endComponent) {
+                    tempEndNodeId = terminalToTempNodeId.get(`${wire.endComponent.component.id}-${wire.endComponent.nodeIndex}`);
+                } else {
+                    // For stub wires, their end doesn't connect to a component, so no union from that end.
+                    return;
+                }
+
+                if (tempStartNodeId !== undefined && tempEndNodeId !== undefined) {
+                    uf.union(tempStartNodeId, tempEndNodeId);
+                }
+            });
+
+            window.CircuitBuilder.components.forEach(comp => {
+                if ((comp.type === 'switch' && comp.status === 'closed') || comp.type === 'ammeter') {
+                    const tempNodeId0 = terminalToTempNodeId.get(`${comp.id}-0`);
+                    const tempNodeId1 = terminalToTempNodeId.get(`${comp.id}-1`);
+                    if (tempNodeId0 !== undefined && tempNodeId1 !== undefined) {
+                        uf.union(tempNodeId0, tempNodeId1);
+                    }
+                }
+            });
+
+            // Step 3: Map temporary UF roots to final global node IDs
+            const rootToFinalNodeId = new Map();
+            window.CircuitBuilder.nodes = []; // Clear global nodes array
+            let finalNodeIdCounter = 1; // Start from 1, as 0 will be ground
+
+            const allRoots = new Set();
+            terminalToTempNodeId.forEach(tempId => allRoots.add(uf.find(tempId)));
+
+            // Handle ground node first
+            let groundRootId = null;
+            const groundComp = window.CircuitBuilder.components.find(c => c.type === 'ground');
+            if (groundComp) {
+                const groundTerminalTempId = terminalToTempNodeId.get(`${groundComp.id}-0`);
+                if (groundTerminalTempId !== undefined) {
+                    groundRootId = uf.find(groundTerminalTempId);
+                    rootToFinalNodeId.set(groundRootId, 0);
+                    const pos = tempNodeIdToCoords.get(groundTerminalTempId);
+                    window.CircuitBuilder.nodes.push({ id: 0, x: pos ? pos.x : groundComp.x + COMPONENT_WIDTH / 2, y: pos ? pos.y : groundComp.y + COMPONENT_HEIGHT / 2, voltage: 0, isGround: true });
+                    allRoots.delete(groundRootId); // Remove ground root from other roots to process
+                }
+            }
+
+            // Assign IDs to all other unique roots
+            allRoots.forEach(root => {
+                rootToFinalNodeId.set(root, finalNodeIdCounter++);
+                // Find a representative coordinate for this root
+                let representativeTempId = null;
+                for (const [tempId, coords] of tempNodeIdToCoords.entries()) {
+                    if (uf.find(tempId) === root) {
+                        representativeTempId = tempId;
+                        break;
+                    }
+                }
+                const pos = representativeTempId ? tempNodeIdToCoords.get(representativeTempId) : {x:0, y:0}; // Fallback
+                window.CircuitBuilder.nodes.push({ id: rootToFinalNodeId.get(root), x: pos.x, y: pos.y, voltage: null, isGround: false });
+            });
+
+            window.CircuitBuilder.nodes.sort((a, b) => a.id - b.id);
+
+            // Step 4: Update component and wire nodeIds with final global node IDs
+            window.CircuitBuilder.components.forEach(comp => {
+                const tempId0 = terminalToTempNodeId.get(`${comp.id}-0`);
+                if (tempId0 !== undefined) {
+                    comp.nodeIds[0] = rootToFinalNodeId.get(uf.find(tempId0));
+                }
+
+                if (comp.type !== 'ground') { // Ground only has one effective terminal
+                    const tempId1 = terminalToTempNodeId.get(`${comp.id}-1`);
+                    if (tempId1 !== undefined) {
+                        comp.nodeIds[1] = rootToFinalNodeId.get(uf.find(tempId1));
+                    }
+                } else {
+                    comp.nodeIds[1] = null; // Ground component only has one connection
+                }
+            });
+
+            window.CircuitBuilder.wires.forEach(wire => {
+                if (wire.startComponent) {
+                    const tempStartId = terminalToTempNodeId.get(`${wire.startComponent.component.id}-${wire.startComponent.nodeIndex}`);
+                    if (tempStartId !== undefined) {
+                        wire.startNodeId = rootToFinalNodeId.get(uf.find(tempStartId));
+                    }
+                }
+                if (wire.endComponent) {
+                    const tempEndId = terminalToTempNodeId.get(`${wire.endComponent.component.id}-${wire.endComponent.nodeIndex}`);
+                    if (tempEndId !== undefined) {
+                        wire.endNodeId = rootToFinalNodeId.get(uf.find(tempEndId));
+                    }
+                } else {
+                    // For stub wires, ensure endNodeId is explicitly null if no end component
+                    wire.endNodeId = null;
+                }
+            });
+            // Ensure nextNodeId is correctly set for future node additions
+            window.CircuitBuilder.nextNodeId = Math.max(window.CircuitBuilder.nextNodeId, ...window.CircuitBuilder.nodes.map(n => n.id).concat(0) ) + 1; // Include 0 in max calculation
+        }
+
+
+        /**
+         * Solves a system of linear equations using Gaussian Elimination.
+         * @param {Array<Array<number>>} A - The coefficient matrix.
+         * @param {Array<number>} b - The constant vector.
+         * @returns {Array<number>} The solution vector x.
+         * @throws {Error} If the matrix is singular (no unique solution).
+         */
+        function solveGaussianElimination(A, b) {
+            const n = A.length;
+            const matrix = [];
+
+            // Create augmented matrix [A|b]
+            for (let i = 0; i < n; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < n; j++) {
+                    matrix[i][j] = A[i][j];
+                }
+                matrix[i][n] = b[i];
+            }
+
+            for (let i = 0; i < n; i++) {
+                // Find pivot row
+                let maxRow = i;
+                for (let k = i + 1; k < n; k++) {
+                    if (Math.abs(matrix[k][i]) > Math.abs(matrix[maxRow][i])) {
+                        maxRow = k;
+                    }
+                }
+                [matrix[i], matrix[maxRow]] = [matrix[maxRow], matrix[i]]; // Swap rows
+
+                // Check for singular matrix
+                if (Math.abs(matrix[i][i]) < 1e-9) { // Use a small epsilon for floating point comparison
+                    throw new Error("Matrix is singular or ill-conditioned. Cannot find unique solution.");
+                }
+
+                // Eliminate below
+                for (let k = i + 1; k < n; k++) {
+                    const factor = matrix[k][i] / matrix[i][i];
+                    for (let j = i; j < n + 1; j++) {
+                        matrix[k][j] -= factor * matrix[i][j];
+                    }
+                }
+            }
+
+            // Back substitution
+            const x = Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                let sum = 0;
+                for (let j = i + 1; j < n; j++) {
+                    sum += matrix[i][j] * x[j];
+                }
+                x[i] = (matrix[i][n] - sum) / matrix[i][i];
+            }
+            return x;
+        }
+
+
+        /**
+         * Solves the circuit using Modified Nodal Analysis (MNA).
+         * Calculates node voltages and currents through voltage sources.
+         * @returns {object} An object containing circuit results and status.
+         */
+        function solveCircuit() {
+            // Reset node voltages and component currents before solving
+            window.CircuitBuilder.nodes.forEach(node => node.voltage = null);
+            window.CircuitBuilder.components.forEach(comp => {
+                comp.currentFlow = 0;
+                comp.voltageDrop = 0;
+            });
+
+            identifyNodes(); // Re-identify nodes on each solve
+
+            const circuitResults = {
+                totalV: 0,
+                totalR: 0,
+                totalI: 0,
+                totalP: 0,
+                status: 'Open Circuit',
+                error: null // To store error messages
+            };
+
+            let referenceNodeId = null;
+            const groundComp = window.CircuitBuilder.components.find(c => c.type === 'ground');
+
+            if (window.CircuitBuilder.nodes.length === 0) {
+                circuitResults.status = 'Empty Circuit';
+                return circuitResults;
+            }
+
+            if (groundComp) {
+                referenceNodeId = 0; // Explicit ground component sets node 0 as reference
+            } else {
+                // If no ground component, pick the node with the smallest ID as arbitrary reference
+                referenceNodeId = window.CircuitBuilder.nodes[0].id;
+            }
+
+            // --- Connectivity Check ---
+            const connectedNodes = new Set();
+            const queue = [referenceNodeId];
+            connectedNodes.add(referenceNodeId);
+
+            let head = 0;
+            while(head < queue.length) {
+                const currentNodeId = queue[head++];
+
+                // Check components connected to this node
+                window.CircuitBuilder.components.forEach(comp => {
+                    let otherNodeId = null;
+                    if (comp.nodeIds[0] === currentNodeId && comp.nodeIds[1] !== null) {
+                        otherNodeId = comp.nodeIds[1];
+                    } else if (comp.nodeIds[1] === currentNodeId && comp.nodeIds[0] !== null) {
+                        otherNodeId = comp.nodeIds[0];
+                    }
+
+                    // Consider all components (resistors, bulbs, batteries, switches, ammeters, capacitors) as paths
+                    // Switches and ammeters are direct connections if closed/ideal
+                    const isPath = (comp.type === 'switch' && comp.status === 'closed') ||
+                                   comp.type === 'ammeter' ||
+                                   ['resistor', 'bulb', 'battery', 'capacitor'].includes(comp.type);
+
+                    if (otherNodeId !== null && !connectedNodes.has(otherNodeId) && isPath) {
+                        connectedNodes.add(otherNodeId);
+                        queue.push(otherNodeId);
+                    }
+                });
+
+                // Check wires connected to this node
+                window.CircuitBuilder.wires.forEach(wire => {
+                    let otherNodeId = null;
+                    if (wire.startNodeId === currentNodeId && wire.endNodeId !== null) {
+                        otherNodeId = wire.endNodeId;
+                    } else if (wire.endNodeId === currentNodeId && wire.startNodeId !== null) {
+                        otherNodeId = wire.startNodeId;
+                    }
+
+                    if (otherNodeId !== null && !connectedNodes.has(otherNodeId)) {
+                        connectedNodes.add(otherNodeId);
+                        queue.push(otherNodeId);
+                    }
+                });
+            }
+
+            // Check if all nodes are connected to the chosen reference node
+            const allNodesConnected = window.CircuitBuilder.nodes.every(node => connectedNodes.has(node.id));
+            if (!allNodesConnected) {
+                circuitResults.status = 'Disconnected Circuit';
+                circuitResults.error = "The circuit contains disconnected parts. Ensure all components are connected to form a single circuit.";
+                return circuitResults;
+            }
+            // --- End Connectivity Check ---
+
+
+            // Filter out the reference node for MNA
+            const unknownNodes = window.CircuitBuilder.nodes.filter(n => n.id !== referenceNodeId);
+            const numUnknownNodes = unknownNodes.length;
+
+            const voltageSources = window.CircuitBuilder.components.filter(c => c.type === 'battery');
+            const numVs = voltageSources.length;
+
+            // Total number of unknowns (node voltages + voltage source currents)
+            const n = numUnknownNodes + numVs;
+
+            // If no unknown nodes and no voltage sources, there's nothing to solve.
+            if (n === 0) {
+                circuitResults.status = 'Open Circuit (No active components)';
+                return circuitResults;
+            }
+
+            // Initialize MNA matrix (G) and right-hand side vector (b)
+            const G = Array(n).fill(0).map(() => Array(n).fill(0));
+            const b = Array(n).fill(0);
+
+            // Map unknown node IDs to their matrix indices (0 to numUnknownNodes-1)
+            const nodeIndexMap = new Map();
+            unknownNodes.forEach((node, index) => nodeIndexMap.set(node.id, index));
+
+            // Map voltage source components to their corresponding MNA variable index (numUnknownNodes to n-1)
+            voltageSources.forEach((vs, idx) => {
+                vs.mnaIndex = numUnknownNodes + idx; // Store MNA index on the component
+            });
+
+
+            // --- Stamping for Resistors and Bulbs ---
+            window.CircuitBuilder.components.forEach(comp => {
+                if (comp.type === 'resistor' || comp.type === 'bulb') {
+                    if (comp.status === 'open' || comp.value < 1e-9) return; // Open switch or very small resistance
+
+                    const conductance = 1 / comp.value;
+                    const n1Id = comp.nodeIds[0];
+                    const n2Id = comp.nodeIds[1];
+
+                    const idx1 = nodeIndexMap.get(n1Id);
+                    const idx2 = nodeIndexMap.get(n2Id);
+
+                    // Add conductance to G matrix
+                    // Diagonal terms (self-conductance)
+                    if (n1Id !== referenceNodeId && idx1 !== undefined) G[idx1][idx1] += conductance;
+                    if (n2Id !== referenceNodeId && idx2 !== undefined) G[idx2][idx2] += conductance;
+
+                    // Off-diagonal terms (mutual conductance)
+                    if (n1Id !== referenceNodeId && n2Id !== referenceNodeId && idx1 !== undefined && idx2 !== undefined) {
+                        G[idx1][idx2] -= conductance;
+                        G[idx2][idx1] -= conductance;
+                    }
+                }
+            });
+
+            // Add GMIN stamping: small conductance from every non-reference node to reference
+            // This helps prevent singular matrices for floating sub-circuits.
+            unknownNodes.forEach((node, index) => {
+                G[index][index] += GMIN;
+            });
+
+
+            // --- Stamping for Voltage Sources (Batteries) ---
+            voltageSources.forEach(vs => {
+                const n1Id = vs.nodeIds[0]; // Positive terminal of battery (node connected to long line)
+                const n2Id = vs.nodeIds[1]; // Negative terminal of battery (node connected to short line)
+                const V = vs.value;
+                const vsIdx = vs.mnaIndex; // MNA index for this voltage source's current
+
+                const idx1 = nodeIndexMap.get(n1Id); // Index of positive node in unknownNodes
+                const idx2 = nodeIndexMap.get(n2Id); // Index of negative node in unknownNodes
+
+                // Add entries to G matrix for voltage source current (additional unknown)
+                // Current flows from positive to negative terminal through the source.
+                // Row for node1: +1 * I_vs
+                if (n1Id !== referenceNodeId && idx1 !== undefined) G[idx1][vsIdx] += 1;
+                // Row for node2: -1 * I_vs
+                if (n2Id !== referenceNodeId && idx2 !== undefined) G[idx2][vsIdx] -= 1;
+
+                // Add entries to G matrix for voltage constraint equation (additional equation)
+                // V_n1 - V_n2 = V_source
+                // This equation goes into the row corresponding to vsIdx
+                if (n1Id !== referenceNodeId && idx1 !== undefined) G[vsIdx][idx1] += 1;
+                if (n2Id !== referenceNodeId && idx2 !== undefined) G[vsIdx][idx2] -= 1;
+
+                // Handle reference node connections for the voltage constraint
+                if (n1Id === referenceNodeId) {
+                    b[vsIdx] += V; // V_ref - V_n2 = V_source => -V_n2 = V_source (since V_ref=0)
+                } else if (n2Id === referenceNodeId) {
+                    b[vsIdx] += V; // V_n1 - V_ref = V_source => V_n1 = V_source
+                } else {
+                    b[vsIdx] += V;
+                }
+            });
+
+            // --- Solve the system ---
+            let solution;
+            try {
+                solution = solveGaussianElimination(G, b);
+            } catch (error) {
+                console.error("Error solving matrix:", error);
+                circuitResults.status = 'Circuit Error';
+                circuitResults.error = error.message;
+                // Clear previous results on error
+                window.CircuitBuilder.nodes.forEach(node => node.voltage = null);
+                window.CircuitBuilder.components.forEach(comp => {
+                    comp.currentFlow = 0;
+                    comp.voltageDrop = 0;
+                });
+                return circuitResults; // Stop execution if matrix is singular
+            }
+
+            // --- Extract results ---
+            // Node voltages
+            unknownNodes.forEach((node, index) => {
+                node.voltage = solution[index];
+            });
+            // Set reference node voltage explicitly
+            const refNode = window.CircuitBuilder.nodes.find(n => n.id === referenceNodeId);
+            if (refNode) {
+                refNode.voltage = 0;
+            }
+
+            // Component currents and voltage drops
+            let totalPowerDissipated = 0;
+            let totalSourceVoltage = 0;
+
+            window.CircuitBuilder.components.forEach(comp => {
+                const node1 = window.CircuitBuilder.nodes.find(n => n.id === comp.nodeIds[0]);
+                const node2 = window.CircuitBuilder.nodes.find(n => n.id === comp.nodeIds[1]);
+
+                if (!node1 || (comp.type !== 'ground' && !node2)) { // Ensure node2 exists for non-ground components
+                    comp.currentFlow = 0;
+                    comp.voltageDrop = 0;
+                    return;
+                }
+
+                const V1 = node1.voltage !== null ? node1.voltage : 0;
+                const V2 = (comp.type !== 'ground' && node2.voltage !== null) ? node2.voltage : 0; // Use V2 only if not ground and node2 exists
+
+                if (comp.type === 'resistor' || comp.type === 'bulb') {
+                    if (comp.status === 'open' || comp.value < 1e-9) {
+                        comp.currentFlow = 0;
+                        comp.voltageDrop = 0;
+                    } else {
+                        comp.voltageDrop = Math.abs(V1 - V2);
+                        comp.currentFlow = comp.voltageDrop / comp.value;
+                        totalPowerDissipated += comp.currentFlow * comp.voltageDrop;
+                    }
+                } else if (comp.type === 'battery') {
+                    comp.voltageDrop = comp.value; // Nominal voltage
+                    comp.currentFlow = solution[comp.mnaIndex]; // Current through the voltage source
+                    totalSourceVoltage += comp.value;
+                } else if (comp.type === 'ammeter') {
+                    // Ammeter measures current of the branch it's in. This is complex.
+                    // For now, it will display the total circuit current if applicable.
+                    // A more advanced solution would trace current paths.
+                    comp.currentFlow = 0; // Ideal ammeter has 0 resistance, so voltage drop is 0.
+                    comp.voltageDrop = Math.abs(V1 - V2); // Should be near 0
+                } else if (comp.type === 'voltmeter') {
+                    comp.voltageDrop = Math.abs(V1 - V2);
+                    comp.currentFlow = 0;
+                } else if (comp.type === 'switch') {
+                    if (comp.status === 'closed') {
+                        comp.currentFlow = 0; // Ideal switch
+                        comp.voltageDrop = 0;
+                    } else {
+                        comp.currentFlow = 0;
+                        comp.voltageDrop = Math.abs(V1 - V2);
+                    }
+                } else if (comp.type === 'capacitor') {
+                    comp.currentFlow = 0; // DC steady state
+                    comp.voltageDrop = Math.abs(V1 - V2);
+                } else if (comp.type === 'ground') {
+                    comp.currentFlow = 0; // Ground doesn't have current flow property
+                    comp.voltageDrop = 0;
+                }
+            });
+
+            // Determine overall circuit status and total values
+            let hasAnyCurrentFlow = window.CircuitBuilder.components.some(c => c.currentFlow > 1e-6); // Use epsilon for current check
+
+            if (voltageSources.length > 0 && hasAnyCurrentFlow) {
+                circuitResults.status = 'Closed Circuit';
+                circuitResults.totalV = totalSourceVoltage;
+                circuitResults.totalP = totalPowerDissipated;
+                if (totalSourceVoltage > 1e-6) { // Avoid division by zero
+                    circuitResults.totalI = totalPowerDissipated / totalSourceVoltage;
+                } else {
+                    circuitResults.totalI = 0;
+                }
+                circuitResults.totalR = (circuitResults.totalI > 1e-6) ? (totalSourceVoltage / circuitResults.totalI) : Infinity;
+            } else if (voltageSources.length > 0 && !hasAnyCurrentFlow) {
+                // Battery present, but no current flowing through resistors/bulbs (e.g., open circuit)
+                circuitResults.status = 'Open Circuit';
+                circuitResults.totalV = totalSourceVoltage;
+                circuitResults.totalR = Infinity;
+                circuitResults.totalI = 0;
+                circuitResults.totalP = 0;
+            } else if (voltageSources.length === 0) {
+                circuitResults.status = 'Open Circuit (No Power Source)';
+                circuitResults.totalV = 0;
+                circuitResults.totalR = Infinity;
+                circuitResults.totalI = 0;
+                circuitResults.totalP = 0;
+            }
+
+            // Update ammeter/voltmeter displays
+            const ammeters = window.CircuitBuilder.components.filter(c => c.type === 'ammeter');
+            if (ammeters.length > 0) {
+                ammeterDisplay.style.display = 'block';
+                // For a more accurate ammeter reading, you would need to calculate branch current.
+                // For now, it shows the total circuit current if applicable.
+                ammeterDisplay.textContent = `Ammeter: ${circuitResults.totalI.toFixed(2)} A`;
+            } else {
+                ammeterDisplay.style.display = 'none';
+            }
+
+            const voltmeters = window.CircuitBuilder.components.filter(c => c.type === 'voltmeter');
+            if (voltmeters.length > 0) {
+                voltmeterDisplay.style.display = 'block';
+                // Display voltage drop across the first voltmeter found
+                voltmeterDisplay.textContent = `Voltmeter: ${voltmeters[0].voltageDrop.toFixed(2)} V`;
+            } else {
+                voltmeterDisplay.style.display = 'none';
+            }
+
+            return circuitResults;
+        }
+
+        /**
+         * Runs the circuit simulation.
+         */
+        function simulateCircuit() {
+            if (window.CircuitBuilder.isSimulating) {
+                stopSimulation();
+                return;
+            }
+
+            const circuitResults = solveCircuit();
+
+            // Handle ground missing error without a pop-up, just update status
+            if (circuitResults.error && (circuitResults.status === 'Ground Missing' || circuitResults.status === 'Disconnected Circuit')) {
+                document.getElementById('circuitStatus').textContent = circuitResults.status;
+                // Optionally clear other info if the circuit is unsolvable without ground
+                document.getElementById('infoTotalVoltage').textContent = '0';
+                document.getElementById('infoTotalResistance').textContent = '∞';
+                document.getElementById('infoTotalCurrent').textContent = '0';
+                document.getElementById('infoTotalPower').textContent = '0';
+                ammeterDisplay.style.display = 'none';
+                voltmeterDisplay.style.display = 'none';
+                nodeVoltageContent.innerHTML = '<p>N/A</p>';
+                componentCurrentContent.innerHTML = '<p>N/A</p>';
+                showMessageBox("Circuit Error", circuitResults.error); // Show message box for these errors
+                return; // Stop simulation attempt
+            }
+            // Show message box for other critical errors
+            else if (circuitResults.error) {
+                showMessageBox("Circuit Simulation Error", circuitResults.error);
+                return; // Stop simulation attempt on error
+            }
+
+
+            document.getElementById('infoTotalVoltage').textContent = circuitResults.totalV.toFixed(2);
+            document.getElementById('infoTotalResistance').textContent = isFinite(circuitResults.totalR) ? circuitResults.totalR.toFixed(2) : '∞';
+            document.getElementById('infoTotalCurrent').textContent = isFinite(circuitResults.totalI) ? circuitResults.totalI.toFixed(2) : '∞';
+            document.getElementById('infoTotalPower').textContent = isFinite(circuitResults.totalP) ? circuitResults.totalP.toFixed(2) : '∞';
+            document.getElementById('circuitStatus').textContent = window.CircuitBuilder.isSimulating ? 'Simulating...' : circuitResults.status;
+
+            if (circuitResults.status.includes('Closed Circuit') && isFinite(circuitResults.totalI) && circuitResults.totalI > 0) {
+                window.CircuitBuilder.isSimulating = true;
+                window.CircuitBuilder.electrons = []; // Clear previous electrons
+                spawnElectrons(circuitResults.totalI);
+                drawCircuit(); // Start the animation loop
+            } else {
+                stopSimulation();
+            }
+        }
+
+        /**
+         * Stops the circuit simulation.
+         */
+        function stopSimulation() {
+            cancelAnimationFrame(window.CircuitBuilder.animationFrameId);
+            window.CircuitBuilder.isSimulating = false;
+            window.CircuitBuilder.electrons = [];
+            window.CircuitBuilder.components.forEach(comp => {
+                comp.currentFlow = 0;
+                comp.voltageDrop = 0;
+            });
+            window.CircuitBuilder.nodes.forEach(node => node.voltage = null); // Clear node voltages
+            ammeterDisplay.style.display = 'none';
+            voltmeterDisplay.style.display = 'none';
+            document.getElementById('circuitStatus').textContent = 'Stopped';
+            drawCircuit();
+            updateInfoPanel(); // Update info panel after stopping
+        }
+
+        /**
+         * Spawns electrons for visualization.
+         * @param {number} totalCurrent - The total current in the circuit (Amperes).
+         */
+        function spawnElectrons(totalCurrent) {
+            const electronCount = Math.min(50, Math.floor(totalCurrent * 20)); // Scale to current
+            const electronSpeed = Math.max(1, totalCurrent * 5); // Speed proportional to current
+
+            // Electrons should follow actual current paths.
+            // This is a simplified approach: we'll find paths along wires that have current flow.
+            // For a truly accurate simulation, you'd need to trace current paths.
+            const currentWires = window.CircuitBuilder.wires.filter(w => w.currentFlow > 0.001);
+
+            for (let i = 0; i < electronCount; i++) {
+                if (currentWires.length > 0) {
+                    const wire = currentWires[Math.floor(Math.random() * currentWires.length)];
+                    // Determine start and end points based on current direction
+                    let startPoint, endPoint;
+                    if (wire.direction === 1) { // Forward direction
+                        startPoint = wire.points[0];
+                        endPoint = wire.points[1] || wire.points[0]; // If single point wire, stay put
+                    } else { // Reverse direction
+                        startPoint = wire.points[wire.points.length - 1];
+                        endPoint = wire.points[wire.points.length - 2] || wire.points[wire.points.length - 1];
+                    }
+
+                    window.CircuitBuilder.electrons.push({
+                        x: startPoint.x,
+                        y: startPoint.y,
+                        path: [...wire.points], // Copy points
+                        currentSegmentIndex: wire.direction === 1 ? 0 : wire.points.length - 1,
+                        speed: electronSpeed,
+                        direction: wire.direction // 1 for forward, -1 for backward
+                    });
+                }
+            }
+        }
+
+        /**
+         * Moves electrons along the wires.
+         */
+        function moveElectrons() {
+            window.CircuitBuilder.electrons.forEach(e => {
+                const currentPoint = e.path[e.currentSegmentIndex];
+                let nextPoint;
+
+                if (e.direction === 1) { // Moving forward
+                    nextPoint = e.path[e.currentSegmentIndex + 1];
+                } else { // Moving backward
+                    nextPoint = e.path[e.currentSegmentIndex - 1];
+                }
+
+                if (!nextPoint) {
+                    // Reached end of wire segment, find next wire in the path or reset
+                    // For now, reset to a random wire that has current flow
+                    const currentWires = window.CircuitBuilder.wires.filter(w => w.currentFlow > 0.001);
+                    if (currentWires.length > 0) {
+                        const newWire = currentWires[Math.floor(Math.random() * currentWires.length)];
+                        e.path = [...newWire.points];
+                        e.direction = newWire.direction;
+                        e.currentSegmentIndex = newWire.direction === 1 ? 0 : newWire.points.length - 1;
+                        e.x = e.path[e.currentSegmentIndex].x;
+                        e.y = e.path[e.currentSegmentIndex].y;
+                    } else {
+                        // No current flowing, stop electron
+                        e.speed = 0;
+                    }
+                    return;
+                }
+
+                const dx = nextPoint.x - e.x;
+                const dy = nextPoint.y - e.y;
+                const distanceToNext = Math.sqrt(dx * dx + dy * dy);
+
+                if (distanceToNext < e.speed) {
+                    // Reached next point, move to next segment
+                    e.x = nextPoint.x;
+                    e.y = nextPoint.y;
+                    if (e.direction === 1) {
+                        e.currentSegmentIndex++;
+                    } else {
+                        e.currentSegmentIndex--;
+                    }
+                } else {
+                    // Move towards next point
+                    e.x += (dx / distanceToNext) * e.speed;
+                    e.y += (dy / distanceToNext) * e.speed;
+                }
+
+                // Draw electron
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = varToRgb('--electron-color');
+                ctx.fill();
+            });
+
+            window.CircuitBuilder.animationFrameId = requestAnimationFrame(drawCircuit); // Keep animating
+        }
+
+        /**
+         * Updates the information panel with current circuit values.
+         */
+        function updateInfoPanel() {
+            const circuitResults = solveCircuit(); // Call solveCircuit here to get fresh results
+
+            document.getElementById('infoTotalVoltage').textContent = circuitResults.totalV.toFixed(2);
+            document.getElementById('infoTotalResistance').textContent = isFinite(circuitResults.totalR) ? circuitResults.totalR.toFixed(2) : '∞';
+            document.getElementById('infoTotalCurrent').textContent = isFinite(circuitResults.totalI) ? circuitResults.totalI.toFixed(2) : '∞';
+            document.getElementById('infoTotalPower').textContent = isFinite(circuitResults.totalP) ? circuitResults.totalP.toFixed(2) : '∞';
+            document.getElementById('circuitStatus').textContent = window.CircuitBuilder.isSimulating ? 'Simulating...' : circuitResults.status;
+
+            let nodeHtml = '';
+            if (window.CircuitBuilder.nodes.length === 0) {
+                nodeHtml += '<p>No nodes in circuit.</p>';
+            } else {
+                window.CircuitBuilder.nodes.forEach(node => {
+                    nodeHtml += `<p>N${node.id}: ${node.voltage !== null ? node.voltage.toFixed(3) + 'V' : 'N/A'}</p>`;
+                });
+            }
+            nodeVoltageContent.innerHTML = nodeHtml;
+
+            let compCurrentHtml = '';
+            if (window.CircuitBuilder.components.length === 0) {
+                compCurrentHtml += '<p>No components in circuit.</p>';
+            } else {
+                window.CircuitBuilder.components.forEach((comp) => {
+                    const compLabel = `${getComponentAbbreviation(comp.type)}${comp.id}`;
+                    if (comp.type === 'resistor' || comp.type === 'bulb') {
+                        compCurrentHtml += `<p>${compLabel} (${comp.value}Ω): ${comp.currentFlow !== undefined ? comp.currentFlow.toFixed(3) + 'A' : 'N/A'}</p>`;
+                    } else if (comp.type === 'battery') {
+                        compCurrentHtml += `<p>${compLabel} (${comp.value}V): ${comp.currentFlow !== undefined ? comp.currentFlow.toFixed(3) + 'A' : 'N/A'} (through source)</p>`;
+                    } else if (comp.type === 'voltmeter') {
+                         compCurrentHtml += `<p>${compLabel}: ${comp.voltageDrop !== undefined ? comp.voltageDrop.toFixed(3) + 'V' : 'N/A'} (across)</p>`;
+                    } else if (comp.type === 'ammeter') {
+                         compCurrentHtml += `<p>${compLabel}: ${comp.currentFlow !== undefined ? comp.currentFlow.toFixed(3) + 'A' : 'N/A'} (through)</p>`;
+                    }
+                });
+            }
+            componentCurrentContent.innerHTML = compCurrentHtml;
+        }
+
+        /**
+         * Resets the entire circuit.
+         */
+        function resetCircuit() {
+            stopSimulation();
+            window.CircuitBuilder.components = [];
+            window.CircuitBuilder.wires = [];
+            window.CircuitBuilder.electrons = [];
+            window.CircuitBuilder.nodes = [];
+            window.CircuitBuilder.nextComponentId = 1; // Reset component ID counter
+            window.CircuitBuilder.nextNodeId = 1;     // Reset node ID counter
+            ammeterDisplay.style.display = 'none';
+            voltmeterDisplay.style.display = 'none';
+            document.getElementById('circuitStatus').textContent = 'Open';
+            drawCircuit();
+            updateInfoPanel();
+        }
+
+        // --- Help Modal Functions ---
+        function toggleHelpModal(show) {
+            if (show) {
+                helpModalOverlay.classList.add('visible');
+            } else {
+                helpModalOverlay.classList.remove('visible');
+            }
+        }
+
+        // Event listeners for Help Modal
+        helpModalCloseBtn.addEventListener('click', () => toggleHelpModal(false));
+        helpModalOverlay.addEventListener('click', (e) => {
+            // Close if clicking on the overlay itself, not the content
+            if (e.target === helpModalOverlay) {
+                toggleHelpModal(false);
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && helpModalOverlay.classList.contains('visible')) {
+                toggleHelpModal(false);
+            }
+        });
+
+
+        // --- Event Listeners and Initialization ---
+
+        window.addEventListener('resize', resizeCanvas);
+        simulateBtn.addEventListener('click', simulateCircuit);
+        resetCircuitBtn.addEventListener('click', resetCircuit);
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            resizeCanvas();
+            updateInfoPanel(); // Initial update to show "Open Circuit"
+        });
+    </script>
+</body>
+</html>

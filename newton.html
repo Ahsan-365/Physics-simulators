@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newton's Laws Simulation Suite</title>
+  <style>
+    /* CSS Variables for consistent styling */
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    /* Reset default browser styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Body styling with a gradient background and Inter font */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align content to the top */
+      min-height: 100vh; /* Ensure body takes full viewport height */
+    }
+
+    /* Main container for the simulation */
+    .container {
+      max-width: 900px; /* Increased max-width for multiple simulations */
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Header styling */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    /* Tabs navigation styling (replaces law-selection) */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 10px; /* Space between tabs */
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0; /* Prevent buttons from shrinking too much */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Base styling for all law content sections */
+    .law-content {
+      display: none; /* Hidden by default */
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+      flex-direction: column; /* Ensure content is stacked */
+      align-items: center; /* Center items horizontally */
+    }
+
+    .law-content.active {
+      display: flex; /* Show active content */
+      animation: fadeIn 0.5s ease; /* Fade-in effect */
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    /* Controls layout using CSS Grid for responsiveness */
+    .controls {
+      width: 100%;
+      max-width: 700px; /* Consistent max-width for controls */
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group input[type="range"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Custom styling for range input (slider) */
+    .control-group input[type="range"] {
+      padding: 0;
+      height: 25px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 10px;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Button group and individual button styling */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    /* Simulation area for the car and canvas-based simulations */
+    .simulation-area {
+      width: 100%;
+      max-width: 700px; /* Consistent max-width for simulation visuals */
+      height: 400px; /* Increased height for canvas simulations */
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex; /* For centering canvas/cars */
+      justify-content: center;
+      align-items: center;
+      position: relative; /* For absolute positioning of cars/rocket */
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .track {
+      position: relative;
+      width: 100%;
+      height: 60px;
+      background: #e9ecef;
+      border: 2px solid #adb5bd;
+      margin: 20px 0; /* Adjust margin for proper placement within simulation-area */
+      border-radius: var(--border-radius);
+      overflow: hidden;
+    }
+
+    /* Car styling for First & Second Laws */
+    .car {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      background: var(--primary-color);
+      border-radius: 10px 10px 5px 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0px; /* Initial position */
+    }
+
+    /* Car wheels */
+    .car::before, .car::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      width: 15px;
+      height: 15px;
+      background: #333;
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .car::before {
+      left: 10px;
+    }
+
+    .car::after {
+      right: 10px;
+    }
+
+    /* Car windows */
+    .car .window {
+      position: absolute;
+      top: 5px;
+      width: 15px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 3px;
+    }
+
+    .car .window.left {
+      left: 10px;
+    }
+
+    .car .window.right {
+      right: 10px;
+    }
+
+    /* Info panel styling */
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 700px; /* Consistent max-width */
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Specific styling for rocket exhaust */
+    .exhaust {
+        position: absolute;
+        width: 40px; /* Width of rocket */
+        height: 0px;
+        background: linear-gradient(to top, orange, yellow);
+        border-radius: 50%;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: height 0.1s ease-out, opacity 0.1s ease-out;
+    }
+
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 300px; /* Smaller height on mobile */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Newton's Laws Simulation Suite</h1>
+      <p class="subtitle">Interactive simulations for all three of Newton's Laws of Motion</p>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn" data-law="firstLaw">First Law: Inertia</button>
+      <button class="tab-btn active" data-law="secondLaw">Second Law: F = ma</button>
+      <button class="tab-btn" data-law="thirdLaw">Third Law: Action-Reaction (Rocket)</button>
+    </div>
+
+    <!-- Newton's First Law Tab -->
+    <div id="firstLawTab" class="law-content">
+      <h2 class="simulation-title">Newton's First Law: Inertia</h2>
+      <p style="text-align: center; margin-bottom: 20px; color: #555;">
+        An object at rest stays at rest, and an object in motion stays in motion with the same speed and in the same direction unless acted upon by an unbalanced force.
+      </p>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="firstLawCarMass">Mass (kg):</label>
+          <input type="number" id="firstLawCarMass" min="1" max="20" value="5" step="0.1">
+        </div>
+        <div class="control-group">
+            <label for="initialVelocity">Initial Velocity (m/s):</label>
+            <input type="number" id="initialVelocity" min="0" max="20" value="0" step="0.1">
+        </div>
+        <div class="control-group">
+            <label for="firstLawFrictionCoefficient">Friction Coefficient (μ):</label>
+            <input type="number" id="firstLawFrictionCoefficient" min="0" max="1" value="0.05" step="0.01">
+        </div>
+        <div class="control-group">
+            <label for="smallForceMagnitude">Small Force (N):</label>
+            <input type="number" id="smallForceMagnitude" min="1" max="50" value="10" step="1">
+        </div>
+        <div class="control-group">
+            <label for="largeForceMagnitude">Large Force (N):</label>
+            <input type="number" id="largeForceMagnitude" min="10" max="200" value="50" step="5">
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="applySmallForceBtn">Apply Small Force</button>
+        <button class="primary" id="applyLargeForceBtn">Apply Large Force</button>
+        <button class="secondary" id="firstLawResetBtn">Reset</button>
+      </div>
+
+      <div class="simulation-area">
+        <div class="track">
+          <div class="car" id="firstLawBox">
+            <div class="window left"></div>
+            <div class="window right"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-item">Current State: <span id="firstLawState">At Rest</span></div>
+        <div class="info-item">Current Velocity: <span id="firstLawVelocity">0</span> m/s</div>
+        <div class="info-item">Current Position: <span id="firstLawPosition">0</span> px</div>
+      </div>
+    </div>
+
+    <!-- Newton's Second Law Tab (Existing, slightly modified for integration) -->
+    <div id="secondLawTab" class="law-content active">
+      <h2 class="simulation-title">Newton's Second Law: F = ma with Friction</h2>
+      <p style="text-align: center; margin-bottom: 20px; color: #555;">
+        The acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass.
+      </p>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="secondLawMassInput">Mass (kg):</label>
+          <input type="number" id="secondLawMassInput" min="1" max="20" value="1" step="0.1">
+        </div>
+
+        <div class="control-group">
+          <label for="secondLawForceInput">Applied Force (N):</label>
+          <input type="number" id="secondLawForceInput" min="1" max="100" value="10" step="0.1">
+        </div>
+
+        <div class="control-group">
+          <label for="secondLawFrictionInput">Friction Coefficient (μ):</label>
+          <input type="number" id="secondLawFrictionInput" min="0" max="1" step="0.01" value="0.1">
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="secondLawStartBtn">Start Simulation</button>
+        <button class="secondary" id="secondLawResetBtn">Reset</button>
+      </div>
+
+      <div class="simulation-area">
+        <div class="track">
+          <div class="car" id="secondLawBox">
+            <div class="window left"></div>
+            <div class="window right"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-item">Net Acceleration: <span id="secondLawAcceleration">0</span> m/s²</div>
+        <div class="info-item">Friction Force: <span id="secondLawFrictionForce">0</span> N</div>
+        <div class="info-item">Net Force: <span id="secondLawNetForce">0</span> N</div>
+      </div>
+    </div>
+
+    <!-- Newton's Third Law Tab (Rocket Simulation) -->
+    <div id="thirdLawTab" class="law-content">
+      <h2 class="simulation-title">Newton's Third Law: Action-Reaction (Rocket Simulation)</h2>
+      <p style="text-align: center; margin-bottom: 20px; color: #555;">
+        For every action, there is an equal and opposite reaction. The rocket expels fuel downwards (action) and moves upwards (reaction).
+      </p>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="rocketMassInput">Initial Rocket Body Mass (kg):</label>
+          <input type="number" id="rocketMassInput" min="10" max="500" value="100" step="10">
+        </div>
+        <div class="control-group">
+          <label for="thrustMagnitudeInput">Thrust Magnitude (N):</label>
+          <input type="number" id="thrustMagnitudeInput" min="100" max="5000" value="1000" step="50">
+        </div>
+        <div class="control-group">
+          <label for="fuelConsumptionRateInput">Fuel Burn Rate (kg/s):</label>
+          <input type="number" id="fuelConsumptionRateInput" min="0.1" max="10" value="1" step="0.1">
+        </div>
+        <div class="control-group">
+            <label for="atmosphericDragCoefficient">Atmospheric Drag Coeff (Cd):</label>
+            <input type="number" id="atmosphericDragCoefficient" min="0" max="0.5" value="0.01" step="0.001">
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button class="primary" id="launchRocketBtn">Launch Rocket</button>
+        <button class="secondary" id="resetRocketBtn">Reset Rocket</button>
+      </div>
+
+      <div class="simulation-area" style="overflow: hidden; background: linear-gradient(to top, #87CEEB, #B0E0E6);">
+        <canvas id="rocketCanvas"></canvas>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-item">Altitude: <span id="rocketAltitude">0</span> m</div>
+        <div class="info-item">Velocity: <span id="rocketVelocity">0</span> m/s</div>
+        <div class="info-item">Current Mass: <span id="rocketCurrentMass">100</span> kg</div>
+        <div class="info-item">Remaining Fuel: <span id="rocketRemainingFuel">100</span> kg</div>
+        <div class="info-item">Acceleration: <span id="rocketAcceleration">0</span> m/s²</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables for managing animation loops and current state
+    let activeAnimationId = null; // Stores the requestAnimationFrame ID for the currently active simulation
+    let currentLawMode = 'secondLaw'; // Default to Second Law initially
+
+    // Object to hold animation IDs for each law to stop them individually
+    const animationLoopIds = {
+        firstLaw: null,
+        secondLaw: null,
+        thirdLaw: null,
+    };
+
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to clamp a value between a min and max.
+     * @param {number} value - The value to clamp.
+     * @param {number} min - The minimum allowed value.
+     * @param {number} max - The maximum allowed value.
+     * @returns {number} The clamped value.
+     */
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    /**
+     * Stops all ongoing animation loops.
+     */
+    function stopAllAnimations() {
+        for (const key in animationLoopIds) {
+            if (animationLoopIds[key]) {
+                cancelAnimationFrame(animationLoopIds[key]);
+                animationLoopIds[key] = null;
+            }
+        }
+    }
+
+    /**
+     * Switches between Newton's Law simulations and manages active tab state.
+     * @param {string} lawId - The ID of the law to show (e.g., 'firstLawTab', 'secondLawTab', 'thirdLawTab').
+     */
+    function showLaw(lawId) {
+        // Stop any currently running animations from all simulations
+        stopAllAnimations();
+
+        // Remove active class from all tab buttons and law content divs
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.law-content').forEach(content => content.classList.remove('active'));
+
+        // Add active class to the clicked tab button
+        const activeTabButton = document.querySelector(`.tab-btn[data-law="${lawId.replace('Tab', '')}"]`);
+        if (activeTabButton) {
+            activeTabButton.classList.add('active');
+        }
+
+        // Show the selected law content div
+        const selectedLawContent = document.getElementById(lawId);
+        if (selectedLawContent) {
+            selectedLawContent.classList.add('active');
+        }
+
+        currentLawMode = lawId.replace('Tab', ''); // Update global mode (e.g., 'firstLaw')
+
+        // Initialize and start animation for the newly active law
+        // Each simulation's init() method also handles its own reset.
+        if (currentLawMode === 'firstLaw') {
+            firstLawSim.init(); // Calls reset and starts animation if initial velocity > 0
+        } else if (currentLawMode === 'secondLaw') {
+            secondLawSim.init(); // Calls reset and prepares for animation on start button click
+        } else if (currentLawMode === 'thirdLaw') {
+            rocketSim.init(); // Calls reset and prepares for animation on launch button click
+        }
+    }
+
+    // --- Newton's First Law Simulation (Law of Inertia) ---
+    // Elements for First Law
+    const firstLawCarMassInput = document.getElementById('firstLawCarMass');
+    const initialVelocityInput = document.getElementById('initialVelocity');
+    const firstLawFrictionCoefficientInput = document.getElementById('firstLawFrictionCoefficient'); // New friction input
+    const smallForceMagnitudeInput = document.getElementById('smallForceMagnitude'); // New small force input
+    const largeForceMagnitudeInput = document.getElementById('largeForceMagnitude'); // New large force input
+
+    const applySmallForceBtn = document.getElementById('applySmallForceBtn');
+    const applyLargeForceBtn = document.getElementById('applyLargeForceBtn');
+    const firstLawResetBtn = document.getElementById('firstLawResetBtn');
+    const firstLawStateText = document.getElementById('firstLawState');
+    const firstLawVelocityText = document.getElementById('firstLawVelocity');
+    const firstLawPositionText = document.getElementById('firstLawPosition');
+    const firstLawBox = document.getElementById('firstLawBox');
+    const firstLawTrack = document.querySelector('#firstLawTab .track');
+
+    const firstLawSim = {
+        position: 0, // Current position of the car in pixels
+        velocity: 0, // Current velocity of the car in m/s
+        mass: 5,     // Mass of the car in kg
+        frictionCoefficient: 0.05, // Will be read from input
+        g: 9.8,      // Acceleration due to gravity (m/s^2)
+        animationId: null, // Stores the requestAnimationFrame ID
+        lastTime: null,    // Timestamp of the last animation frame
+        trackWidth: 0,     // Width of the simulation track
+        carWidth: 0,       // Width of the car element
+
+        /**
+         * Initializes the First Law simulation.
+         * Sets up track and car dimensions, then calls reset.
+         */
+        init: function() {
+            this.trackWidth = firstLawTrack.offsetWidth;
+            this.carWidth = firstLawBox.offsetWidth;
+            this.reset();
+        },
+
+        /**
+         * Resets the First Law simulation to its initial state.
+         * Stops any ongoing animation, resets position, velocity, and mass based on inputs.
+         * Starts animation if there's an initial velocity.
+         */
+        reset: function() {
+            cancelAnimationFrame(this.animationId); // Stop any existing animation
+            this.animationId = null; // Clear the animation ID
+            this.position = 0; // Reset car to the start
+            this.velocity = parseFloat(initialVelocityInput.value); // Get initial velocity from input
+            this.mass = parseFloat(firstLawCarMassInput.value); // Get mass from input
+            this.frictionCoefficient = parseFloat(firstLawFrictionCoefficientInput.value); // Get friction from input
+            this.lastTime = null; // Reset last timestamp for fresh animation start
+            firstLawBox.style.left = this.position + 'px'; // Update car's visual position
+            this.updateInfoPanel(); // Refresh info display
+
+            // If an initial velocity is set, start the animation immediately
+            if (Math.abs(this.velocity) > 0.01) { // Use a small threshold to avoid starting for near-zero velocity
+                this.start();
+            }
+        },
+
+        /**
+         * Applies an instantaneous force (impulse) to the car.
+         * Calculates the change in velocity due to the force and updates the car's velocity.
+         * @param {number} magnitude - The magnitude of the force to apply (N).
+         */
+        applyForce: function(magnitude) {
+            // Recalculate mass and friction based on current inputs before applying force
+            this.mass = parseFloat(firstLawCarMassInput.value);
+            this.frictionCoefficient = parseFloat(firstLawFrictionCoefficientInput.value);
+
+            // Simulate an impulse: Change in momentum (m*Δv) = Force * Δt
+            // Δv = (Force * Δt) / mass
+            const impulseDuration = 0.05; // A very short time duration (e.g., 0.05 seconds) for the "push"
+            const deltaV = (magnitude * impulseDuration) / this.mass;
+            this.velocity += deltaV; // Add the change in velocity
+            this.start(); // Ensure animation starts if it was at rest
+        },
+
+        /**
+         * Updates the information panel for the First Law simulation.
+         * Displays current velocity, position, and state (At Rest/In Motion).
+         */
+        updateInfoPanel: function() {
+            firstLawVelocityText.textContent = this.velocity.toFixed(2);
+            firstLawPositionText.textContent = this.position.toFixed(2);
+
+            let state = 'At Rest';
+            if (Math.abs(this.velocity) > 0.01) { // If velocity is greater than a small threshold
+                state = 'In Motion';
+            }
+            firstLawStateText.textContent = state;
+        },
+
+        /**
+         * The main animation loop for the First Law simulation.
+         * Calculates new velocity and position based on friction, updates the car's visual,
+         * and manages animation stopping conditions.
+         * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+         */
+        animate: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000; // Time elapsed since last frame in seconds
+            this.lastTime = currentTime;
+
+            // Recalculate mass and friction in case inputs changed during motion
+            this.mass = parseFloat(firstLawCarMassInput.value);
+            this.frictionCoefficient = parseFloat(firstLawFrictionCoefficientInput.value);
+
+
+            // Calculate friction force. Friction always opposes motion.
+            const normalForce = this.mass * this.g;
+            let frictionForceMagnitude = this.frictionCoefficient * normalForce; // Magnitude of friction
+            let accelerationDueToFriction = 0;
+            if (this.mass > 0) { // Avoid division by zero
+                accelerationDueToFriction = frictionForceMagnitude / this.mass; // Acceleration due to friction
+            }
+            
+
+            // Apply friction: Reduce velocity based on its direction
+            if (this.velocity > 0) {
+                this.velocity = Math.max(0, this.velocity - accelerationDueToFriction * deltaTime);
+            } else if (this.velocity < 0) {
+                this.velocity = Math.min(0, this.velocity + accelerationDueToFriction * deltaTime);
+            }
+
+            // Update position based on velocity. 50 is a visual scaling factor (pixels per m/s).
+            this.position += this.velocity * 50 * deltaTime; 
+
+            // Boundary checks: Keep the car within the track and stop it if it hits an end.
+            const maxPosition = this.trackWidth - this.carWidth;
+            if (this.position < 0) {
+                this.position = 0;
+                this.velocity = 0; // Stop if it hits the left end
+            } else if (this.position > maxPosition) {
+                this.position = maxPosition;
+                this.velocity = 0; // Stop if it hits the right end
+            }
+            
+            // Stop the animation if the car is effectively at rest and within bounds.
+            if (Math.abs(this.velocity) < 0.01 && this.position >= 0 && this.position <= maxPosition) {
+                this.velocity = 0; // Snap velocity to exactly zero
+                this.updateInfoPanel();
+                cancelAnimationFrame(this.animationId); // Stop the animation loop
+                this.animationId = null; // Clear the animation ID
+                return; // Exit the animation loop
+            }
+
+            firstLawBox.style.left = this.position + 'px'; // Update car's visual position
+            this.updateInfoPanel(); // Refresh info display
+            this.animationId = requestAnimationFrame((t) => this.animate(t)); // Request next animation frame
+            animationLoopIds.firstLaw = this.animationId; // Store for global stopping
+        },
+        
+        /**
+         * Starts the animation loop for the First Law simulation.
+         * Prevents multiple animation loops from running simultaneously.
+         */
+        start: function() {
+            if (!this.animationId) { // Only start if no animation is currently running
+                this.lastTime = null; // Reset lastTime to ensure correct deltaTime calculation for the first frame
+                this.animationId = requestAnimationFrame((t) => this.animate(t)); // Start the animation loop
+                animationLoopIds.firstLaw = this.animationId; // Store the ID
+            }
+        }
+    };
+
+    // Event listeners for Newton's First Law controls
+    applySmallForceBtn.addEventListener('click', () => firstLawSim.applyForce(parseFloat(smallForceMagnitudeInput.value))); // Read from input
+    applyLargeForceBtn.addEventListener('click', () => firstLawSim.applyForce(parseFloat(largeForceMagnitudeInput.value))); // Read from input
+    firstLawResetBtn.addEventListener('click', () => firstLawSim.reset()); // Reset the simulation
+    // These inputs trigger a reset to update the simulation's initial state
+    firstLawCarMassInput.addEventListener('input', () => firstLawSim.reset());
+    initialVelocityInput.addEventListener('input', () => firstLawSim.reset());
+    firstLawFrictionCoefficientInput.addEventListener('input', () => firstLawSim.reset());
+
+
+    // --- Newton's Second Law Simulation (F = ma) ---
+    // Elements for Second Law
+    const secondLawMassInput = document.getElementById('secondLawMassInput');
+    const secondLawForceInput = document.getElementById('secondLawForceInput');
+    const secondLawFrictionInput = document.getElementById('secondLawFrictionInput');
+    const secondLawStartBtn = document.getElementById('secondLawStartBtn');
+    const secondLawResetBtn = document.getElementById('secondLawResetBtn');
+    const secondLawAccelerationText = document.getElementById('secondLawAcceleration');
+    const secondLawFrictionForceText = document.getElementById('secondLawFrictionForce');
+    const secondLawNetForceText = document.getElementById('secondLawNetForce');
+    const secondLawBox = document.getElementById('secondLawBox');
+    const secondLawTrack = document.querySelector('#secondLawTab .track');
+
+    const secondLawSim = {
+        position: 0, // Current position of the car in pixels
+        velocity: 0, // Current velocity of the car in m/s
+        animationId: null, // Stores the requestAnimationFrame ID
+        lastTime: null,    // Timestamp of the last animation frame
+        trackWidth: 0,     // Width of the simulation track
+        carWidth: 0,       // Width of the car element
+        g: 9.8,            // Acceleration due to gravity (m/s^2)
+
+        /**
+         * Initializes the Second Law simulation.
+         * Sets up track and car dimensions, then calls reset.
+         */
+        init: function() {
+            this.trackWidth = secondLawTrack.offsetWidth;
+            this.carWidth = secondLawBox.offsetWidth;
+            this.reset();
+        },
+
+        /**
+         * Resets the Second Law simulation to its initial state.
+         * Stops any ongoing animation, resets position and velocity.
+         */
+        reset: function() {
+            cancelAnimationFrame(this.animationId); // Stop any existing animation
+            this.animationId = null; // Clear the animation ID
+            this.position = 0; // Reset car to the start
+            this.velocity = 0; // Reset velocity to zero
+            this.lastTime = null; // Reset last timestamp
+            secondLawBox.style.left = '0px'; // Update car's visual position
+            this.updateValues(); // Refresh info panel with initial values
+        },
+
+        /**
+         * Reads input values and calculates net acceleration, friction force, and net force.
+         * Also updates the info panel.
+         * @returns {{acceleration: number, netForce: number}} Calculated acceleration and net force.
+         */
+        updateValues: function() {
+            const mass = parseFloat(secondLawMassInput.value);
+            const force = parseFloat(secondLawForceInput.value);
+            const mu = parseFloat(secondLawFrictionInput.value);
+
+            // Basic input validation using clamp utility
+            const validMass = clamp(mass, 1, 20);
+            const validForce = clamp(force, 1, 100);
+            const validMu = clamp(mu, 0, 1);
+
+            // Update input fields with validated values
+            secondLawMassInput.value = validMass;
+            secondLawForceInput.value = validForce;
+            secondLawFrictionInput.value = validMu;
+
+            const normalForce = validMass * this.g;
+            const frictionForce = validMu * normalForce;
+            // Net force cannot be negative if friction opposes the applied force
+            const netForce = Math.max(0, validForce - frictionForce);
+            let acceleration = 0;
+            // Calculate acceleration only if there's a positive net force and valid mass
+            if (validMass > 0) {
+                acceleration = netForce / validMass;
+            }
+
+            // Update the info panel display
+            secondLawAccelerationText.textContent = acceleration.toFixed(2);
+            secondLawFrictionForceText.textContent = frictionForce.toFixed(2);
+            secondLawNetForceText.textContent = netForce.toFixed(2);
+
+            return { acceleration, netForce };
+        },
+
+        /**
+         * The main animation loop for the Second Law simulation.
+         * Updates car's velocity and position based on calculated acceleration.
+         * Manages stopping conditions.
+         * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+         */
+        animate: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000; // Time elapsed in seconds
+            this.lastTime = currentTime;
+
+            const { acceleration, netForce } = this.updateValues(); // Recalculate acceleration based on current inputs
+            
+            // Stopping condition: If net force is zero (or very close), velocity is zero (or very close),
+            // and the car is at the end of the track, stop the animation.
+            // A small tolerance (e.g., -1 pixel) is added for maxPosition to account for floating point errors.
+            const maxPosition = this.trackWidth - this.carWidth;
+            if (netForce <= 0.01 && Math.abs(this.velocity) < 0.01 && this.position >= (maxPosition - 1)) {
+                this.velocity = 0; // Ensure velocity is exactly zero
+                secondLawBox.style.left = maxPosition + 'px'; // Snap car to the end
+                cancelAnimationFrame(this.animationId); // Stop the animation loop
+                this.animationId = null; // Clear the animation ID
+                return; // Exit the animation loop
+            }
+            
+            this.velocity += acceleration * deltaTime; // Update velocity: v = v0 + at
+            this.position += this.velocity * 50 * deltaTime; // Update position: x = x0 + vt (with visual scaling)
+
+            // Boundary checks: Keep car within track, stop if it hits ends.
+            if (this.position >= maxPosition) {
+                this.position = maxPosition;
+                this.velocity = 0; // Stop when it hits the end
+            } else if (this.position < 0) {
+                this.position = 0;
+                this.velocity = 0; // Should not typically happen with positive acceleration
+            }
+
+            secondLawBox.style.left = this.position + 'px'; // Update car's visual position
+            this.animationId = requestAnimationFrame((t) => this.animate(t)); // Request next animation frame
+            animationLoopIds.secondLaw = this.animationId; // Store for global stopping
+        },
+
+        /**
+         * Starts the animation loop for the Second Law simulation.
+         * Resets the simulation before starting.
+         */
+        start: function() {
+            if (!this.animationId) { // Only start if no animation is currently running
+                this.reset(); // Always reset to start from 0,0 for a clear demonstration of F=ma
+                this.lastTime = null; // Reset lastTime for consistent deltaTime
+                this.animationId = requestAnimationFrame((t) => this.animate(t)); // Start the animation loop
+                animationLoopIds.secondLaw = this.animationId; // Store the ID
+            }
+        }
+    };
+
+    // Event listeners for Newton's Second Law controls
+    secondLawMassInput.addEventListener('input', () => secondLawSim.updateValues());
+    secondLawForceInput.addEventListener('input', () => secondLawSim.updateValues());
+    secondLawFrictionInput.addEventListener('input', () => secondLawSim.updateValues());
+    secondLawStartBtn.addEventListener('click', () => secondLawSim.start());
+    secondLawResetBtn.addEventListener('click', () => secondLawSim.reset());
+
+    // --- Newton's Third Law (Action-Reaction / Rocket Simulation) ---
+    // Elements for Third Law
+    const rocketCanvas = document.getElementById('rocketCanvas');
+    const rocketMassInput = document.getElementById('rocketMassInput');
+    const thrustMagnitudeInput = document.getElementById('thrustMagnitudeInput');
+    const fuelConsumptionRateInput = document.getElementById('fuelConsumptionRateInput');
+    const atmosphericDragCoefficientInput = document.getElementById('atmosphericDragCoefficient'); // New drag input
+
+    const launchRocketBtn = document.getElementById('launchRocketBtn');
+    const resetRocketBtn = document.getElementById('resetRocketBtn');
+
+    const rocketAltitudeText = document.getElementById('rocketAltitude');
+    const rocketVelocityText = document.getElementById('rocketVelocity');
+    const rocketCurrentMassText = document.getElementById('rocketCurrentMass');
+    const rocketRemainingFuelText = document.getElementById('rocketRemainingFuel');
+    const rocketAccelerationText = document.getElementById('rocketAcceleration');
+
+    const rocketSim = {
+        ctx: null,         // 2D rendering context for the canvas
+        canvas: null,      // Reference to the canvas element
+        rocket: {
+            x: 0,          // X-position of the rocket (top-left corner)
+            y: 0,          // Y-position of the rocket (top-left corner)
+            width: 40,     // Visual width of the rocket
+            height: 80,    // Visual height of the rocket
+            velocity: 0,   // Vertical velocity of the rocket in m/s
+            altitude: 0,   // Altitude of the rocket in meters
+            mass: 0,       // Total current mass (body + fuel) in kg
+            bodyMass: 0,   // Mass of the rocket structure itself (constant)
+            fuel: 0,       // Remaining fuel mass in kg
+            thrust: 0,     // Upward thrust force in Newtons
+            fuelBurnRate: 0, // Rate of fuel consumption in kg/s
+            dragCoefficient: 0.01, // Will be read from input
+        },
+        g: 9.81,           // Acceleration due to gravity (m/s^2)
+        animationId: null, // Stores the requestAnimationFrame ID
+        lastTime: null,    // Timestamp of the last animation frame
+        
+        /**
+         * Initializes the Rocket Simulation.
+         * Sets up canvas dimensions and calls reset.
+         */
+        init: function() {
+            this.canvas = rocketCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.reset();
+        },
+
+        /**
+         * Resets the Rocket Simulation to its initial state.
+         * Stops any ongoing animation, resets all rocket properties based on input values.
+         */
+        reset: function() {
+            cancelAnimationFrame(this.animationId); // Stop any existing animation
+            this.animationId = null; // Clear the animation ID
+            this.lastTime = null; // Reset last timestamp
+
+            // Get initial rocket body mass from input
+            const initialRocketBodyMass = parseFloat(rocketMassInput.value);
+            this.rocket.bodyMass = initialRocketBodyMass; // Store constant body mass
+            // Assume initial fuel mass is equal to initial body mass for a typical launch ratio
+            this.rocket.fuel = initialRocketBodyMass * 1; 
+            // Total initial mass is body mass plus fuel mass
+            this.rocket.mass = this.rocket.bodyMass + this.rocket.fuel; 
+            this.rocket.thrust = parseFloat(thrustMagnitudeInput.value);
+            this.rocket.fuelBurnRate = parseFloat(fuelConsumptionRateInput.value); // Set initial burn rate
+            this.rocket.dragCoefficient = parseFloat(atmosphericDragCoefficientInput.value); // Get drag coefficient from input
+
+            // Set initial visual position of the rocket (bottom of canvas, adjusted for ground)
+            this.rocket.x = this.canvas.width / 2 - this.rocket.width / 2;
+            this.rocket.y = this.canvas.height - this.rocket.height - 20; // 20px is for the ground line
+            this.rocket.velocity = 0;
+            this.rocket.altitude = 0;
+
+            this.draw(); // Draw the rocket in its initial state
+            this.updateInfoPanel(); // Update info display
+        },
+
+        /**
+         * Draws the rocket and its exhaust (if burning fuel) on the canvas.
+         */
+        draw: function() {
+            if (!this.ctx) return; // Ensure context is available
+
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear entire canvas
+
+            // Draw ground at the bottom
+            this.ctx.fillStyle = '#6B4226'; // Brown color for ground
+            this.ctx.fillRect(0, this.canvas.height - 20, this.canvas.width, 20); // Ground rectangle
+
+            // Draw exhaust plume only if the rocket engine is active (animation running, fuel burning, fuel left)
+            if (this.animationId && this.rocket.fuelBurnRate > 0 && this.rocket.fuel > 0) {
+                const exhaustHeight = 50 + Math.random() * 20; // Dynamic height for flame effect
+                const exhaustWidth = this.rocket.width * (0.8 + Math.random() * 0.2); // Dynamic width for flame effect
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.rocket.x + this.rocket.width / 2, this.rocket.y + this.rocket.height); // Start at bottom center of rocket
+                this.ctx.lineTo(this.rocket.x + this.rocket.width / 2 - exhaustWidth / 2, this.rocket.y + this.rocket.height + exhaustHeight); // Left point of flame
+                this.ctx.lineTo(this.rocket.x + this.rocket.width / 2 + exhaustWidth / 2, this.rocket.y + this.rocket.height + exhaustHeight); // Right point of flame
+                this.ctx.closePath();
+                
+                // Create a gradient for a more realistic flame appearance
+                const gradient = this.ctx.createLinearGradient(this.rocket.x, this.rocket.y + this.rocket.height, this.rocket.x, this.rocket.y + this.rocket.height + exhaustHeight);
+                gradient.addColorStop(0, 'orange'); // Base of flame
+                gradient.addColorStop(0.5, 'yellow'); // Middle of flame
+                gradient.addColorStop(1, 'rgba(255, 255, 0, 0)'); // Fading out at the tip
+                this.ctx.fillStyle = gradient;
+                this.ctx.fill(); // Draw the flame
+            }
+
+            // Draw Rocket Body (rectangle)
+            this.ctx.fillStyle = '#888'; // Gray color
+            this.ctx.fillRect(this.rocket.x, this.rocket.y, this.rocket.width, this.rocket.height);
+
+            // Draw Rocket Nose Cone (triangle on top)
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.rocket.x + this.rocket.width / 2, this.rocket.y - 20); // Top point
+            this.ctx.lineTo(this.rocket.x, this.rocket.y); // Bottom left of cone
+            this.ctx.lineTo(this.rocket.x + this.rocket.width, this.rocket.y); // Bottom right of cone
+            this.ctx.closePath();
+            this.ctx.fillStyle = '#C0392B'; // Red color
+            this.ctx.fill();
+
+            // Draw Fins (two small triangles at the bottom sides)
+            this.ctx.fillStyle = '#666'; // Dark gray
+            // Left fin
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.rocket.x, this.rocket.y + this.rocket.height * 0.7); // Top-left of fin relative to body
+            this.ctx.lineTo(this.rocket.x - 15, this.rocket.y + this.rocket.height + 5); // Bottom-left point
+            this.ctx.lineTo(this.rocket.x, this.rocket.y + this.rocket.height); // Bottom-right point relative to body
+            this.ctx.closePath();
+            this.ctx.fill();
+
+            // Right fin
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.rocket.x + this.rocket.width, this.rocket.y + this.rocket.height * 0.7); // Top-right of fin relative to body
+            this.ctx.lineTo(this.rocket.x + this.rocket.width + 15, this.rocket.y + this.rocket.height + 5); // Bottom-right point
+            this.ctx.lineTo(this.rocket.x + this.rocket.width, this.rocket.y + this.rocket.height); // Bottom-left point relative to body
+            this.ctx.closePath();
+            this.ctx.fill();
+        },
+
+        /**
+         * Updates the physical state of the rocket (mass, velocity, altitude, acceleration).
+         * This is the core physics calculation for the simulation.
+         * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+         */
+        update: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000; // Time elapsed since last frame in seconds
+            this.lastTime = currentTime;
+
+            // Update rocket properties from inputs in case they changed during flight
+            this.rocket.bodyMass = parseFloat(rocketMassInput.value);
+            this.rocket.thrust = parseFloat(thrustMagnitudeInput.value);
+            this.rocket.fuelBurnRate = parseFloat(fuelConsumptionRateInput.value);
+            this.rocket.dragCoefficient = parseFloat(atmosphericDragCoefficientInput.value);
+
+            let currentAcceleration = 0;
+            let currentThrust = 0;
+
+            // Apply thrust and burn fuel only if there's fuel remaining
+            if (this.rocket.fuel > 0) {
+                currentThrust = this.rocket.thrust; // Use the stored thrust magnitude
+                
+                const fuelBurned = this.rocket.fuelBurnRate * deltaTime; // Calculate fuel consumed in this frame
+                this.rocket.fuel -= fuelBurned; // Decrease remaining fuel
+                this.rocket.fuel = Math.max(0, this.rocket.fuel); // Ensure fuel doesn't go below zero
+            } else {
+                // If fuel is depleted, no thrust and no more fuel burning
+                currentThrust = 0;
+                this.rocket.fuelBurnRate = 0; // Set burn rate to 0 to stop visual exhaust and fuel consumption
+            }
+
+            // Update total rocket mass: sum of fixed body mass and remaining fuel mass
+            this.rocket.mass = this.rocket.bodyMass + this.rocket.fuel;
+
+            // Calculate gravitational force (weight) acting downwards
+            const weight = this.rocket.mass * this.g;
+            
+            // Calculate atmospheric drag force. It always opposes velocity.
+            // Simplified drag model: F_drag = Cd * v^2
+            let dragForce = 0;
+            if (Math.abs(this.rocket.velocity) > 0.1) { // Apply drag only if moving significantly
+                dragForce = this.rocket.dragCoefficient * this.rocket.velocity * this.rocket.velocity;
+                // Drag opposes velocity: if moving up (positive velocity), drag is down (negative).
+                // If moving down (negative velocity), drag is up (positive).
+                dragForce = -Math.sign(this.rocket.velocity) * dragForce;
+            }
+
+
+            // Calculate net force acting on the rocket (Thrust - Weight + Drag)
+            let netForce = currentThrust - weight + dragForce;
+
+            // Calculate acceleration using Newton's Second Law: a = F_net / m
+            // Prevent division by zero if mass somehow becomes zero or negative
+            currentAcceleration = netForce / (this.rocket.mass > 0 ? this.rocket.mass : 1); 
+
+            // Update velocity using acceleration: v = v0 + at
+            this.rocket.velocity += currentAcceleration * deltaTime;
+            // Update altitude using velocity: h = h0 + vt
+            this.rocket.altitude += this.rocket.velocity * deltaTime;
+
+            // Boundary condition: Ensure rocket doesn't go below ground level
+            if (this.rocket.altitude < 0) {
+                this.rocket.altitude = 0; // Snap altitude to ground
+                this.rocket.velocity = 0; // Stop vertical movement
+                currentAcceleration = 0; // Acceleration becomes zero at rest on ground
+                this.stop(); // Stop the animation as it's landed
+            }
+
+            // Update visual Y position of the rocket on the canvas
+            // We're scaling meters to pixels (1 pixel per meter for simplicity)
+            const pixelsPerMeter = 1;
+            // newY is calculated from the bottom of the canvas, accounting for ground height
+            const newY = this.canvas.height - (this.rocket.altitude * pixelsPerMeter) - this.rocket.height - 20;
+            this.rocket.y = newY;
+
+            this.updateInfoPanel(currentAcceleration); // Update displayed information
+            this.draw(); // Redraw the rocket in its new position
+
+            // Continue the animation loop only if it hasn't been stopped
+            if (this.animationId) { 
+                this.animationId = requestAnimationFrame((t) => this.update(t));
+                animationLoopIds.thirdLaw = this.animationId; // Store for global stopping
+            }
+        },
+
+        /**
+         * Updates the information panel for the Rocket Simulation.
+         * Displays current altitude, velocity, mass, remaining fuel, and acceleration.
+         * @param {number} currentAcceleration - The calculated acceleration for the current frame.
+         */
+        updateInfoPanel: function(currentAcceleration = 0) {
+            rocketAltitudeText.textContent = this.rocket.altitude.toFixed(2);
+            rocketVelocityText.textContent = this.rocket.velocity.toFixed(2);
+            rocketCurrentMassText.textContent = this.rocket.mass.toFixed(2);
+            rocketRemainingFuelText.textContent = this.rocket.fuel.toFixed(2);
+            rocketAccelerationText.textContent = currentAcceleration.toFixed(2);
+        },
+
+        /**
+         * Starts the animation loop for the Rocket Simulation.
+         * Prevents multiple loops and ensures `lastTime` is reset for accurate `deltaTime`.
+         */
+        start: function() {
+            if (!this.animationId) { // Only start if no animation is currently running
+                this.lastTime = null; // Reset lastTime for consistent deltaTime calculation
+                // Ensure fuel burn rate is set from the input value when starting
+                this.rocket.fuelBurnRate = parseFloat(fuelConsumptionRateInput.value);
+                this.animationId = requestAnimationFrame((t) => this.update(t)); // Start the animation loop
+                animationLoopIds.thirdLaw = this.animationId; // Store the ID
+            }
+        },
+
+        /**
+         * Stops the animation loop for the Rocket Simulation.
+         */
+        stop: function() {
+            cancelAnimationFrame(this.animationId); // Cancel the requested animation frame
+            this.animationId = null; // Clear the animation ID
+        }
+    };
+
+    // Event listeners for Newton's Third Law (Rocket) controls
+    launchRocketBtn.addEventListener('click', () => rocketSim.start()); // Launch the rocket
+    resetRocketBtn.addEventListener('click', () => rocketSim.reset()); // Reset the rocket simulation
+    // These inputs trigger a full reset to re-calculate initial conditions based on new values
+    rocketMassInput.addEventListener('input', () => rocketSim.reset());
+    thrustMagnitudeInput.addEventListener('input', () => rocketSim.reset());
+    fuelConsumptionRateInput.addEventListener('input', () => rocketSim.reset());
+    atmosphericDragCoefficientInput.addEventListener('input', () => rocketSim.reset());
+
+
+    // --- Global Initialization ---
+    /**
+     * Executes when the DOM is fully loaded.
+     * Initializes all simulation objects and sets up the initial active tab.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize all simulation objects. Each init() also calls its respective reset().
+        firstLawSim.init();
+        secondLawSim.init();
+        rocketSim.init();
+
+        // Set the initial law to display (Second Law by default) and activate its button.
+        // We simulate a click on the corresponding tab button to ensure all UI states
+        // and initial conditions are set up correctly by the showLaw function.
+        const initialLaw = 'secondLaw';
+        const initialTabButton = document.querySelector(`.tab-btn[data-law="${initialLaw}"]`);
+        if (initialTabButton) {
+            initialTabButton.click(); // Programmatically click the button
+        } else {
+            // Fallback in case the button isn't found (shouldn't happen)
+            showLaw(initialLaw + 'Tab');
+        }
+    });
+
+    // Event listener for the tab navigation buttons.
+    // When a tab button is clicked, it calls showLaw to switch simulations.
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lawId = btn.getAttribute('data-law') + 'Tab'; // Construct the target div ID (e.g., 'firstLaw' becomes 'firstLawTab')
+        showLaw(lawId); // Switch to the selected law's simulation
+      });
+    });
+
+  </script>
+</body>
+</html>

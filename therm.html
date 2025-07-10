@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thermodynamics Simulators</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #007bff; /* Blue */
+      --secondary-color: #28a745; /* Green */
+      --accent-color: #ffc107; /* Yellow */
+      --dark-color: #343a40;
+      --light-color: #f8f9fa;
+      --background-gradient: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      --panel-bg: #ffffff;
+      --border-radius: 12px;
+      --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      --input-bg: #e9ecef;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top */
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    header {
+      text-align: center;
+      padding: 25px;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.3rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tab-btn {
+      padding: 14px 28px;
+      background: var(--panel-bg);
+      border: none;
+      border-radius: 30px;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      color: var(--dark-color);
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+    }
+
+    .tab-content {
+      display: none;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 900px;
+      height: 550px;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .info-item {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee;
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-item strong {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .info-item span {
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    /* Specific styles for Heat Transfer */
+    .material-block {
+        width: 150px;
+        height: 150px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        transition: background-color 0.5s ease;
+    }
+    .heat-source {
+        width: 80px;
+        height: 80px;
+        background-color: #dc3545; /* Red */
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 0 20px 5px rgba(220, 53, 69, 0.7);
+    }
+    .heat-sink {
+        width: 80px;
+        height: 80px;
+        background-color: #17a2b8; /* Cyan */
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 0 20px 5px rgba(23, 162, 184, 0.7);
+    }
+    .heat-flow-arrow {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 25px solid #ffc107; /* Yellow */
+        transform: rotate(90deg);
+        opacity: 0; /* Hidden by default */
+        transition: opacity 0.5s ease;
+    }
+
+    /* States of Matter specific styles */
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        opacity: 0.7;
+    }
+
+    /* Thermal Expansion specific styles */
+    .expansion-bar-container {
+        width: 80%;
+        height: 100px;
+        background-color: #e0e0e0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .expansion-bar {
+        height: 50px;
+        background-color: var(--secondary-color);
+        border-radius: 5px;
+        position: absolute;
+        left: 10%; /* Start from 10% to show expansion */
+        transition: width 0.5s ease-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        white-space: nowrap;
+        padding: 0 10px;
+    }
+    .expansion-scale {
+        position: absolute;
+        bottom: 10px;
+        width: 80%;
+        height: 2px;
+        background-color: var(--dark-color);
+    }
+    .expansion-tick {
+        position: absolute;
+        top: -5px;
+        width: 2px;
+        height: 10px;
+        background-color: var(--dark-color);
+    }
+
+    /* Zeroth Law specific styles */
+    .thermal-block {
+        width: 150px;
+        height: 150px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        transition: background-color 1s ease-out; /* Smooth temperature change */
+    }
+    .contact-area {
+        width: 50px;
+        height: 10px;
+        background-color: #ccc;
+        border-radius: 5px;
+        margin: 0 10px;
+    }
+
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        gap: 15px;
+      }
+      header {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+      }
+      .tabs {
+        gap: 8px;
+      }
+      .tab-btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+      .tab-content {
+        padding: 25px;
+      }
+      .simulation-title {
+        font-size: 1.8rem;
+      }
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 15px;
+      }
+      .control-group label {
+        font-size: 0.9rem;
+      }
+      .control-group input[type="number"],
+      .control-group select {
+        padding: 10px;
+        font-size: 0.95rem;
+      }
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 450px;
+      }
+      .info-panel {
+        padding: 20px;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      .simulation-area {
+        height: 380px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Thermodynamics Simulators</h1>
+      <p class="subtitle">Exploring Heat, Energy, and Entropy</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="firstLaw">First Law of Thermodynamics</button>
+      <button class="tab-btn" data-tab="zerothLaw">Zeroth Law of Thermodynamics</button>
+      <button class="tab-btn" data-tab="carnotEngine">Carnot Engine Efficiency</button>
+      <button class="tab-btn" data-tab="entropyChange">Entropy Change</button>
+      <button class="tab-btn" data-tab="heatTransfer">Heat Transfer</button>
+      <button class="tab-btn" data-tab="statesOfMatter">States of Matter</button>
+      <button class="tab-btn" data-tab="thermalExpansion">Thermal Expansion</button>
+    </div>
+
+    <!-- First Law of Thermodynamics Tab -->
+    <div id="firstLaw" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">First Law of Thermodynamics: ΔU = Q - W</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="heatAdded">Heat Added to System (Q in Joules):</label>
+            <input type="number" id="heatAdded" min="-10000" max="10000" value="500" step="10">
+          </div>
+          <div class="control-group">
+            <label for="workDone">Work Done BY System (W in Joules):</label>
+            <input type="number" id="workDone" min="-10000" max="10000" value="200" step="10">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="firstLawCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Heat Added (Q):</strong> <span id="infoHeatAdded">500 J</span></div>
+          <div class="info-item"><strong>Work Done BY System (W):</strong> <span id="infoWorkDone">200 J</span></div>
+          <div class="info-item"><strong>Change in Internal Energy (ΔU):</strong> <span id="deltaU">300 J</span></div>
+          <div class="info-item"><strong>Formula:</strong> <span>ΔU = Q - W</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zeroth Law of Thermodynamics Tab -->
+    <div id="zerothLaw" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">Zeroth Law of Thermodynamics: Thermal Equilibrium</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="mass1">Mass 1 (kg):</label>
+                    <input type="number" id="mass1" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="specificHeat1">Specific Heat 1 (J/kg·K):</label>
+                    <input type="number" id="specificHeat1" min="100" max="5000" value="4186" step="10">
+                </div>
+                <div class="control-group">
+                    <label for="temp1">Initial Temperature 1 (K):</label>
+                    <input type="number" id="temp1" min="1" max="1000" value="350" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="mass2">Mass 2 (kg):</label>
+                    <input type="number" id="mass2" min="0.1" max="10" value="1" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="specificHeat2">Specific Heat 2 (J/kg·K):</label>
+                    <input type="number" id="specificHeat2" min="100" max="5000" value="900" step="10">
+                </div>
+                <div class="control-group">
+                    <label for="temp2">Initial Temperature 2 (K):</label>
+                    <input type="number" id="temp2" min="1" max="1000" value="280" step="1">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="primary" id="startEquilibriumSim">Start Simulation</button>
+                <button class="secondary" id="stopEquilibriumSim">Stop Simulation</button>
+                <button class="secondary" id="resetEquilibriumSim">Reset</button>
+            </div>
+
+            <div class="simulation-area" style="display: flex; justify-content: center; align-items: center;">
+                <div class="thermal-block" id="block1">Block 1</div>
+                <div class="contact-area"></div>
+                <div class="thermal-block" id="block2">Block 2</div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-item"><strong>Initial Temp 1:</strong> <span id="infoTemp1">350 K</span></div>
+                <div class="info-item"><strong>Initial Temp 2:</strong> <span id="infoTemp2">280 K</span></div>
+                <div class="info-item"><strong>Final Equilibrium Temp:</strong> <span id="infoFinalTemp">315.00 K</span></div>
+                <div class="info-item"><strong>Formula:</strong> <span>T_f = (m1*c1*T1 + m2*c2*T2) / (m1*c1 + m2*c2)</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carnot Engine Efficiency Tab -->
+    <div id="carnotEngine" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Carnot Engine Efficiency: η = 1 - Tc/Th</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="tempHot">Hot Reservoir Temperature (Th in K):</label>
+            <input type="number" id="tempHot" min="300" max="2000" value="1000" step="10">
+          </div>
+          <div class="control-group">
+            <label for="tempCold">Cold Reservoir Temperature (Tc in K):</label>
+            <input type="number" id="tempCold" min="100" max="900" value="300" step="10">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="carnotCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Hot Reservoir (Th):</strong> <span id="infoTempHot">1000 K</span></div>
+          <div class="info-item"><strong>Cold Reservoir (Tc):</strong> <span id="infoTempCold">300 K</span></div>
+          <div class="info-item"><strong>Carnot Efficiency (η):</strong> <span id="carnotEfficiency">70.00 %</span></div>
+          <div class="info-item"><strong>Formula:</strong> <span>η = 1 - Tc/Th</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entropy Change Tab -->
+    <div id="entropyChange" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Entropy Change: ΔS = Q_rev/T</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="entropyProcess">Process Type:</label>
+            <select id="entropyProcess">
+              <option value="isothermal">Isothermal Process</option>
+              <option value="phaseChange">Phase Change (Melting/Boiling)</option>
+              <option value="heatTransfer">Heat Transfer</option>
+            </select>
+          </div>
+          <div class="control-group" id="isothermalControls">
+            <label for="isothermalQ">Reversible Heat (Q_rev in J):</label>
+            <input type="number" id="isothermalQ" min="-10000" max="10000" value="1000" step="10">
+            <label for="isothermalT">Temperature (T in K):</label>
+            <input type="number" id="isothermalT" min="1" max="1000" value="300" step="1">
+          </div>
+          <div class="control-group" id="phaseChangeControls" style="display:none;">
+            <label for="massPhase">Mass (m in kg):</label>
+            <input type="number" id="massPhase" min="0.1" max="10" value="1" step="0.1">
+            <label for="latentHeat">Latent Heat (L in J/kg):</label>
+            <input type="number" id="latentHeat" min="1000" max="1000000" value="334000" step="1000">
+            <label for="phaseChangeT">Temperature (T in K):</label>
+            <input type="number" id="phaseChangeT" min="1" max="1000" value="273.15" step="1">
+          </div>
+          <div class="control-group" id="heatTransferControls" style="display:none;">
+            <label for="heatTransferQ">Heat Transferred (Q in J):</label>
+            <input type="number" id="heatTransferQ" min="-10000" max="10000" value="500" step="10">
+            <label for="initialT">Initial Temperature (Ti in K):</label>
+            <input type="number" id="initialT" min="1" max="1000" value="290" step="1">
+            <label for="finalT">Final Temperature (Tf in K):</label>
+            <input type="number" id="finalT" min="1" max="1000" value="310" step="1">
+            <label for="specificHeat">Specific Heat (c in J/(kg·K)):</label>
+            <input type="number" id="specificHeat" min="1" max="5000" value="4186" step="1">
+            <label for="massHeatTransfer">Mass (m in kg):</label>
+            <input type="number" id="massHeatTransfer" min="0.1" max="10" value="1" step="0.1">
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Process:</strong> <span id="infoEntropyProcess">Isothermal Process</span></div>
+          <div class="info-item"><strong>Calculated Entropy Change (ΔS):</strong> <span id="deltaS">3.33 J/K</span></div>
+          <div class="info-item"><strong>Formula:</strong> <span id="entropyFormula">ΔS = Q_rev/T</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heat Transfer Tab -->
+    <div id="heatTransfer" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Heat Transfer: Conduction, Convection, Radiation</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="transferType">Transfer Type:</label>
+            <select id="transferType">
+              <option value="conduction">Conduction</option>
+              <option value="convection">Convection</option>
+              <option value="radiation">Radiation</option>
+            </select>
+          </div>
+          <div class="control-group" id="conductionControls">
+            <label for="thermalConductivity">Thermal Conductivity (k in W/(m·K)):</label>
+            <input type="number" id="thermalConductivity" min="0.01" max="400" value="0.5" step="0.01">
+            <label for="areaConduction">Area (A in m²):</label>
+            <input type="number" id="areaConduction" min="0.01" max="10" value="1" step="0.01">
+            <label for="tempDiffConduction">Temperature Difference (ΔT in K):</label>
+            <input type="number" id="tempDiffConduction" min="1" max="100" value="50" step="1">
+            <label for="thicknessConduction">Thickness (L in m):</label>
+            <input type="number" id="thicknessConduction" min="0.01" max="1" value="0.1" step="0.01">
+          </div>
+          <div class="control-group" id="convectionControls" style="display:none;">
+            <label for="convectionCoefficient">Convection Coefficient (h in W/(m²·K)):</label>
+            <input type="number" id="convectionCoefficient" min="1" max="1000" value="10" step="1">
+            <label for="areaConvection">Area (A in m²):</label>
+            <input type="number" id="areaConvection" min="0.01" max="10" value="1" step="0.01">
+            <label for="tempDiffConvection">Temperature Difference (ΔT in K):</label>
+            <input type="number" id="tempDiffConvection" min="1" max="100" value="50" step="1">
+          </div>
+          <div class="control-group" id="radiationControls" style="display:none;">
+            <label for="emissivity">Emissivity (ε):</label>
+            <input type="number" id="emissivity" min="0.01" max="1" value="0.9" step="0.01">
+            <label for="areaRadiation">Area (A in m²):</label>
+            <input type="number" id="areaRadiation" min="0.01" max="10" value="1" step="0.01">
+            <label for="tempSource">Source Temperature (Ts in K):</label>
+            <input type="number" id="tempSource" min="100" max="1000" value="500" step="10">
+            <label for="tempSurroundings">Surroundings Temperature (Tsurr in K):</label>
+            <input type="number" id="tempSurroundings" min="100" max="1000" value="300" step="10">
+          </div>
+        </div>
+
+        <div class="simulation-area" style="display: flex; justify-content: space-around; align-items: center;">
+            <div class="heat-source" id="heatSource">Hot</div>
+            <div class="heat-flow-arrow" id="heatFlowArrow"></div>
+            <div class="material-block" id="materialBlock">Material</div>
+            <div class="heat-sink" id="heatSink">Cold</div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Transfer Type:</strong> <span id="infoTransferType">Conduction</span></div>
+          <div class="info-item"><strong>Rate of Heat Transfer (Q/Δt):</strong> <span id="heatTransferRate">500.00 W</span></div>
+          <div class="info-item"><strong>Formula:</strong> <span id="heatTransferFormula"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- States of Matter Tab -->
+    <div id="statesOfMatter" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">States of Matter</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="somTemperature">Temperature (K):</label>
+            <input type="number" id="somTemperature" min="0" max="10000" value="300" step="10">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="statesOfMatterCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Current State:</strong> <span id="infoCurrentState">Gas</span></div>
+          <div class="info-item"><strong>Temperature:</strong> <span id="infoSomTemperature">300 K</span></div>
+          <div class="info-item"><strong>Description:</strong> <span id="infoStateDescription">Particles are far apart and move randomly.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thermal Expansion Tab -->
+    <div id="thermalExpansion" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Thermal Expansion: ΔL = L0 * α * ΔT</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="expansionType">Expansion Type:</label>
+            <select id="expansionType">
+              <option value="linear">Linear Expansion</option>
+              <option value="area">Area Expansion</option>
+              <option value="volume">Volume Expansion</option>
+            </select>
+          </div>
+          <div class="control-group" id="linearExpansionControls">
+            <label for="initialLength">Initial Length (L0 in m):</label>
+            <input type="number" id="initialLength" min="0.1" max="10" value="1" step="0.1">
+            <label for="thermalCoeff">Coefficient of Linear Thermal Expansion (α in 1/K):</label>
+            <input type="number" id="thermalCoeff" min="1e-7" max="1e-4" value="1.2e-5" step="1e-6">
+          </div>
+          <div class="control-group" id="areaExpansionControls" style="display:none;">
+            <label for="initialArea">Initial Area (A0 in m²):</label>
+            <input type="number" id="initialArea" min="0.01" max="100" value="1" step="0.1">
+            <label for="areaThermalCoeff">Coefficient of Area Thermal Expansion (β in 1/K):</label>
+            <input type="number" id="areaThermalCoeff" min="1e-7" max="1e-4" value="2.4e-5" step="1e-6">
+          </div>
+          <div class="control-group" id="volumeExpansionControls" style="display:none;">
+            <label for="initialVolume">Initial Volume (V0 in m³):</label>
+            <input type="number" id="initialVolume" min="0.001" max="1000" value="1" step="0.1">
+            <label for="volumeThermalCoeff">Coefficient of Volume Thermal Expansion (γ in 1/K):</label>
+            <input type="number" id="volumeThermalCoeff" min="1e-7" max="1e-4" value="3.6e-5" step="1e-6">
+          </div>
+          <div class="control-group">
+            <label for="initialTempExpansion">Initial Temperature (T0 in K):</label>
+            <input type="number" id="initialTempExpansion" min="1" max="1000" value="293.15" step="1">
+          </div>
+          <div class="control-group">
+            <label for="finalTempExpansion">Final Temperature (Tf in K):</label>
+            <input type="number" id="finalTempExpansion" min="1" max="1000" value="303.15" step="1">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+            <div class="expansion-bar-container">
+                <div class="expansion-bar" id="expansionBar"></div>
+                <div class="expansion-scale">
+                    <div class="expansion-tick" style="left: 0%;"></div>
+                    <div class="expansion-tick" style="left: 25%;"></div>
+                    <div class="expansion-tick" style="left: 50%;"></div>
+                    <div class="expansion-tick" style="left: 75%;"></div>
+                    <div class="expansion-tick" style="left: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Expansion Type:</strong> <span id="infoExpansionType">Linear Expansion</span></div>
+          <div class="info-item"><strong>Initial Value (L0/A0/V0):</strong> <span id="infoInitialValue">1.00 m</span></div>
+          <div class="info-item"><strong>Temperature Change (ΔT):</strong> <span id="infoTempChange">10.00 K</span></div>
+          <div class="info-item"><strong>Change in Value (ΔL/ΔA/ΔV):</strong> <span id="deltaValue">0.00012 m</span></div>
+          <div class="info-item"><strong>Final Value (Lf/Af/Vf):</strong> <span id="finalValue">1.00012 m</span></div>
+          <div class="info-item"><strong>Formula:</strong> <span id="thermalExpansionFormula">ΔL = L0 * α * ΔT</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Constants
+    const STEFAN_BOLTZMANN = 5.67e-8; // Stefan-Boltzmann constant W/(m²·K⁴)
+
+    // Extract CSS variables for use in JS
+    const style = getComputedStyle(document.documentElement);
+    const var_primary_color = style.getPropertyValue('--primary-color').trim();
+    const var_secondary_color = style.getPropertyValue('--secondary-color').trim();
+    const var_accent_color = style.getPropertyValue('--accent-color').trim();
+    const var_dark_color = style.getPropertyValue('--dark-color').trim();
+    const var_light_color = style.getPropertyValue('--light-color').trim();
+
+    // Global variables for animation and canvas context
+    let animationId;
+    let currentTabMode = 'firstLaw'; // Initial active tab
+    let simulationCanvas = null; // Reference to the currently active canvas
+    let simulationCtx = null; // Reference to the currently active canvas context
+
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to draw an arrowhead
+     */
+    function drawArrowhead(ctx, x, y, angle, color, size = 15) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Converts a temperature in Kelvin to an RGB color for visualization.
+     * Higher temp = more red/yellow, lower temp = more blue.
+     * Range 0K (blue) to 1000K (red)
+     */
+    function tempToColor(tempK) {
+        const minTemp = 0;
+        const maxTemp = 1000;
+        const normalizedTemp = Math.max(0, Math.min(1, (tempK - minTemp) / (maxTemp - minTemp)));
+
+        let r, g, b;
+        if (normalizedTemp < 0.5) { // Blue to Green
+            r = 0;
+            g = Math.floor(255 * normalizedTemp * 2);
+            b = Math.floor(255 * (1 - normalizedTemp * 2));
+        } else { // Green to Red
+            r = Math.floor(255 * (normalizedTemp - 0.5) * 2);
+            g = Math.floor(255 * (1 - (normalizedTemp - 0.5) * 2));
+            b = 0;
+        }
+        return `rgb(${r},${g},${b})`;
+    }
+
+
+    /**
+     * Updates the info panel based on the current simulation mode and its parameters.
+     */
+    function updateInfoPanel() {
+      // First Law of Thermodynamics Info
+      if (currentTabMode === 'firstLaw') {
+        const Q = parseFloat(document.getElementById('heatAdded').value);
+        const W = parseFloat(document.getElementById('workDone').value);
+        const deltaU = Q - W;
+
+        document.getElementById('infoHeatAdded').textContent = `${Q.toFixed(0)} J`;
+        document.getElementById('infoWorkDone').textContent = `${W.toFixed(0)} J`;
+        document.getElementById('deltaU').textContent = `${deltaU.toFixed(2)} J`;
+      }
+      // Zeroth Law of Thermodynamics Info
+      else if (currentTabMode === 'zerothLaw') {
+        const m1 = parseFloat(document.getElementById('mass1').value);
+        const c1 = parseFloat(document.getElementById('specificHeat1').value);
+        const T1 = parseFloat(document.getElementById('temp1').value);
+        const m2 = parseFloat(document.getElementById('mass2').value);
+        const c2 = parseFloat(document.getElementById('specificHeat2').value);
+        const T2 = parseFloat(document.getElementById('temp2').value);
+
+        let finalTemp = 0;
+        if ((m1 * c1 + m2 * c2) !== 0) {
+            finalTemp = (m1 * c1 * T1 + m2 * c2 * T2) / (m1 * c1 + m2 * c2);
+        }
+
+        document.getElementById('infoTemp1').textContent = `${T1.toFixed(0)} K`;
+        document.getElementById('infoTemp2').textContent = `${T2.toFixed(0)} K`;
+        document.getElementById('infoFinalTemp').textContent = `${finalTemp.toFixed(2)} K`;
+
+        zerothLawSim.updateVisuals();
+      }
+      // Carnot Engine Efficiency Info
+      else if (currentTabMode === 'carnotEngine') {
+        const Th = parseFloat(document.getElementById('tempHot').value);
+        const Tc = parseFloat(document.getElementById('tempCold').value);
+
+        let efficiency = 0;
+        if (Th > Tc && Th > 0) {
+            efficiency = (1 - (Tc / Th)) * 100;
+        }
+
+        document.getElementById('infoTempHot').textContent = `${Th.toFixed(0)} K`;
+        document.getElementById('infoTempCold').textContent = `${Tc.toFixed(0)} K`;
+        document.getElementById('carnotEfficiency').textContent = `${efficiency.toFixed(2)} %`;
+      }
+      // Entropy Change Info
+      else if (currentTabMode === 'entropyChange') {
+        const processType = document.getElementById('entropyProcess').value;
+        let deltaS = 0;
+        let formula = '';
+
+        if (processType === 'isothermal') {
+            const Q_rev = parseFloat(document.getElementById('isothermalQ').value);
+            const T = parseFloat(document.getElementById('isothermalT').value);
+            if (T !== 0) {
+                deltaS = Q_rev / T;
+            }
+            formula = 'ΔS = Q_rev/T';
+        } else if (processType === 'phaseChange') {
+            const m = parseFloat(document.getElementById('massPhase').value);
+            const L = parseFloat(document.getElementById('latentHeat').value);
+            const T = parseFloat(document.getElementById('phaseChangeT').value);
+            if (T !== 0) {
+                deltaS = (m * L) / T;
+            }
+            formula = 'ΔS = mL/T';
+        } else if (processType === 'heatTransfer') {
+            const Q = parseFloat(document.getElementById('heatTransferQ').value);
+            const Ti = parseFloat(document.getElementById('initialT').value);
+            const Tf = parseFloat(document.getElementById('finalT').value);
+            const c = parseFloat(document.getElementById('specificHeat').value);
+            const m = parseFloat(document.getElementById('massHeatTransfer').value);
+
+            if (Ti > 0 && Tf > 0 && m > 0 && c > 0) {
+                deltaS = m * c * Math.log(Tf / Ti);
+            }
+            formula = 'ΔS = mc * ln(Tf/Ti)';
+        }
+
+        document.getElementById('infoEntropyProcess').textContent = processType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        document.getElementById('deltaS').textContent = `${deltaS.toFixed(3)} J/K`;
+        document.getElementById('entropyFormula').textContent = formula;
+      }
+      // Heat Transfer Info
+      else if (currentTabMode === 'heatTransfer') {
+        const transferType = document.getElementById('transferType').value;
+        let heatRate = 0;
+        let formula = '';
+
+        if (transferType === 'conduction') {
+            const k = parseFloat(document.getElementById('thermalConductivity').value);
+            const A = parseFloat(document.getElementById('areaConduction').value);
+            const deltaT = parseFloat(document.getElementById('tempDiffConduction').value);
+            const L = parseFloat(document.getElementById('thicknessConduction').value);
+            if (L !== 0) {
+                heatRate = (k * A * deltaT) / L;
+            }
+            formula = 'Q/Δt = kAΔT/L';
+        } else if (transferType === 'convection') {
+            const h = parseFloat(document.getElementById('convectionCoefficient').value);
+            const A = parseFloat(document.getElementById('areaConvection').value);
+            const deltaT = parseFloat(document.getElementById('tempDiffConvection').value);
+            heatRate = h * A * deltaT;
+            formula = 'Q/Δt = hAΔT';
+        } else if (transferType === 'radiation') {
+            const epsilon = parseFloat(document.getElementById('emissivity').value);
+            const A = parseFloat(document.getElementById('areaRadiation').value);
+            const Ts = parseFloat(document.getElementById('tempSource').value);
+            const Tsurr = parseFloat(document.getElementById('tempSurroundings').value);
+            heatRate = epsilon * STEFAN_BOLTZMANN * A * (Math.pow(Ts, 4) - Math.pow(Tsurr, 4));
+            formula = 'Q/Δt = εσA(Ts^4 - Tsurr^4)';
+        }
+
+        document.getElementById('infoTransferType').textContent = transferType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        document.getElementById('heatTransferRate').textContent = `${heatRate.toFixed(2)} W`;
+        document.getElementById('heatTransferFormula').textContent = formula;
+
+        heatTransferSim.updateVisuals();
+      }
+      // States of Matter Info
+      else if (currentTabMode === 'statesOfMatter') {
+        const temperature = parseFloat(document.getElementById('somTemperature').value);
+
+        let state = '';
+        let description = '';
+        if (temperature < 10) {
+            state = 'Bose-Einstein Condensate';
+            description = 'Particles are super-cooled to near absolute zero, behaving as a single quantum entity.';
+        } else if (temperature < 100) {
+            state = 'Solid';
+            description = 'Particles are tightly packed in a fixed, ordered lattice, with small vibrations.';
+        } else if (temperature < 500) {
+            state = 'Liquid';
+            description = 'Particles are close together but can move past each other, forming a fluid.';
+        } else if (temperature < 5000) {
+            state = 'Gas';
+            description = 'Particles are far apart and move randomly and rapidly, filling their container.';
+        } else {
+            state = 'Plasma';
+            description = 'Ionized gas, consisting of free electrons and ions, at very high energy.';
+        }
+        document.getElementById('infoCurrentState').textContent = state;
+        document.getElementById('infoSomTemperature').textContent = `${temperature.toFixed(0)} K`;
+        document.getElementById('infoStateDescription').textContent = description;
+        statesOfMatterSim.draw();
+      }
+      // Thermal Expansion Info
+      else if (currentTabMode === 'thermalExpansion') {
+        const expansionType = document.getElementById('expansionType').value;
+        const T0 = parseFloat(document.getElementById('initialTempExpansion').value);
+        const Tf = parseFloat(document.getElementById('finalTempExpansion').value);
+        const deltaT = Tf - T0;
+
+        let initialValue = 0;
+        let thermalCoeff = 0;
+        let deltaValue = 0;
+        let finalValue = 0;
+        let unit = '';
+        let formula = '';
+
+        if (expansionType === 'linear') {
+            initialValue = parseFloat(document.getElementById('initialLength').value);
+            thermalCoeff = parseFloat(document.getElementById('thermalCoeff').value);
+            deltaValue = initialValue * thermalCoeff * deltaT;
+            finalValue = initialValue + deltaValue;
+            unit = 'm';
+            formula = 'ΔL = L0 * α * ΔT';
+        } else if (expansionType === 'area') {
+            initialValue = parseFloat(document.getElementById('initialArea').value);
+            thermalCoeff = parseFloat(document.getElementById('areaThermalCoeff').value);
+            deltaValue = initialValue * thermalCoeff * deltaT;
+            finalValue = initialValue + deltaValue;
+            unit = 'm²';
+            formula = 'ΔA = A0 * β * ΔT';
+        } else if (expansionType === 'volume') {
+            initialValue = parseFloat(document.getElementById('initialVolume').value);
+            thermalCoeff = parseFloat(document.getElementById('volumeThermalCoeff').value);
+            deltaValue = initialValue * thermalCoeff * deltaT;
+            finalValue = initialValue + deltaValue;
+            unit = 'm³';
+            formula = 'ΔV = V0 * γ * ΔT';
+        }
+
+        document.getElementById('infoExpansionType').textContent = expansionType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        document.getElementById('infoInitialValue').textContent = `${initialValue.toFixed(2)} ${unit}`;
+        document.getElementById('infoTempChange').textContent = `${deltaT.toFixed(2)} K`;
+        document.getElementById('deltaValue').textContent = `${deltaValue.toExponential(2)} ${unit}`;
+        document.getElementById('finalValue').textContent = `${finalValue.toFixed(5)} ${unit}`;
+        document.getElementById('thermalExpansionFormula').textContent = formula;
+
+        thermalExpansionSim.updateVisuals();
+      }
+    }
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations
+        cancelAnimationFrame(animationId);
+        if (statesOfMatterSim.animationInterval) clearInterval(statesOfMatterSim.animationInterval);
+        if (zerothLawSim.animationInterval) clearInterval(zerothLawSim.animationInterval);
+
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Update global mode
+        currentTabMode = tabId;
+
+        // Initialize canvas and context for the active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set for drawing
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Specific initializations/resets for each tab
+        if (currentTabMode === 'firstLaw') {
+            firstLawSim.init();
+        } else if (currentTabMode === 'zerothLaw') {
+            zerothLawSim.init(); // This will now call reset and then start simulation
+        } else if (currentTabMode === 'carnotEngine') {
+            carnotEngineSim.init();
+        } else if (currentTabMode === 'entropyChange') {
+            entropyChangeSim.init();
+        } else if (currentTabMode === 'heatTransfer') {
+            heatTransferSim.init();
+        } else if (currentTabMode === 'statesOfMatter') {
+            statesOfMatterSim.init();
+        } else if (currentTabMode === 'thermalExpansion') {
+            thermalExpansionSim.init();
+        }
+
+        // Re-start main animation loop if current tab needs it
+        if (currentTabMode === 'firstLaw' || currentTabMode === 'carnotEngine' || currentTabMode === 'statesOfMatter') {
+            animate();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- First Law of Thermodynamics Simulation ---
+    const firstLawCanvas = document.getElementById('firstLawCanvas');
+    const heatAddedInput = document.getElementById('heatAdded');
+    const workDoneInput = document.getElementById('workDone');
+
+    const firstLawSim = {
+        ctx: null,
+        canvas: null,
+        centerX: 0,
+        centerY: 0,
+        init: function() {
+            this.canvas = firstLawCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const Q = parseFloat(heatAddedInput.value);
+            const W = parseFloat(workDoneInput.value);
+            const deltaU = Q - W;
+
+            this.centerX = width / 2;
+            this.centerY = height / 2;
+            const boxWidth = 200;
+            const boxHeight = 150;
+
+            // Draw system box
+            this.ctx.strokeStyle = var_dark_color;
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(this.centerX - boxWidth / 2, this.centerY - boxHeight / 2, boxWidth, boxHeight);
+
+            this.ctx.fillStyle = var_primary_color;
+            this.ctx.font = '24px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('SYSTEM', this.centerX, this.centerY + 10);
+
+            // Draw Q (Heat) arrow
+            this.ctx.strokeStyle = Q > 0 ? 'red' : 'blue';
+            this.ctx.fillStyle = Q > 0 ? 'red' : 'blue';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            if (Q > 0) { // Heat added to system
+                this.ctx.moveTo(this.centerX, this.centerY - boxHeight / 2 - 50);
+                this.ctx.lineTo(this.centerX, this.centerY - boxHeight / 2 - 10);
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, this.centerX, this.centerY - boxHeight / 2 - 10, Math.PI / 2, this.ctx.fillStyle);
+                this.ctx.fillText(`Q = ${Q.toFixed(0)} J`, this.centerX, this.centerY - boxHeight / 2 - 60);
+            } else if (Q < 0) { // Heat removed from system
+                this.ctx.moveTo(this.centerX, this.centerY - boxHeight / 2 - 10);
+                this.ctx.lineTo(this.centerX, this.centerY - boxHeight / 2 - 50);
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, this.centerX, this.centerY - boxHeight / 2 - 50, -Math.PI / 2, this.ctx.fillStyle);
+                this.ctx.fillText(`Q = ${Q.toFixed(0)} J`, this.centerX, this.centerY - boxHeight / 2 - 60);
+            }
+
+            // Draw W (Work) arrow
+            this.ctx.strokeStyle = W > 0 ? 'green' : 'purple';
+            this.ctx.fillStyle = W > 0 ? 'green' : 'purple';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            if (W > 0) { // Work done BY system
+                this.ctx.moveTo(this.centerX + boxWidth / 2 + 50, this.centerY);
+                this.ctx.lineTo(this.centerX + boxWidth / 2 + 10, this.centerY);
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, this.centerX + boxWidth / 2 + 10, this.centerY, Math.PI, this.ctx.fillStyle);
+                this.ctx.fillText(`W = ${W.toFixed(0)} J`, this.centerX + boxWidth / 2 + 60, this.centerY - 20);
+            } else if (W < 0) { // Work done ON system
+                this.ctx.moveTo(this.centerX + boxWidth / 2 + 10, this.centerY);
+                this.ctx.lineTo(this.centerX + boxWidth / 2 + 50, this.centerY);
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, this.centerX + boxWidth / 2 + 50, this.centerY, 0, this.ctx.fillStyle);
+                this.ctx.fillText(`W = ${W.toFixed(0)} J`, this.centerX + boxWidth / 2 + 60, this.centerY - 20);
+            }
+
+            // Draw Delta U
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = '20px Inter';
+            this.ctx.fillText(`ΔU = ${deltaU.toFixed(2)} J`, this.centerX, this.centerY + boxHeight / 2 + 40);
+
+            updateInfoPanel();
+        }
+    };
+
+    heatAddedInput.addEventListener('input', firstLawSim.draw);
+    workDoneInput.addEventListener('input', firstLawSim.draw);
+
+
+    // --- Zeroth Law of Thermodynamics Simulator ---
+    const mass1Input = document.getElementById('mass1');
+    const specificHeat1Input = document.getElementById('specificHeat1');
+    const temp1Input = document.getElementById('temp1');
+    const mass2Input = document.getElementById('mass2');
+    const specificHeat2Input = document.getElementById('specificHeat2');
+    const temp2Input = document.getElementById('temp2');
+    const resetEquilibriumSimBtn = document.getElementById('resetEquilibriumSim');
+    const startEquilibriumSimBtn = document.getElementById('startEquilibriumSim'); // New button
+    const stopEquilibriumSimBtn = document.getElementById('stopEquilibriumSim');   // New button
+    const block1Div = document.getElementById('block1');
+    const block2Div = document.getElementById('block2');
+
+    const zerothLawSim = {
+        initialTemp1: 0,
+        initialTemp2: 0,
+        animationInterval: null,
+        simulating: false,
+        init: function() {
+            this.reset(); // Reset to initial state
+            this.updateVisuals(); // Update visuals immediately
+            // Do NOT auto-start simulation here. User will click Start.
+        },
+        reset: function() {
+            this.stopSimulation(); // Ensure any running simulation is stopped
+            // Reset to default values for inputs
+            mass1Input.value = 1;
+            specificHeat1Input.value = 4186;
+            temp1Input.value = 350;
+            mass2Input.value = 1;
+            specificHeat2Input.value = 900;
+            temp2Input.value = 280;
+
+            this.initialTemp1 = parseFloat(temp1Input.value);
+            this.initialTemp2 = parseFloat(temp2Input.value);
+
+            this.updateVisuals(); // Update visuals with reset values
+            updateInfoPanel(); // Update info panel with reset values
+        },
+        startSimulation: function() {
+            if (this.simulating) return; // Prevent multiple starts
+            this.simulating = true;
+
+            const m1 = parseFloat(mass1Input.value);
+            const c1 = parseFloat(specificHeat1Input.value);
+            const T1_initial = parseFloat(temp1Input.value);
+            const m2 = parseFloat(mass2Input.value);
+            const c2 = parseFloat(specificHeat2Input.value);
+            const T2_initial = parseFloat(temp2Input.value);
+
+            const finalTemp = (m1 * c1 * T1_initial + m2 * c2 * T2_initial) / (m1 * c1 + m2 * c2);
+            let currentTemp1 = T1_initial;
+            let currentTemp2 = T2_initial;
+
+            const tempChangeRate = 0.01; // Rate of temperature change per interval
+
+            this.animationInterval = setInterval(() => {
+                // Check if temperatures are close enough to finalTemp
+                if (Math.abs(currentTemp1 - finalTemp) < 0.1 && Math.abs(currentTemp2 - finalTemp) < 0.1) {
+                    this.stopSimulation(); // Stop when equilibrium is reached
+                    currentTemp1 = finalTemp; // Snap to final temp for precision
+                    currentTemp2 = finalTemp;
+                } else {
+                    // Gradual approach to equilibrium
+                    currentTemp1 += (finalTemp - currentTemp1) * tempChangeRate;
+                    currentTemp2 += (finalTemp - currentTemp2) * tempChangeRate;
+                }
+
+                // Update input values and visuals
+                temp1Input.value = currentTemp1.toFixed(0); // Update input for display
+                temp2Input.value = currentTemp2.toFixed(0); // Update input for display
+
+                block1Div.style.backgroundColor = tempToColor(currentTemp1);
+                block2Div.style.backgroundColor = tempToColor(currentTemp2);
+                block1Div.textContent = `${currentTemp1.toFixed(0)} K`;
+                block2Div.textContent = `${currentTemp2.toFixed(0)} K`;
+                document.getElementById('infoTemp1').textContent = `${currentTemp1.toFixed(0)} K`;
+                document.getElementById('infoTemp2').textContent = `${currentTemp2.toFixed(0)} K`;
+                document.getElementById('infoFinalTemp').textContent = `${finalTemp.toFixed(2)} K`;
+
+            }, 50); // Update every 50ms
+        },
+        stopSimulation: function() {
+            clearInterval(this.animationInterval);
+            this.simulating = false;
+        },
+        updateVisuals: function() {
+            // This function is for immediate visual update based on current input values
+            block1Div.style.backgroundColor = tempToColor(parseFloat(temp1Input.value));
+            block2Div.style.backgroundColor = tempToColor(parseFloat(temp2Input.value));
+            block1Div.textContent = `${parseFloat(temp1Input.value).toFixed(0)} K`;
+            block2Div.textContent = `${parseFloat(temp2Input.value).toFixed(0)} K`;
+        }
+    };
+
+    resetEquilibriumSimBtn.addEventListener('click', () => zerothLawSim.reset());
+    startEquilibriumSimBtn.addEventListener('click', () => zerothLawSim.startSimulation()); // New event listener
+    stopEquilibriumSimBtn.addEventListener('click', () => zerothLawSim.stopSimulation());   // New event listener
+    mass1Input.addEventListener('input', updateInfoPanel);
+    specificHeat1Input.addEventListener('input', updateInfoPanel);
+    temp1Input.addEventListener('input', updateInfoPanel);
+    mass2Input.addEventListener('input', updateInfoPanel);
+    specificHeat2Input.addEventListener('input', updateInfoPanel);
+    temp2Input.addEventListener('input', updateInfoPanel);
+
+
+    // --- Carnot Engine Efficiency Simulation ---
+    const carnotCanvas = document.getElementById('carnotCanvas');
+    const tempHotInput = document.getElementById('tempHot');
+    const tempColdInput = document.getElementById('tempCold');
+
+    const carnotEngineSim = {
+        ctx: null,
+        canvas: null,
+        centerX: 0,
+        centerY: 0,
+        init: function() {
+            this.canvas = carnotCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const Th = parseFloat(tempHotInput.value);
+            const Tc = parseFloat(document.getElementById('tempCold').value);
+
+            const hotColor = `hsl(0, 100%, ${100 - (Th / 2000) * 50}%)`; // More red for higher temp
+            const coldColor = `hsl(200, 100%, ${50 + (Tc / 1000) * 50}%)`; // More blue for lower temp
+
+            const reservoirHeight = 100;
+            const reservoirWidth = 250;
+            const engineSize = 100;
+
+            this.centerX = width / 2;
+            this.centerY = height / 2;
+
+            // Hot Reservoir
+            this.ctx.fillStyle = hotColor;
+            this.ctx.fillRect(width / 2 - reservoirWidth / 2, 50, reservoirWidth, reservoirHeight);
+            this.ctx.strokeStyle = var_dark_color;
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(width / 2 - reservoirWidth / 2, 50, reservoirWidth, reservoirHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '20px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`Hot Reservoir (${Th} K)`, width / 2, 50 + reservoirHeight / 2 + 5);
+
+            // Cold Reservoir
+            this.ctx.fillStyle = coldColor;
+            this.ctx.fillRect(width / 2 - reservoirWidth / 2, height - 50 - reservoirHeight, reservoirWidth, reservoirHeight);
+            this.ctx.strokeStyle = var_dark_color;
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(width / 2 - reservoirWidth / 2, height - 50 - reservoirHeight, reservoirWidth, reservoirHeight);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(`Cold Reservoir (${Tc} K)`, width / 2, height - 50 - reservoirHeight / 2 + 5);
+
+            // Engine
+            const engineY = (height / 2) - (engineSize / 2);
+            this.ctx.fillStyle = var_secondary_color;
+            this.ctx.fillRect(width / 2 - engineSize / 2, engineY, engineSize, engineSize);
+            this.ctx.strokeStyle = var_dark_color;
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(width / 2 - engineSize / 2, engineY, engineSize, engineSize);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('ENGINE', width / 2, engineY + engineSize / 2 + 5);
+
+            // Heat Flow (Qh) from Hot to Engine
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(width / 2, 50 + reservoirHeight);
+            this.ctx.lineTo(width / 2, engineY);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, width / 2, engineY, Math.PI / 2, 'red');
+            this.ctx.fillStyle = 'red';
+            this.ctx.fillText('Qh', width / 2 + 30, (50 + reservoirHeight + engineY) / 2);
+
+            // Work (W) from Engine
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(width / 2 + engineSize / 2, this.centerY);
+            this.ctx.lineTo(width / 2 + engineSize / 2 + 60, this.centerY);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, width / 2 + engineSize / 2 + 60, this.centerY, 0, 'green');
+            this.ctx.fillStyle = 'green';
+            this.ctx.fillText('W', width / 2 + engineSize / 2 + 80, this.centerY - 10);
+
+            // Heat Flow (Qc) from Engine to Cold
+            this.ctx.strokeStyle = 'blue';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(width / 2, engineY + engineSize);
+            this.ctx.lineTo(width / 2, height - 50 - reservoirHeight);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, width / 2, height - 50 - reservoirHeight, Math.PI / 2, 'blue');
+            this.ctx.fillStyle = 'blue';
+            this.ctx.fillText('Qc', width / 2 + 30, (engineY + engineSize + height - 50 - reservoirHeight) / 2);
+
+            updateInfoPanel();
+        }
+    };
+
+    tempHotInput.addEventListener('input', carnotEngineSim.draw);
+    tempColdInput.addEventListener('input', carnotEngineSim.draw);
+
+
+    // --- Entropy Change Simulation ---
+    const entropyProcessSelect = document.getElementById('entropyProcess');
+    const isothermalControls = document.getElementById('isothermalControls');
+    const phaseChangeControls = document.getElementById('phaseChangeControls');
+    const heatTransferControls = document.getElementById('heatTransferControls');
+
+    const isothermalQInput = document.getElementById('isothermalQ');
+    const isothermalTInput = document.getElementById('isothermalT');
+    const massPhaseInput = document.getElementById('massPhase');
+    const latentHeatInput = document.getElementById('latentHeat');
+    const phaseChangeTInput = document.getElementById('phaseChangeT');
+    const heatTransferQInput = document.getElementById('heatTransferQ');
+    const initialTInput = document.getElementById('initialT');
+    const finalTInput = document.getElementById('finalT');
+    const specificHeatInput = document.getElementById('specificHeat');
+    const massHeatTransferInput = document.getElementById('massHeatTransfer');
+
+
+    const entropyChangeSim = {
+        init: function() {
+            this.updateControlVisibility();
+            updateInfoPanel();
+        },
+        updateControlVisibility: function() {
+            const selectedProcess = entropyProcessSelect.value;
+            isothermalControls.style.display = 'none';
+            phaseChangeControls.style.display = 'none';
+            heatTransferControls.style.display = 'none';
+
+            if (selectedProcess === 'isothermal') {
+                isothermalControls.style.display = 'flex';
+            } else if (selectedProcess === 'phaseChange') {
+                phaseChangeControls.style.display = 'flex';
+            } else if (selectedProcess === 'heatTransfer') {
+                heatTransferControls.style.display = 'flex';
+            }
+        }
+    };
+
+    // Fix: Use .bind() to explicitly set 'this' context for event listeners
+    entropyProcessSelect.addEventListener('change', entropyChangeSim.init.bind(entropyChangeSim));
+    isothermalQInput.addEventListener('input', updateInfoPanel);
+    isothermalTInput.addEventListener('input', updateInfoPanel);
+    massPhaseInput.addEventListener('input', updateInfoPanel);
+    latentHeatInput.addEventListener('input', updateInfoPanel);
+    phaseChangeTInput.addEventListener('input', updateInfoPanel);
+    heatTransferQInput.addEventListener('input', updateInfoPanel);
+    initialTInput.addEventListener('input', updateInfoPanel);
+    finalTInput.addEventListener('input', updateInfoPanel);
+    specificHeatInput.addEventListener('input', updateInfoPanel);
+    massHeatTransferInput.addEventListener('input', updateInfoPanel);
+
+
+    // --- Heat Transfer Simulation ---
+    const transferTypeSelect = document.getElementById('transferType');
+    const conductionControls = document.getElementById('conductionControls');
+    const convectionControls = document.getElementById('convectionControls');
+    const radiationControls = document.getElementById('radiationControls');
+
+    const thermalConductivityInput = document.getElementById('thermalConductivity');
+    const areaConductionInput = document.getElementById('areaConduction');
+    const tempDiffConductionInput = document.getElementById('tempDiffConduction');
+    const thicknessConductionInput = document.getElementById('thicknessConduction');
+
+    const convectionCoefficientInput = document.getElementById('convectionCoefficient');
+    const areaConvectionInput = document.getElementById('areaConvection');
+    const tempDiffConvectionInput = document.getElementById('tempDiffConvection');
+
+    const emissivityInput = document.getElementById('emissivity');
+    const areaRadiationInput = document.getElementById('areaRadiation');
+    const tempSourceInput = document.getElementById('tempSource');
+    const tempSurroundingsInput = document.getElementById('tempSurroundings');
+
+    const materialBlock = document.getElementById('materialBlock');
+    const heatFlowArrow = document.getElementById('heatFlowArrow');
+    const heatSource = document.getElementById('heatSource');
+    const heatSink = document.getElementById('heatSink');
+
+
+    const heatTransferSim = {
+        init: function() {
+            this.updateControlVisibility();
+            this.updateVisuals();
+            updateInfoPanel();
+        },
+        updateControlVisibility: function() {
+            const selectedType = transferTypeSelect.value;
+            conductionControls.style.display = 'none';
+            convectionControls.style.display = 'none';
+            radiationControls.style.display = 'none';
+
+            if (selectedType === 'conduction') {
+                conductionControls.style.display = 'flex';
+                materialBlock.textContent = 'Solid';
+                materialBlock.style.backgroundColor = '#6c757d'; /* Gray */
+            } else if (selectedType === 'convection') {
+                convectionControls.style.display = 'flex';
+                materialBlock.textContent = 'Fluid';
+                materialBlock.style.backgroundColor = '#17a2b8'; /* Cyan */
+            } else if (selectedType === 'radiation') {
+                radiationControls.style.display = 'flex';
+                materialBlock.textContent = 'Vacuum';
+                materialBlock.style.backgroundColor = '#343a40'; /* Dark */
+            }
+        },
+        updateVisuals: function() {
+            const transferType = transferTypeSelect.value;
+            const tempDiff = parseFloat(document.getElementById('tempDiffConduction').value || document.getElementById('tempDiffConvection').value || (parseFloat(document.getElementById('tempSource').value) - parseFloat(document.getElementById('tempSurroundings').value)));
+
+            // Adjust arrow visibility and direction
+            if (tempDiff > 0) {
+                heatFlowArrow.style.opacity = 1;
+                heatFlowArrow.style.transform = 'rotate(90deg)'; // Left to right
+            } else if (tempDiff < 0) {
+                heatFlowArrow.style.opacity = 1;
+                heatFlowArrow.style.transform = 'rotate(-90deg)'; // Right to left
+            } else {
+                heatFlowArrow.style.opacity = 0;
+            }
+
+            // Adjust heat source/sink colors based on temperature
+            const hotTemp = parseFloat(document.getElementById('tempSource')?.value || 500);
+            const coldTemp = parseFloat(document.getElementById('tempSurroundings')?.value || 300);
+
+            heatSource.style.backgroundColor = `hsl(0, 100%, ${50 - (hotTemp / 1000) * 20}%)`;
+            heatSink.style.backgroundColor = `hsl(200, 100%, ${50 + (coldTemp / 1000) * 20}%)`;
+        }
+    };
+
+    transferTypeSelect.addEventListener('change', heatTransferSim.init);
+    thermalConductivityInput.addEventListener('input', updateInfoPanel);
+    areaConductionInput.addEventListener('input', updateInfoPanel);
+    tempDiffConductionInput.addEventListener('input', updateInfoPanel);
+    thicknessConductionInput.addEventListener('input', updateInfoPanel);
+    convectionCoefficientInput.addEventListener('input', updateInfoPanel);
+    areaConvectionInput.addEventListener('input', updateInfoPanel);
+    tempDiffConvectionInput.addEventListener('input', updateInfoPanel);
+    emissivityInput.addEventListener('input', updateInfoPanel);
+    areaRadiationInput.addEventListener('input', updateInfoPanel);
+    tempSourceInput.addEventListener('input', updateInfoPanel);
+    tempSurroundingsInput.addEventListener('input', updateInfoPanel);
+
+
+    // --- States of Matter Simulator ---
+    const statesOfMatterCanvas = document.getElementById('statesOfMatterCanvas');
+    const somTemperatureInput = document.getElementById('somTemperature');
+
+    const statesOfMatterSim = {
+        ctx: null,
+        canvas: null,
+        particles: [],
+        numParticles: 150,
+        particleSize: 8,
+        animationInterval: null,
+        init: function() {
+            this.canvas = statesOfMatterCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.createParticles();
+            this.startAnimation();
+            this.draw(); // Initial draw
+        },
+        createParticles: function() {
+            this.particles = [];
+            for (let i = 0; i < this.numParticles; i++) {
+                this.particles.push({
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    color: var_primary_color,
+                    size: this.particleSize
+                });
+            }
+        },
+        startAnimation: function() {
+            clearInterval(this.animationInterval);
+            this.animationInterval = setInterval(() => {
+                this.updateParticles();
+                this.draw();
+            }, 1000 / 60); // 60 FPS
+        },
+        updateParticles: function() {
+            const temperature = parseFloat(somTemperatureInput.value);
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            const particleSize = this.particleSize;
+
+            let speedFactor = 0;
+            let cohesionFactor = 0; // How much particles stick together
+
+            if (temperature < 10) { // Bose-Einstein Condensate
+                speedFactor = 0.01;
+                cohesionFactor = 0.99; // Very high cohesion
+            } else if (temperature < 100) { // Solid
+                speedFactor = 0.1;
+                cohesionFactor = 0.9; // High cohesion
+            } else if (temperature < 500) { // Liquid
+                speedFactor = 0.5;
+                cohesionFactor = 0.5; // Moderate cohesion
+            } else if (temperature < 5000) { // Gas
+                speedFactor = 1.5;
+                cohesionFactor = 0.1; // Low cohesion
+            } else { // Plasma
+                speedFactor = 3;
+                cohesionFactor = 0; // No cohesion, high repulsion/ionization
+            }
+
+            this.particles.forEach((p, i) => {
+                // Apply velocity
+                p.x += p.vx * speedFactor;
+                p.y += p.vy * speedFactor;
+
+                // Wall collisions
+                if (p.x <= 0 || p.x >= width - particleSize) {
+                    p.vx *= -1;
+                }
+                if (p.y <= 0 || p.y >= height - particleSize) {
+                    p.vy *= -1;
+                }
+
+                // Cohesion/Repulsion (simplified)
+                if (cohesionFactor > 0) {
+                    for (let j = i + 1; j < this.numParticles; j++) {
+                        const p2 = this.particles[j];
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < particleSize * 2) { // If particles are close
+                            const force = (particleSize * 2 - dist) / (particleSize * 2) * cohesionFactor;
+                            p.vx += dx * force * 0.01;
+                            p.vy += dy * force * 0.01;
+                            p2.vx -= dx * force * 0.01;
+                            p2.vy -= dy * force * 0.01;
+                        }
+                    }
+                }
+            });
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            this.particles.forEach(p => {
+                this.ctx.beginPath();
+                this.ctx.arc(p.x + p.size / 2, p.y + p.size / 2, p.size / 2, 0, Math.PI * 2);
+                this.ctx.fillStyle = p.color;
+                this.ctx.fill();
+            });
+        }
+    };
+
+    somTemperatureInput.addEventListener('input', updateInfoPanel);
+
+
+    // --- Thermal Expansion Simulator ---
+    const expansionTypeSelect = document.getElementById('expansionType');
+    const linearExpansionControls = document.getElementById('linearExpansionControls');
+    const areaExpansionControls = document.getElementById('areaExpansionControls');
+    const volumeExpansionControls = document.getElementById('volumeExpansionControls');
+
+    const initialLengthInput = document.getElementById('initialLength');
+    const initialAreaInput = document.getElementById('initialArea');
+    const initialVolumeInput = document.getElementById('initialVolume');
+
+    const initialTempExpansionInput = document.getElementById('initialTempExpansion');
+    const finalTempExpansionInput = document.getElementById('finalTempExpansion');
+
+    const thermalCoeffInput = document.getElementById('thermalCoeff'); // alpha
+    const areaThermalCoeffInput = document.getElementById('areaThermalCoeff'); // beta
+    const volumeThermalCoeffInput = document.getElementById('volumeThermalCoeff'); // gamma
+
+    const expansionBar = document.getElementById('expansionBar');
+    const expansionBarContainer = document.querySelector('.expansion-bar-container');
+
+    const thermalExpansionSim = {
+        init: function() {
+            this.updateControlVisibility();
+            this.updateVisuals();
+            updateInfoPanel();
+        },
+        updateControlVisibility: function() {
+            const selectedType = expansionTypeSelect.value;
+            linearExpansionControls.style.display = 'none';
+            areaExpansionControls.style.display = 'none';
+            volumeExpansionControls.style.display = 'none';
+
+            if (selectedType === 'linear') {
+                linearExpansionControls.style.display = 'flex';
+            } else if (selectedType === 'area') {
+                areaExpansionControls.style.display = 'flex';
+            } else if (selectedType === 'volume') {
+                volumeExpansionControls.style.display = 'flex';
+            }
+        },
+        updateVisuals: function() {
+            const expansionType = expansionTypeSelect.value;
+            const L0 = parseFloat(initialLengthInput.value);
+            const A0 = parseFloat(initialAreaInput.value);
+            const V0 = parseFloat(initialVolumeInput.value);
+            const T0 = parseFloat(initialTempExpansionInput.value);
+            const Tf = parseFloat(finalTempExpansionInput.value);
+            const alpha = parseFloat(thermalCoeffInput.value);
+            const beta = parseFloat(areaThermalCoeffInput.value);
+            const gamma = parseFloat(volumeThermalCoeffInput.value);
+
+            const deltaT = Tf - T0;
+
+            let initialVisualValue = 0;
+            let finalVisualValue = 0;
+            let maxRefValue = 0; // For scaling the bar
+
+            if (expansionType === 'linear') {
+                initialVisualValue = L0;
+                finalVisualValue = L0 * (1 + alpha * deltaT);
+                maxRefValue = parseFloat(initialLengthInput.max);
+            } else if (expansionType === 'area') {
+                initialVisualValue = A0;
+                finalVisualValue = A0 * (1 + beta * deltaT);
+                maxRefValue = parseFloat(initialAreaInput.max);
+            } else if (expansionType === 'volume') {
+                initialVisualValue = V0;
+                finalVisualValue = V0 * (1 + gamma * deltaT);
+                maxRefValue = parseFloat(initialVolumeInput.max);
+            }
+
+            // Map finalVisualValue to a visual width within the container
+            const containerWidth = expansionBarContainer.offsetWidth * 0.8; // Use 80% of container width for scale
+            const minRefValue = 0; // Assuming min possible value for visual scaling
+
+            // Normalize finalVisualValue to a 0-1 scale relative to min/max input ranges
+            const normalizedFinalValue = (finalVisualValue - minRefValue) / (maxRefValue - minRefValue);
+
+            // Scale to container width, ensuring a minimum visible width
+            const visualWidth = Math.max(50, normalizedFinalValue * containerWidth); // Min 50px to always be visible
+
+            expansionBar.style.width = `${visualWidth}px`;
+            expansionBar.textContent = `${finalVisualValue.toFixed(3)}`; // Text content will be updated by info panel
+
+            // Adjust color based on temperature change
+            if (deltaT > 0) {
+                expansionBar.style.backgroundColor = 'red'; // Expanding
+            } else if (deltaT < 0) {
+                expansionBar.style.backgroundColor = 'blue'; // Contracting
+            } else {
+                expansionBar.style.backgroundColor = var_secondary_color; // No change
+            }
+        }
+    };
+
+    // Fix: Use .bind() to explicitly set 'this' context for event listeners
+    expansionTypeSelect.addEventListener('change', thermalExpansionSim.init.bind(thermalExpansionSim));
+    initialLengthInput.addEventListener('input', updateInfoPanel);
+    initialAreaInput.addEventListener('input', updateInfoPanel);
+    initialVolumeInput.addEventListener('input', updateInfoPanel);
+    initialTempExpansionInput.addEventListener('input', updateInfoPanel);
+    finalTempExpansionInput.addEventListener('input', updateInfoPanel);
+    thermalCoeffInput.addEventListener('input', updateInfoPanel);
+    areaThermalCoeffInput.addEventListener('input', updateInfoPanel);
+    volumeThermalCoeffInput.addEventListener('input', updateInfoPanel);
+
+
+    // Main animation loop - this function runs repeatedly and calls the drawing function
+    // for the currently active simulation tab if it's a canvas-based animation.
+    function animate() {
+      // The condition for `simulationCtx` is now simpler as 'thirdLaw' is removed.
+      if (!simulationCtx && currentTabMode !== 'entropyChange' && currentTabMode !== 'heatTransfer' && currentTabMode !== 'thermalExpansion' && currentTabMode !== 'zerothLaw') {
+          animationId = requestAnimationFrame(animate);
+          return;
+      }
+
+      // Resize canvas if container size changes
+      if (simulationCanvas) {
+          const parentContainer = simulationCanvas.closest('.simulation-area');
+          if (parentContainer && (simulationCanvas.width !== parentContainer.offsetWidth || simulationCanvas.height !== parentContainer.offsetHeight)) {
+              simulationCanvas.width = parentContainer.offsetWidth;
+              simulationCanvas.height = parentContainer.offsetHeight;
+              // Redraw after resize
+              if (currentTabMode === 'firstLaw') {
+                  firstLawSim.draw();
+              } else if (currentTabMode === 'carnotEngine') {
+                  carnotEngineSim.draw();
+              } else if (currentTabMode === 'statesOfMatter') {
+                  statesOfMatterSim.createParticles(); // Recreate particles for new dimensions
+                  statesOfMatterSim.draw();
+              }
+          }
+      }
+
+      if (currentTabMode === 'firstLaw') {
+          firstLawSim.draw();
+      } else if (currentTabMode === 'carnotEngine') {
+          carnotEngineSim.draw();
+      } else if (currentTabMode === 'statesOfMatter') {
+          // States of Matter has its own interval-based animation
+      }
+      // Entropy Change, Heat Transfer, Thermal Expansion, Zeroth Law are event-driven or have their own DOM updates/intervals
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Initialize the simulators that need an initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            currentTabMode = tabId; // Set initial mode
+        }
+
+        // Initialize all simulators
+        firstLawSim.init();
+        zerothLawSim.init(); // This will now call reset and not auto-start
+        carnotEngineSim.init();
+        entropyChangeSim.init();
+        heatTransferSim.init();
+        statesOfMatterSim.init();
+        thermalExpansionSim.init();
+
+        updateInfoPanel(); // Initial update of the info panel for the active tab
+
+        // Start the main animation loop only if the active tab is one that uses it
+        if (currentTabMode === 'firstLaw' || currentTabMode === 'carnotEngine' || currentTabMode === 'statesOfMatter') {
+            animate();
+        }
+    });
+  </script>
+</body>
+</html>

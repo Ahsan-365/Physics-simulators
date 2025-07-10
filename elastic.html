@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Properties of Matter Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Root variables for consistent theming across the application */
+    :root {
+      --primary-color: #7b1fa2; /* Deep Purple */
+      --secondary-color: #455a64; /* Blue Gray */
+      --accent-color: #ffc107; /* Amber */
+      --dark-color: #212121; /* General text color */
+      --light-color: #f5f5f5; /* Light background elements */
+      --background-gradient: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); /* Soft purple gradient */
+      --panel-bg: #ffffff; /* Background for content panels */
+      --border-radius: 12px; /* Rounded corners for major elements */
+      --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
+      --input-bg: #ede7f6; /* Light purple for control groups */
+      --button-hover-scale: 1.03; /* Scale effect on button hover */
+      --button-active-scale: 0.98; /* Scale effect on button click */
+    }
+
+    /* Global reset for consistent box-sizing and removal of default margins/paddings */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Body styling: font, background, layout */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align content to the top */
+      min-height: 100vh; /* Ensure body takes full viewport height */
+    }
+
+    /* Main container for the entire application layout */
+    .container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px; /* Spacing between sections */
+    }
+
+    /* Header section styling */
+    header {
+      text-align: center;
+      padding: 25px;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.3rem;
+    }
+
+    /* Tab navigation buttons styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 12px;
+    }
+
+    .tab-btn {
+      padding: 14px 28px;
+      background: var(--panel-bg);
+      border: none;
+      border-radius: 30px; /* Pill-shaped buttons */
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      color: var(--dark-color);
+      flex-shrink: 0; /* Prevent buttons from shrinking */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-4px); /* Lift effect on hover */
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(123, 31, 162, 0.4); /* Primary color shadow for active state */
+    }
+
+    /* Tab content area styling, hidden by default */
+    .tab-content {
+      display: none;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .tab-content.active {
+      display: block; /* Show active tab content */
+      animation: fadeIn 0.6s ease-out; /* Fade-in animation */
+    }
+
+    /* Keyframe animation for fading in tab content */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Container for each simulation section */
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    /* Grid layout for simulation controls */
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Responsive grid columns */
+      gap: 25px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08); /* Inner shadow for depth */
+    }
+
+    /* Styling for individual control groups (label + input) */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    /* Styling for number input fields and select dropdowns */
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      border-color: var(--primary-color); /* Highlight on focus */
+      outline: none;
+    }
+
+    /* Grouping for action buttons */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* General styling for all buttons */
+    button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    /* Area where simulations are visually displayed */
+    .simulation-area {
+      width: 100%;
+      max-width: 900px;
+      height: 550px; /* Fixed height for consistent layout */
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden; /* Hide overflowing elements */
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative; /* Needed for absolute positioning of particles */
+    }
+
+    /* Canvas element styling within the simulation area */
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+    }
+
+    /* Information panel styling */
+    .info-panel {
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .info-item {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee; /* Separator for info items */
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-item strong {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .info-item span {
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    /* Specific styles for Elasticity simulation */
+    .elasticity-bar {
+      position: absolute;
+      background-color: #607d8b; /* Blue Gray */
+      border: 2px solid #455a64;
+      border-radius: 5px;
+      transition: height 0.3s ease-out, top 0.3s ease-out; /* Transition for height and position */
+    }
+    .elasticity-force-indicator {
+      position: absolute;
+      background-color: #f44336; /* Red */
+      width: 10px;
+      height: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 0;
+      z-index: 10;
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      transition: top 0.3s ease-out; /* Transition for position */
+    }
+    .elasticity-force-indicator::after {
+        content: 'F';
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #f44336;
+        font-weight: bold;
+    }
+
+    /* Specific styles for Surface Tension simulation */
+    .surface-tension-droplet {
+      position: absolute;
+      background-color: rgba(0, 123, 255, 0.7); /* Blue */
+      border: 2px solid rgba(0, 123, 255, 0.9);
+      box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
+      border-radius: 50%;
+      /* No CSS transition here, will be JS animated */
+    }
+    #surfaceTensionCapillaryContainer { /* Specific ID for this tab's container */
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .surface-tension-capillary-tube {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-left: 2px solid #9e9e9e;
+      border-right: 2px solid #9e9e9e;
+      z-index: 1;
+    }
+    .surface-tension-liquid-level {
+      position: absolute;
+      background-color: rgba(0, 123, 255, 0.8);
+      z-index: 2;
+      /* No CSS transition here, will be JS animated */
+    }
+
+    /* Specific styles for Viscosity simulation */
+    .viscosity-fluid-container {
+      position: absolute;
+      width: 80%;
+      height: 90%;
+      background-color: rgba(100, 100, 100, 0.1); /* Transparent gray for fluid */
+      border: 2px solid var(--secondary-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .viscosity-falling-object {
+      position: absolute;
+      background-color: var(--primary-color);
+      border-radius: 50%;
+      top: 0; /* Start at the top of the container */
+      left: 50%;
+      transform: translateX(-50%); /* Center horizontally */
+      /* No CSS transition here, will be JS animated */
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Properties of Matter Simulator</h1>
+      <p class="subtitle">Exploring the Fundamental Characteristics of Materials</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="elasticity">Elasticity & Hooke's Law</button>
+      <button class="tab-btn" data-tab="surfaceTension">Surface Tension</button>
+      <button class="tab-btn" data-tab="viscosity">Viscosity</button>
+    </div>
+
+    <!-- Elasticity & Hooke's Law Tab -->
+    <div id="elasticity" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Elasticity, Stress, Strain & Hooke's Law</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="initialLength">Initial Length (m):</label>
+            <input type="number" id="initialLength" min="0.1" max="5" value="1" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="crossSectionalArea">Area (m²):</label>
+            <input type="number" id="crossSectionalArea" min="0.0001" max="0.01" value="0.001" step="0.0001">
+          </div>
+          <div class="control-group">
+            <label for="appliedForce">Applied Force (N):</label>
+            <input type="number" id="appliedForce" min="0" max="1000" value="100" step="10">
+          </div>
+          <div class="control-group">
+            <label for="youngsModulus">Young's Modulus (Pa):</label>
+            <input type="number" id="youngsModulus" min="1e9" max="200e9" value="70e9" step="1e9">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <div id="elasticityBar" class="elasticity-bar"></div>
+          <div id="elasticityForceIndicator" class="elasticity-force-indicator"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Initial Length (L₀):</strong> <span id="infoInitialLength">1.0 m</span></div>
+          <div class="info-item"><strong>Cross-sectional Area (A):</strong> <span id="infoArea">0.001 m²</span></div>
+          <div class="info-item"><strong>Applied Force (F):</strong> <span id="infoAppliedForce">100 N</span></div>
+          <div class="info-item"><strong>Youngs Modulus (Y):</strong> <span id="infoYoungsModulus">70 GPa</span></div>
+          <div class="info-item"><strong>Change in Length (ΔL):</strong> <span id="infoDeltaL">0.0014 m</span></div>
+          <div class="info-item"><strong>Stress (σ):</strong> <span id="infoStress">100000 Pa</span></div>
+          <div class="info-item"><strong>Strain (ε):</strong> <span id="infoStrain">0.0014</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surface Tension Tab -->
+    <div id="surfaceTension" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Surface Tension & Capillary Action</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="liquidType">Liquid Type:</label>
+            <select id="liquidType">
+              <option value="water">Water (72.8 mN/m)</option>
+              <option value="ethanol">Ethanol (22.1 mN/m)</option>
+              <option value="mercury">Mercury (485 mN/m)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="temperatureLiquid">Temperature (°C):</label>
+            <input type="number" id="temperatureLiquid" min="0" max="100" value="20" step="5">
+          </div>
+          <div class="control-group">
+            <label for="tubeRadius">Capillary Tube Radius (mm):</label>
+            <input type="number" id="tubeRadius" min="0.1" max="5" value="1" step="0.1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startSurfaceTensionBtn">Simulate Droplet</button>
+          <button class="secondary" id="resetSurfaceTensionBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="surfaceTensionCanvas"></canvas>
+          <div id="surfaceTensionCapillaryContainer">
+            <!-- Capillary tube, liquid level, and droplet will be dynamically created here by JS -->
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Liquid Type:</strong> <span id="infoLiquidType">Water</span></div>
+          <div class="info-item"><strong>Temperature:</strong> <span id="infoTemperatureLiquid">20 °C</span></div>
+          <div class="info-item"><strong>Surface Tension (γ):</strong> <span id="infoSurfaceTension">72.8 mN/m</span></div>
+          <div class="info-item"><strong>Capillary Rise (h):</strong> <span id="infoCapillaryRise">0.00 m</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viscosity Tab -->
+    <div id="viscosity" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Viscosity & Terminal Velocity</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="fluidViscosity">Fluid Viscosity (Pa·s):</label>
+            <input type="number" id="fluidViscosity" min="0.001" max="10" value="0.001" step="0.001">
+          </div>
+          <div class="control-group">
+            <label for="objectRadius">Object Radius (mm):</label>
+            <input type="number" id="objectRadius" min="0.1" max="10" value="2" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="objectDensity">Object Density (kg/m³):</label>
+            <input type="number" id="objectDensity" min="500" max="10000" value="2700" step="100">
+          </div>
+          <div class="control-group">
+            <label for="fluidDensity">Fluid Density (kg/m³):</label>
+            <input type="number" id="fluidDensity" min="100" max="2000" value="1000" step="50">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startViscosityBtn">Start Drop</button>
+          <button class="secondary" id="resetViscosityBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <div id="viscosityFluidContainer" class="viscosity-fluid-container"></div>
+          <div id="viscosityFallingObject" class="viscosity-falling-object"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Fluid Viscosity (η):</strong> <span id="infoFluidViscosity">0.001 Pa·s</span></div>
+          <div class="info-item"><strong>Object Radius (r):</strong> <span id="infoObjectRadius">2 mm</span></div>
+          <div class="info-item"><strong>Object Density (ρ_obj):</strong> <span id="infoObjectDensity">2700 kg/m³</span></div>
+          <div class="info-item"><strong>Fluid Density (ρ_fluid):</strong> <span id="infoFluidDensity">1000 kg/m³</span></div>
+          <div class="info-item"><strong>Terminal Velocity (v_t):</strong> <span id="infoTerminalVelocity">0.00 m/s</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId; // Stores requestAnimationFrame ID for potential global animation loop
+    let currentTabMode = 'elasticity'; // Tracks the currently active simulation tab
+    let simulationCanvas = null; // Reference to the canvas element of the active tab
+    let simulationCtx = null; // Reference to the 2D rendering context of the active canvas
+
+    /**
+     * Updates the information panel based on the currently active simulation tab
+     * and its parameters.
+     */
+    function updateInfoPanel() {
+      // Update info for Elasticity tab
+      if (currentTabMode === 'elasticity') {
+        const initialLength = parseFloat(document.getElementById('initialLength').value);
+        const area = parseFloat(document.getElementById('crossSectionalArea').value);
+        const force = parseFloat(document.getElementById('appliedForce').value);
+        const youngsModulus = parseFloat(document.getElementById('youngsModulus').value);
+
+        // Hooke's Law for Young's Modulus: Y = (F/A) / (ΔL/L₀) => ΔL = (F * L₀) / (A * Y)
+        let deltaL = (force * initialLength) / (area * youngsModulus);
+        if (isNaN(deltaL) || !isFinite(deltaL)) deltaL = 0; // Handle division by zero or invalid inputs
+
+        const stress = force / area; // Stress = Force / Area
+        const strain = deltaL / initialLength; // Strain = Change in Length / Initial Length
+
+        document.getElementById('infoInitialLength').textContent = `${initialLength.toFixed(1)} m`;
+        document.getElementById('infoArea').textContent = `${area.toFixed(4)} m²`;
+        document.getElementById('infoAppliedForce').textContent = `${force.toFixed(0)} N`;
+        document.getElementById('infoYoungsModulus').textContent = `${(youngsModulus / 1e9).toFixed(0)} GPa`; // Display in GPa
+        document.getElementById('infoDeltaL').textContent = `${deltaL.toFixed(4)} m`;
+        document.getElementById('infoStress').textContent = `${stress.toExponential(2)} Pa`; // Scientific notation for large numbers
+        document.getElementById('infoStrain').textContent = `${strain.toFixed(4)}`;
+      }
+      // Update info for Surface Tension tab
+      else if (currentTabMode === 'surfaceTension') {
+        const liquidType = document.getElementById('liquidType').value;
+        const temperature = parseFloat(document.getElementById('temperatureLiquid').value);
+        const tubeRadius = parseFloat(document.getElementById('tubeRadius').value) / 1000; // Convert mm to meters
+
+        let surfaceTensionVal = 0; // mN/m
+        let liquidDensity = 0; // kg/m^3
+        let contactAngle = 0; // radians, assuming ideal wetting for now (cos(0) = 1)
+
+        switch (liquidType) {
+          case 'water':
+            // Water surface tension decreases with temperature
+            surfaceTensionVal = 72.8 - (0.15 * temperature); // Approx. linear decrease
+            liquidDensity = 1000; // Approx density of water
+            contactAngle = 0; // Good wetting
+            break;
+          case 'ethanol':
+            surfaceTensionVal = 22.1; // Approx constant for simplicity
+            liquidDensity = 789; // Density of ethanol
+            contactAngle = 0; // Good wetting
+            break;
+          case 'mercury':
+            surfaceTensionVal = 485; // High surface tension
+            liquidDensity = 13534; // Very high density
+            contactAngle = Math.PI * 150 / 180; // Poor wetting (150 degrees)
+            break;
+        }
+
+        // Jurin's Law for Capillary Rise: h = (2 * γ * cos(θ)) / (ρ * g * r)
+        // γ: surface tension (N/m), ρ: liquid density (kg/m³), g: gravity (9.81 m/s²), r: tube radius (m)
+        // Convert mN/m to N/m for calculation
+        const gamma_Nm = surfaceTensionVal / 1000;
+        const g = 9.81; // Acceleration due to gravity
+
+        let capillaryRise = (2 * gamma_Nm * Math.cos(contactAngle)) / (liquidDensity * g * tubeRadius);
+        if (isNaN(capillaryRise) || !isFinite(capillaryRise)) capillaryRise = 0;
+
+        document.getElementById('infoLiquidType').textContent = liquidType.charAt(0).toUpperCase() + liquidType.slice(1);
+        document.getElementById('infoTemperatureLiquid').textContent = `${temperature.toFixed(0)} °C`;
+        document.getElementById('infoSurfaceTension').textContent = `${surfaceTensionVal.toFixed(1)} mN/m`;
+        document.getElementById('infoCapillaryRise').textContent = `${capillaryRise.toFixed(4)} m`;
+      }
+      // Update info for Viscosity tab
+      else if (currentTabMode === 'viscosity') {
+        const fluidViscosity = parseFloat(document.getElementById('fluidViscosity').value);
+        const objectRadius = parseFloat(document.getElementById('objectRadius').value) / 1000; // Convert mm to meters
+        const objectDensity = parseFloat(document.getElementById('objectDensity').value);
+        const fluidDensity = parseFloat(document.getElementById('fluidDensity').value);
+
+        // Stokes' Law for Terminal Velocity: v_t = (2 * r² * g * (ρ_obj - ρ_fluid)) / (9 * η)
+        // r: object radius (m), g: gravity (9.81 m/s²), ρ_obj: object density (kg/m³),
+        // ρ_fluid: fluid density (kg/m³), η: fluid viscosity (Pa·s)
+        const g = 9.81; // Acceleration due to gravity
+
+        let terminalVelocity = (2 * Math.pow(objectRadius, 2) * g * (objectDensity - fluidDensity)) / (9 * fluidViscosity);
+        if (isNaN(terminalVelocity) || !isFinite(terminalVelocity)) terminalVelocity = 0;
+        if (terminalVelocity < 0) terminalVelocity = 0; // Velocity cannot be negative (object floats up if less denser)
+
+        document.getElementById('infoFluidViscosity').textContent = `${fluidViscosity.toFixed(3)} Pa·s`;
+        document.getElementById('infoObjectRadius').textContent = `${(objectRadius * 1000).toFixed(1)} mm`;
+        document.getElementById('infoObjectDensity').textContent = `${objectDensity.toFixed(0)} kg/m³`;
+        document.getElementById('infoFluidDensity').textContent = `${fluidDensity.toFixed(0)} kg/m³`;
+        document.getElementById('infoTerminalVelocity').textContent = `${terminalVelocity.toFixed(2)} m/s`;
+      }
+    }
+
+    /**
+     * Handles tab switching logic: stops current animations, updates active tab,
+     * initializes new tab's visuals, and updates info panel.
+     */
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop and reset any ongoing animations in all simulators
+        elasticitySim.reset();
+        surfaceTensionSim.reset();
+        viscositySim.reset();
+
+        // Remove 'active' class from all tab buttons and content areas
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add 'active' class to the clicked button and its corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Update the global current tab mode
+        currentTabMode = tabId;
+
+        // Get and set the canvas and its context for the newly active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set to fill its parent container
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Initialize the specific simulator for the newly active tab
+        if (currentTabMode === 'elasticity') {
+            elasticitySim.init();
+        } else if (currentTabMode === 'surfaceTension') {
+            surfaceTensionSim.init();
+        } else if (currentTabMode === 'viscosity') {
+            viscositySim.init();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- Elasticity & Hooke's Law Simulation Object ---
+    const elasticityBar = document.getElementById('elasticityBar');
+    const elasticityForceIndicator = document.getElementById('elasticityForceIndicator');
+
+    const elasticitySim = {
+        init: function() {
+            this.resetVisuals();
+        },
+        resetVisuals: function() {
+            // Ensure elements exist before proceeding
+            if (!elasticityBar || !elasticityForceIndicator) {
+                console.error("Elasticity simulation elements not found during resetVisuals.");
+                return;
+            }
+
+            const simArea = elasticityBar.closest('.simulation-area');
+            if (!simArea) {
+                console.error("Simulation area not found for elasticity bar during resetVisuals.");
+                return;
+            }
+            const simAreaHeight = simArea.offsetHeight;
+            const initialLength = parseFloat(document.getElementById('initialLength').value);
+
+            const scaleFactor = 300 / 1; // pixels per meter (1m = 300px)
+            const barHeightPx = initialLength * scaleFactor;
+
+            // Disable transitions for instant reset
+            elasticityBar.style.transition = 'none';
+            elasticityForceIndicator.style.transition = 'none';
+
+            // Set initial dimensions and position
+            elasticityBar.style.height = `${barHeightPx}px`;
+            elasticityBar.style.width = '100px';
+            elasticityBar.style.left = `calc(50% - 50px)`;
+            elasticityBar.style.top = `${(simAreaHeight - barHeightPx) / 2}px`;
+
+            elasticityForceIndicator.style.top = `${(simAreaHeight - barHeightPx) / 2 - 50}px`;
+            elasticityForceIndicator.style.display = 'block';
+
+            // Force reflow to apply instant reset
+            elasticityBar.offsetHeight;
+            elasticityForceIndicator.offsetHeight;
+
+            // Re-enable transitions
+            elasticityBar.style.transition = 'height 0.3s ease-out, top 0.3s ease-out';
+            elasticityForceIndicator.style.transition = 'top 0.3s ease-out';
+
+            this.draw(); // Apply current deformation and update info panel
+        },
+        draw: function() {
+            // Ensure elements exist before proceeding
+            if (!elasticityBar || !elasticityForceIndicator) {
+                console.error("Elasticity simulation elements not found during draw.");
+                return;
+            }
+            const simArea = elasticityBar.closest('.simulation-area');
+            if (!simArea) {
+                console.error("Simulation area not found for elasticity bar during draw.");
+                return;
+            }
+
+            const initialLength = parseFloat(document.getElementById('initialLength').value);
+            const area = parseFloat(document.getElementById('crossSectionalArea').value);
+            const force = parseFloat(document.getElementById('appliedForce').value);
+            const youngsModulus = parseFloat(document.getElementById('youngsModulus').value);
+
+            let deltaL = (force * initialLength) / (area * youngsModulus);
+            if (isNaN(deltaL) || !isFinite(deltaL)) deltaL = 0;
+
+            const scaleFactor = 300 / 1;
+            const deltaLPx = deltaL * scaleFactor;
+
+            const simAreaHeight = simArea.offsetHeight;
+            const initialBarHeightPx = initialLength * scaleFactor;
+
+            elasticityBar.style.height = `${initialBarHeightPx + deltaLPx}px`;
+            elasticityBar.style.top = `${(simAreaHeight - (initialBarHeightPx + deltaLPx)) / 2}px`;
+
+            elasticityForceIndicator.style.top = `${(simAreaHeight - (initialBarHeightPx + deltaLPx)) / 2 - 50}px`;
+
+            updateInfoPanel();
+        },
+        reset: function() {
+            this.resetVisuals();
+        }
+    };
+
+    // Event listeners for Elasticity tab controls
+    document.getElementById('initialLength').addEventListener('input', elasticitySim.draw.bind(elasticitySim));
+    document.getElementById('crossSectionalArea').addEventListener('input', elasticitySim.draw.bind(elasticitySim));
+    document.getElementById('appliedForce').addEventListener('input', elasticitySim.draw.bind(elasticitySim));
+    document.getElementById('youngsModulus').addEventListener('input', elasticitySim.draw.bind(elasticitySim));
+
+    // --- Surface Tension Simulation Object ---
+    const surfaceTensionCanvas = document.getElementById('surfaceTensionCanvas');
+    const startSurfaceTensionBtn = document.getElementById('startSurfaceTensionBtn');
+    const resetSurfaceTensionBtn = document.getElementById('resetSurfaceTensionBtn');
+    const liquidTypeInput = document.getElementById('liquidType');
+    const temperatureLiquidInput = document.getElementById('temperatureLiquid');
+    const tubeRadiusInput = document.getElementById('tubeRadius');
+    const surfaceTensionCapillaryContainer = document.getElementById('surfaceTensionCapillaryContainer');
+
+    let surfaceTensionTubeElement = null; // Reference to the created tube DOM element
+    let surfaceTensionLiquidLevelElement = null; // Reference to the created liquid level DOM element
+    let surfaceTensionDropletElement = null; // Reference to the created droplet DOM element
+
+    const surfaceTensionSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null, // For droplet animation
+        liquidLevelAnimationId: null, // For liquid level animation
+        liquidLevelStartTime: null, // To track start time for liquid level animation
+
+        init: function() {
+            this.canvas = surfaceTensionCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.resetVisuals();
+        },
+        resetVisuals: function() {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            if (this.liquidLevelAnimationId) {
+                cancelAnimationFrame(this.liquidLevelAnimationId);
+                this.liquidLevelAnimationId = null;
+            }
+            surfaceTensionCapillaryContainer.innerHTML = ''; // Clear all previous elements
+            surfaceTensionTubeElement = null;
+            surfaceTensionLiquidLevelElement = null;
+            surfaceTensionDropletElement = null;
+            document.getElementById('infoCapillaryRise').textContent = '0.00 m';
+            this.createCapillaryTubeAndLiquid(); // Re-create tube and liquid level
+            this.draw(); // Update info panel
+        },
+        createCapillaryTubeAndLiquid: function() {
+            surfaceTensionCapillaryContainer.innerHTML = ''; // Ensure container is empty
+
+            const simAreaWidth = this.canvas.width;
+            const simAreaHeight = this.canvas.height;
+            const tubeRadiusMm = parseFloat(tubeRadiusInput.value);
+            const tubeWidthPx = tubeRadiusMm * 2 * 10; // Scale mm to pixels (1mm radius = 20px diameter)
+
+            // Create and append capillary tube element
+            surfaceTensionTubeElement = document.createElement('div');
+            surfaceTensionTubeElement.className = 'surface-tension-capillary-tube';
+            surfaceTensionTubeElement.style.width = `${tubeWidthPx}px`;
+            surfaceTensionTubeElement.style.height = `${simAreaHeight * 0.8}px`;
+            surfaceTensionTubeElement.style.left = `${(simAreaWidth - tubeWidthPx) / 2}px`;
+            surfaceTensionTubeElement.style.top = `${simAreaHeight * 0.1}px`;
+            surfaceTensionCapillaryContainer.appendChild(surfaceTensionTubeElement);
+
+            // Create and append liquid level element
+            surfaceTensionLiquidLevelElement = document.createElement('div');
+            surfaceTensionLiquidLevelElement.className = 'surface-tension-liquid-level';
+            surfaceTensionLiquidLevelElement.style.width = `${tubeWidthPx}px`;
+            surfaceTensionLiquidLevelElement.style.left = `${(simAreaWidth - tubeWidthPx) / 2}px`;
+            surfaceTensionLiquidLevelElement.style.bottom = '0px'; // Position at the bottom of the tube
+            surfaceTensionLiquidLevelElement.style.height = '0px'; // Start with no rise
+            surfaceTensionCapillaryContainer.appendChild(surfaceTensionLiquidLevelElement);
+        },
+        draw: function() {
+            if (!surfaceTensionTubeElement || !surfaceTensionLiquidLevelElement) {
+                // If elements don't exist, create them first. This handles initial load.
+                this.createCapillaryTubeAndLiquid();
+            }
+
+            const liquidType = liquidTypeInput.value;
+            const temperature = parseFloat(temperatureLiquidInput.value);
+            const tubeRadius = parseFloat(tubeRadiusInput.value) / 1000; // Convert mm to meters
+
+            let surfaceTensionVal = 0; // mN/m
+            let liquidDensity = 0; // kg/m^3
+            let contactAngle = 0; // radians
+
+            switch (liquidType) {
+              case 'water':
+                surfaceTensionVal = 72.8 - (0.15 * temperature);
+                liquidDensity = 1000;
+                contactAngle = 0;
+                break;
+              case 'ethanol':
+                surfaceTensionVal = 22.1;
+                liquidDensity = 789;
+                contactAngle = 0;
+                break;
+              case 'mercury':
+                surfaceTensionVal = 485;
+                liquidDensity = 13534;
+                contactAngle = Math.PI * 150 / 180; // High contact angle for non-wetting
+                break;
+            }
+
+            const gamma_Nm = surfaceTensionVal / 1000; // Convert mN/m to N/m
+            const g = 9.81; // Acceleration due to gravity
+
+            let capillaryRise = (2 * gamma_Nm * Math.cos(contactAngle)) / (liquidDensity * g * tubeRadius);
+            if (isNaN(capillaryRise) || !isFinite(capillaryRise)) capillaryRise = 0;
+
+            // Capillary rise visualization: Scale the calculated rise to fit the tube's pixel height
+            const simAreaHeight = this.canvas.height;
+            const tubeHeightPx = parseFloat(surfaceTensionTubeElement.style.height);
+            // Max realistic rise for visual scaling (e.g., 0.05m = 50mm)
+            const maxRealisticRiseM = 0.05;
+            const scaleFactor = tubeHeightPx / maxRealisticRiseM;
+            const riseHeightPx = capillaryRise * scaleFactor;
+
+            // Animate liquid level height using requestAnimationFrame
+            const targetHeight = Math.max(0, Math.min(tubeHeightPx, riseHeightPx));
+            const currentHeight = parseFloat(surfaceTensionLiquidLevelElement.style.height);
+
+            const animateLiquidLevel = (timestamp) => {
+                if (!this.liquidLevelStartTime) this.liquidLevelStartTime = timestamp;
+                const elapsed = timestamp - this.liquidLevelStartTime;
+                const duration = 500; // ms
+                const progress = Math.min(elapsed / duration, 1);
+
+                const animatedHeight = currentHeight + (targetHeight - currentHeight) * progress;
+                surfaceTensionLiquidLevelElement.style.height = `${animatedHeight}px`;
+
+                surfaceTensionLiquidLevelElement.style.backgroundColor = (liquidType === 'mercury') ? 'rgba(160, 160, 160, 0.8)' : 'rgba(0, 123, 255, 0.8)';
+
+                if (progress < 1) {
+                    this.liquidLevelAnimationId = requestAnimationFrame(animateLiquidLevel);
+                } else {
+                    this.liquidLevelStartTime = null; // Reset for next animation
+                    this.liquidLevelAnimationId = null;
+                }
+            };
+            if (this.liquidLevelAnimationId) cancelAnimationFrame(this.liquidLevelAnimationId); // Stop previous if running
+            this.liquidLevelStartTime = null; // Reset start time for new animation
+            this.liquidLevelAnimationId = requestAnimationFrame(animateLiquidLevel);
+
+
+            updateInfoPanel();
+        },
+        simulateDroplet: function() {
+            this.resetVisuals(); // Clear everything first
+            // Do NOT call createCapillaryTubeAndLiquid here, as droplet will be the only element
+            // It will be recreated after the droplet disappears.
+
+            const simAreaWidth = this.canvas.width;
+            const simAreaHeight = this.canvas.height;
+
+            surfaceTensionDropletElement = document.createElement('div');
+            surfaceTensionDropletElement.className = 'surface-tension-droplet';
+            surfaceTensionDropletElement.style.left = `${simAreaWidth / 2}px`;
+            surfaceTensionDropletElement.style.top = `${simAreaHeight / 2}px`;
+            surfaceTensionCapillaryContainer.appendChild(surfaceTensionDropletElement);
+
+            const liquidType = liquidTypeInput.value;
+            let surfaceTensionVal = 0;
+            switch (liquidType) {
+              case 'water': surfaceTensionVal = 72.8; break;
+              case 'ethanol': surfaceTensionVal = 22.1; break;
+              case 'mercury': surfaceTensionVal = 485; break;
+            }
+
+            const baseSize = 100;
+            const normalizedTension = surfaceTensionVal / 500;
+            const dropletSize = baseSize * (1 - 0.5 * normalizedTension);
+
+            surfaceTensionDropletElement.style.width = `${dropletSize}px`;
+            surfaceTensionDropletElement.style.height = `${dropletSize}px`;
+            surfaceTensionDropletElement.style.backgroundColor = (liquidType === 'mercury') ? 'rgba(160, 160, 160, 0.7)' : 'rgba(0, 123, 255, 0.7)';
+            surfaceTensionDropletElement.style.borderColor = (liquidType === 'mercury') ? 'rgba(160, 160, 160, 0.9)' : 'rgba(0, 123, 255, 0.9)';
+
+            // Droplet animation using requestAnimationFrame
+            let startTime = null;
+            const animateDroplet = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const duration = 500; // ms for bounce
+                const progress = Math.min(elapsed / duration, 1);
+
+                const scale = 1 + 0.05 * Math.sin(progress * Math.PI); // Simple bounce effect
+                surfaceTensionDropletElement.style.transform = `translate(-50%, -50%) scale(${scale})`;
+
+                if (progress < 1) {
+                    this.animationFrameId = requestAnimationFrame(animateDroplet);
+                } else {
+                    // Droplet animation finished, remove it after a short delay
+                    setTimeout(() => {
+                        if (surfaceTensionDropletElement) surfaceTensionDropletElement.remove();
+                        surfaceTensionDropletElement = null;
+                        this.createCapillaryTubeAndLiquid(); // Re-draw tube after droplet disappears
+                        this.draw(); // Update info panel (to show capillary rise again)
+                    }, 500); // Keep droplet visible for 0.5s after bounce
+                }
+            };
+            if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = requestAnimationFrame(animateDroplet);
+
+            updateInfoPanel();
+        },
+        reset: function() {
+            this.resetVisuals();
+        }
+    };
+
+    // Event listeners for Surface Tension tab controls
+    liquidTypeInput.addEventListener('change', surfaceTensionSim.draw.bind(surfaceTensionSim));
+    temperatureLiquidInput.addEventListener('input', surfaceTensionSim.draw.bind(surfaceTensionSim));
+    tubeRadiusInput.addEventListener('input', surfaceTensionSim.draw.bind(surfaceTensionSim));
+    startSurfaceTensionBtn.addEventListener('click', () => surfaceTensionSim.simulateDroplet());
+    resetSurfaceTensionBtn.addEventListener('click', () => surfaceTensionSim.reset());
+
+    // --- Viscosity Simulation Object ---
+    const fluidViscosityInput = document.getElementById('fluidViscosity');
+    const objectRadiusInput = document.getElementById('objectRadius');
+    const objectDensityInput = document.getElementById('objectDensity');
+    const fluidDensityInput = document.getElementById('fluidDensity');
+    const startViscosityBtn = document.getElementById('startViscosityBtn');
+    const resetViscosityBtn = document.getElementById('resetViscosityBtn');
+    const viscosityFluidContainer = document.getElementById('viscosityFluidContainer');
+    const viscosityFallingObject = document.getElementById('viscosityFallingObject');
+
+    const viscositySim = {
+        animationFrameId: null,
+        startTime: null,
+        currentYPx: 0, // Current Y position of the object in pixels
+        terminalVelocity: 0, // Calculated terminal velocity in m/s
+        lastElapsedSeconds: 0, // To calculate delta time between frames
+
+        init: function() {
+            this.resetVisuals();
+        },
+        resetVisuals: function() {
+            if (this.animationFrameId) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            this.startTime = null;
+            this.currentYPx = 0; // Reset object's pixel position
+            this.terminalVelocity = 0;
+            this.lastElapsedSeconds = 0;
+
+            // Reset object position and hide it
+            viscosityFallingObject.style.transform = `translate(-50%, 0px)`; // Reset to top
+            viscosityFallingObject.style.display = 'none'; // Hide until start
+            viscosityFluidContainer.style.display = 'block'; // Ensure fluid container is visible
+
+            updateInfoPanel();
+        },
+        startDrop: function() {
+            this.resetVisuals(); // Reset position before starting
+            viscosityFallingObject.style.display = 'block'; // Show the object
+
+            const objectRadius = parseFloat(objectRadiusInput.value) / 1000; // Convert mm to meters
+            // Corrected scaling for object size: 1mm radius = 20px diameter (10px/mm)
+            // A 2mm radius object (4mm diameter) will be 40px. This is a reasonable visual size.
+            const objectSizePx = objectRadius * 2 * 1000 * 10; // Convert m to mm, then scale mm to px (10px per mm diameter)
+            viscosityFallingObject.style.width = `${objectSizePx}px`;
+            viscosityFallingObject.style.height = `${objectSizePx}px`;
+
+            const fluidViscosity = parseFloat(fluidViscosityInput.value);
+            const objectDensity = parseFloat(objectDensityInput.value);
+            const fluidDensity = parseFloat(fluidDensityInput.value);
+            const g = 9.81;
+
+            this.terminalVelocity = (2 * Math.pow(objectRadius, 2) * g * (objectDensity - fluidDensity)) / (9 * fluidViscosity);
+            if (isNaN(this.terminalVelocity) || !isFinite(this.terminalVelocity) || this.terminalVelocity < 0) {
+                this.terminalVelocity = 0; // Object doesn't fall (or floats up)
+            }
+
+            const containerHeightPx = viscosityFluidContainer.offsetHeight;
+            // Target Y position (bottom of container minus object size)
+            const targetYPx = containerHeightPx - objectSizePx;
+
+            this.currentYPx = 0; // Start at the top
+            this.startTime = null; // Will be set on the first frame of animation
+            this.lastElapsedSeconds = 0; // Reset for new animation
+
+            // Start the animation loop
+            this.animationFrameId = requestAnimationFrame(this.animateFallingObjectLoop.bind(this));
+            updateInfoPanel(); // Initial info panel update
+        },
+        animateFallingObjectLoop: function(timestamp) {
+            if (!this.startTime) {
+                this.startTime = timestamp;
+            }
+
+            const elapsedSeconds = (timestamp - this.startTime) / 1000; // Time elapsed in seconds
+
+            // Calculate new Y position based on terminal velocity
+            // Scale terminal velocity (m/s) to pixels per second for visual movement
+            // Assuming 1 meter in real-world corresponds to 1000 pixels in simulation for movement calculation
+            const movementPerSecondPx = this.terminalVelocity * 1000;
+            let newYPx = this.currentYPx + (movementPerSecondPx * (elapsedSeconds - this.lastElapsedSeconds));
+
+            // Update last elapsed for delta time calculation in next frame
+            this.lastElapsedSeconds = elapsedSeconds;
+
+            const containerHeightPx = viscosityFluidContainer.offsetHeight;
+            const objectSizePx = parseFloat(viscosityFallingObject.style.width); // Get current object size
+            const targetYPx = containerHeightPx - objectSizePx;
+
+            // Clamp Y position to ensure it doesn't fall beyond the container bottom
+            newYPx = Math.min(newYPx, targetYPx);
+
+            viscosityFallingObject.style.transform = `translate(-50%, ${newYPx}px)`;
+            this.currentYPx = newYPx; // Update current position for next frame
+
+            if (this.currentYPx < targetYPx) {
+                this.animationFrameId = requestAnimationFrame(this.animateFallingObjectLoop.bind(this));
+            } else {
+                // Animation finished
+                this.animationFrameId = null;
+                this.startTime = null;
+                this.lastElapsedSeconds = null;
+                updateInfoPanel();
+            }
+        },
+        draw: function() {
+            // No continuous canvas drawing for this sim, DOM elements handle visuals
+            updateInfoPanel();
+        },
+        reset: function() {
+            this.resetVisuals();
+        }
+    };
+
+    // Event listeners for Viscosity tab controls
+    fluidViscosityInput.addEventListener('input', viscositySim.draw.bind(viscositySim));
+    objectRadiusInput.addEventListener('input', viscositySim.draw.bind(viscositySim));
+    objectDensityInput.addEventListener('input', viscositySim.draw.bind(viscositySim));
+    fluidDensityInput.addEventListener('input', viscositySim.draw.bind(viscositySim));
+    startViscosityBtn.addEventListener('click', () => viscositySim.startDrop());
+    resetViscosityBtn.addEventListener('click', () => viscositySim.reset());
+
+    // Initialize all simulators when the DOM content is fully loaded.
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas and context
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            currentTabMode = tabId; // Set the initial global tab mode
+        }
+
+        // Initialize all simulation modules
+        elasticitySim.init();
+        surfaceTensionSim.init();
+        viscositySim.init();
+
+        updateInfoPanel(); // Perform an initial update of the info panel for the active tab
+    });
+
+  </script>
+</body>
+</html>

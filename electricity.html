@@ -1,0 +1,2965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electricity Simulation Suite</title>
+  <style>
+    /* CSS Variables for consistent theming */
+    :root {
+      --primary-color: #007bff; /* Blue */
+      --secondary-color: #6c757d; /* Gray */
+      --accent-color: #28a745; /* Green */
+      --dark-color: #343a40; /* Dark Gray */
+      --light-color: #f8f9fa; /* Light Gray */
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #e9ecef;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+      --positive-charge-color: #dc3545; /* Red */
+      --negative-charge-color: #007bff; /* Blue */
+      --wire-color: #343a40;
+      --component-color: #6c757d;
+      --bulb-off-color: #ffc107; /* Yellow for off */
+      --bulb-on-color: #ffeb3b; /* Brighter yellow for on */
+      --magnetic-field-color: #008000; /* Green for magnetic fields */
+      --waveform-voltage-color: #dc3545; /* Red for voltage waveform */
+      --waveform-current-color: #007bff; /* Blue for current waveform */
+    }
+
+    /* Global Box-sizing and Font */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif; /* Using Inter font */
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 20px;
+      min-height: 100vh; /* Ensure body takes full height */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      flex-grow: 1; /* Allow container to grow and fill space */
+    }
+
+    /* Header Styling */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: var(--secondary-color);
+      font-size: 1.2rem;
+    }
+
+    /* Tabs Styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Tab Content Styling */
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Simulation Area Styling */
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px;
+      height: 500px; /* Fixed height for canvas container */
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative; /* For absolutely positioned elements */
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Specific styles for Static Electricity */
+    .static-object {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: var(--border-radius);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: all 0.5s ease-out; /* Smooth movement */
+    }
+
+    #object1 {
+      background-color: #ffc107; /* Yellow */
+      left: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    #object2 {
+      background-color: #17a2b8; /* Cyan */
+      right: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .charge-particle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: white;
+        opacity: 0;
+        animation: fade-out 1s forwards;
+    }
+
+    @keyframes fade-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    /* Styles for AC Circuit waveforms */
+    .waveform-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    .waveform-canvas {
+        background-color: #f0f0f0;
+        border-radius: var(--border-radius);
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Styles for Ammeter/Voltmeter */
+    .meter-display {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 2px solid var(--dark-color);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: var(--dark-color);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        cursor: grab;
+        z-index: 10;
+        display: none; /* Hidden by default */
+        text-align: center;
+        white-space: nowrap;
+    }
+    .meter-display:active {
+        cursor: grabbing;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .tab-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+      }
+      .simulation-area {
+        height: 350px; /* Smaller height on mobile */
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+        .tabs {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .tab-btn {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Electricity Simulation Suite</h1>
+      <p class="subtitle">Interactive simulations for electric fields, static electricity, and circuits</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="electricField">Electric Field</button>
+      <button class="tab-btn" data-tab="staticElectricity">Static Electricity</button>
+      <button class="tab-btn" data-tab="currentElectricity">Current Electricity</button>
+      <button class="tab-btn" data-tab="capacitors">Capacitors</button>
+      <button class="tab-btn" data-tab="magneticFields">Magnetic Fields</button>
+      <button class="tab-btn" data-tab="acCircuits">AC Circuits</button>
+    </div>
+
+    <!-- Electric Field Tab -->
+    <div id="electricField" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Electric Field Visualization</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="numCharges">Number of Charges:</label>
+            <input type="number" id="numCharges" min="1" max="5" value="2" step="1">
+          </div>
+          <div class="control-group">
+            <label for="charge1Value">Charge 1 (nC):</label>
+            <input type="number" id="charge1Value" min="-10" max="10" value="5" step="1">
+          </div>
+          <div class="control-group">
+            <label for="charge2Value">Charge 2 (nC):</label>
+            <input type="number" id="charge2Value" min="-10" max="10" value="-5" step="1">
+          </div>
+          <div class="control-group" id="charge3Control" style="display:none;">
+            <label for="charge3Value">Charge 3 (nC):</label>
+            <input type="number" id="charge3Value" min="-10" max="10" value="0" step="1">
+          </div>
+          <div class="control-group" id="charge4Control" style="display:none;">
+            <label for="charge4Value">Charge 4 (nC):</label>
+            <input type="number" id="charge4Value" min="-10" max="10" value="0" step="1">
+          </div>
+          <div class="control-group" id="charge5Control" style="display:none;">
+            <label for="charge5Value">Charge 5 (nC):</label>
+            <input type="number" id="charge5Value" min="-10" max="10" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="fieldLinesToggle">Show Field Lines:</label>
+            <input type="checkbox" id="fieldLinesToggle" checked>
+          </div>
+          <div class="control-group">
+            <label for="equipotentialToggle">Show Equipotential Lines:</label>
+            <input type="checkbox" id="equipotentialToggle">
+          </div>
+          <div class="control-group">
+            <label for="fieldVectorsToggle">Show Field Vectors:</label>
+            <input type="checkbox" id="fieldVectorsToggle">
+          </div>
+          <div class="control-group">
+            <label for="testChargeValue">Test Charge (nC):</label>
+            <input type="number" id="testChargeValue" min="-5" max="5" value="1" step="1">
+          </div>
+          <div class="control-group">
+            <label for="showTestChargeForce">Show Force on Test Charge:</label>
+            <input type="checkbox" id="showTestChargeForce">
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="electricFieldCanvas"></canvas>
+          <div id="testCharge" style="position: absolute; width: 20px; height: 20px; border-radius: 50%; background-color: yellow; border: 2px solid black; cursor: grab; display: none;"></div>
+        </div>
+
+        <div class="info-panel" id="electricFieldInfo">
+          <div class="info-item">Total Charge: <span id="totalCharge">0</span> nC</div>
+          <div class="info-item">Field Strength at Center: <span id="fieldStrengthCenter">0</span> N/C</div>
+          <div class="info-item">Force on Test Charge: <span id="testChargeForce">0</span> N</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Static Electricity Tab -->
+    <div id="staticElectricity" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Charge Transfer & Interaction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="initialCharge1">Initial Charge on Object 1 (nC):</label>
+            <input type="number" id="initialCharge1" min="-100" max="100" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="initialCharge2">Initial Charge on Object 2 (nC):</label>
+            <input type="number" id="initialCharge2" min="-100" max="100" value="0" step="1">
+          </div>
+          <div class="control-group">
+            <label for="transferAmount">Charge Transfer Amount (nC):</label>
+            <input type="number" id="transferAmount" min="1" max="50" value="10" step="1">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="transferChargeBtn">Transfer Charge</button>
+          <button class="secondary" id="groundObject1Btn">Ground Object 1</button>
+          <button class="secondary" id="groundObject2Btn">Ground Object 2</button>
+          <button class="secondary" id="staticResetPositionBtn">Reset Position</button>
+          <button class="secondary" id="staticResetBtn">Reset All</button>
+        </div>
+
+        <div class="simulation-area" style="overflow: visible;">
+          <div class="static-object" id="object1">Object 1<br><span id="obj1Charge">0 nC</span></div>
+          <div class="static-object" id="object2">Object 2<br><span id="obj2Charge">0 nC</span></div>
+          <div id="chargeTransferParticles" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></div>
+        </div>
+
+        <div class="info-panel" id="staticElectricityInfo">
+          <div class="info-item">Charge on Object 1: <span id="infoObj1Charge">0</span> nC</div>
+          <div class="info-item">Charge on Object 2: <span id="infoObj2Charge">0</span> nC</div>
+          <div class="info-item">Force between Objects: <span id="forceBetweenObjects">0</span> N</div>
+          <div class="info-item">Interaction: <span id="interactionType">None</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Electricity Tab -->
+    <div id="currentElectricity" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Simple Circuit Simulator (Ohm's Law)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="voltageInput">Voltage (V):</label>
+            <input type="number" id="voltageInput" min="1" max="24" value="12" step="1">
+          </div>
+          <div class="control-group">
+            <label for="resistor1Input">Resistor 1 (Ω):</label>
+            <input type="number" id="resistor1Input" min="1" max="100" value="10" step="1">
+          </div>
+          <div class="control-group">
+            <label for="resistor2Input">Resistor 2 (Ω):</label>
+            <input type="number" id="resistor2Input" min="1" max="100" value="20" step="1">
+          </div>
+          <div class="control-group">
+            <label for="numResistors">Number of Resistors:</label>
+            <select id="numResistors">
+                <option value="2">2 Resistors</option>
+                <option value="3">3 Resistors</option>
+            </select>
+          </div>
+          <div class="control-group" id="resistor3Control" style="display:none;">
+            <label for="resistor3Input">Resistor 3 (Ω):</label>
+            <input type="number" id="resistor3Input" min="1" max="100" value="10" step="1">
+          </div>
+          <div class="control-group">
+            <label for="circuitType">Circuit Type:</label>
+            <select id="circuitType">
+              <option value="series">Series</option>
+              <option value="parallel">Parallel</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="showElectronFlow">Show Electron Flow:</label>
+            <input type="checkbox" id="showElectronFlow" checked>
+          </div>
+          <div class="control-group">
+            <label for="resistor1IsBulb">Resistor 1 is Light Bulb:</label>
+            <input type="checkbox" id="resistor1IsBulb">
+          </div>
+          <div class="control-group">
+            <label for="circuitSwitch">Circuit Switch:</label>
+            <input type="checkbox" id="circuitSwitch" checked>
+          </div>
+          <div class="control-group">
+            <label for="ammeterLocation">Ammeter Location:</label>
+            <select id="ammeterLocation">
+                <option value="none">None</option>
+                <option value="R1">Across R1</option>
+                <option value="R2">Across R2</option>
+                <option value="total">Total Current</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="voltmeterLocation">Voltmeter Location:</label>
+            <select id="voltmeterLocation">
+                <option value="none">None</option>
+                <option value="R1">Across R1</option>
+                <option value="R2">Across R2</option>
+                <option value="battery">Across Battery</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="circuitResetBtn">Reset Circuit</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="currentElectricityCanvas"></canvas>
+          <div id="ammeterDisplay" class="meter-display">Ammeter: 0.00 A</div>
+          <div id="voltmeterDisplay" class="meter-display">Voltmeter: 0.00 V</div>
+        </div>
+
+        <div class="info-panel" id="currentElectricityInfo">
+          <div class="info-item">Total Voltage: <span id="infoVoltage">12</span> V</div>
+          <div class="info-item">Resistor 1: <span id="infoResistor1">10</span> Ω</div>
+          <div class="info-item">Resistor 2: <span id="infoResistor2">20</span> Ω</div>
+          <div class="info-item" id="infoResistor3Item" style="display:none;">Resistor 3: <span id="infoResistor3">0</span> Ω</div>
+          <div class="info-item">Circuit Type: <span id="infoCircuitType">Series</span></div>
+          <div class="info-item">Total Resistance: <span id="totalResistance">30</span> Ω</div>
+          <div class="info-item">Total Current: <span id="totalCurrent">0.40</span> A</div>
+          <div class="info-item">Power Dissipated: <span id="powerDissipated">4.80</span> W</div>
+          <div class="info-item" id="ammeterReadingItem" style="display:none;">Ammeter Reading: <span id="ammeterReading">0</span> A</div>
+          <div class="info-item" id="voltmeterReadingItem" style="display:none;">Voltmeter Reading: <span id="voltmeterReading">0</span> V</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capacitors Tab -->
+    <div id="capacitors" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Capacitor Charging and Discharging</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="capacitanceInput">Capacitance (μF):</label>
+            <input type="number" id="capacitanceInput" min="1" max="100" value="10" step="1">
+          </div>
+          <div class="control-group">
+            <label for="capacitorVoltageSource">Source Voltage (V):</label>
+            <input type="number" id="capacitorVoltageSource" min="1" max="24" value="12" step="1">
+          </div>
+          <div class="control-group">
+            <label for="capacitorResistance">Resistance (Ω):</label>
+            <input type="number" id="capacitorResistance" min="10" max="1000" value="100" step="10">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="chargeCapacitorBtn">Charge</button>
+          <button class="secondary" id="dischargeCapacitorBtn">Discharge</button>
+          <button class="secondary" id="pauseResumeCapacitorBtn">Pause</button>
+          <button class="secondary" id="resetCapacitorBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="capacitorCanvas"></canvas>
+          <canvas id="capacitorGraphCanvas" class="waveform-canvas" style="position: absolute; bottom: 10px; right: 10px; width: 90%; height: 40%; border: 1px solid #ccc;"></canvas>
+        </div>
+
+        <div class="info-panel" id="capacitorsInfo">
+          <div class="info-item">Capacitance: <span id="infoCapacitance">10</span> μF</div>
+          <div class="info-item">Source Voltage: <span id="infoCapacitorVoltageSource">12</span> V</div>
+          <div class="info-item">Resistance: <span id="infoCapacitorResistance">100</span> Ω</div>
+          <div class="info-item">Time Constant ($\tau$): <span id="timeConstant">0</span> s</div>
+          <div class="info-item">Current: <span id="capacitorCurrent">0</span> A</div>
+          <div class="info-item">Charge Stored: <span id="chargeStored">0</span> μC</div>
+          <div class="info-item">Capacitor Voltage: <span id="capacitorVoltage">0</span> V</div>
+          <div class="info-item">Energy Stored: <span id="energyStored">0</span> μJ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Magnetic Fields Tab -->
+    <div id="magneticFields" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">Magnetic Field Visualization</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="fieldSource">Field Source:</label>
+                    <select id="fieldSource">
+                        <option value="straightWire">Straight Wire</option>
+                        <option value="currentLoop">Current Loop</option>
+                        <option value="solenoid">Solenoid</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="currentValue">Current (A):</label>
+                    <input type="number" id="currentValue" min="0.1" max="10" value="2" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="numTurns" id="numTurnsLabel" style="display:none;">Number of Turns:</label>
+                    <input type="number" id="numTurns" min="1" max="20" value="5" step="1" style="display:none;">
+                </div>
+                <div class="control-group">
+                    <label for="fieldDirection">Current Direction:</label>
+                    <select id="fieldDirection">
+                        <option value="up">Up (Wire)</option>
+                        <option value="clockwise">Clockwise (Loop/Solenoid)</option>
+                        <option value="down">Down (Wire)</option>
+                        <option value="counterClockwise">Counter-Clockwise (Loop/Solenoid)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="magneticFieldCanvas"></canvas>
+            </div>
+
+            <div class="info-panel" id="magneticFieldsInfo">
+                <div class="info-item">Source Type: <span id="infoSourceType">Straight Wire</span></div>
+                <div class="info-item">Current: <span id="infoCurrentValue">2</span> A</div>
+                <div class="info-item" id="infoNumTurnsItem" style="display:none;">Number of Turns: <span id="infoNumTurns">5</span></div>
+                <div class="info-item">Field Strength (Example Point): <span id="infoFieldStrength">0</span> T</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AC Circuits Tab -->
+    <div id="acCircuits" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">AC RLC Series Circuit</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="acVoltagePeak">Peak Voltage (V):</label>
+                    <input type="number" id="acVoltagePeak" min="1" max="50" value="20" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="acFrequency">Frequency (Hz):</label>
+                    <input type="number" id="acFrequency" min="1" max="200" value="50" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="acResistance">Resistance (Ω):</label>
+                    <input type="number" id="acResistance" min="1" max="500" value="100" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="acInductance">Inductance (mH):</label>
+                    <input type="number" id="acInductance" min="1" max="500" value="100" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="acCapacitance">Capacitance (μF):</label>
+                    <input type="number" id="acCapacitance" min="0.1" max="100" value="10" step="0.1">
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="acCircuitCanvas" class="waveform-canvas"></canvas>
+            </div>
+
+            <div class="info-panel" id="acCircuitsInfo">
+                <div class="info-item">Peak Voltage: <span id="infoAcVoltagePeak">20</span> V</div>
+                <div class="info-item">Frequency: <span id="infoAcFrequency">50</span> Hz</div>
+                <div class="info-item">Resistance (R): <span id="infoAcResistance">100</span> Ω</div>
+                <div class="info-item">Inductance (L): <span id="infoAcInductance">100</span> mH</div>
+                <div class="info-item">Capacitance (C): <span id="infoAcCapacitance">10</span> μF</div>
+                <div class="info-item">Inductive Reactance (X_L): <span id="infoInductiveReactance">0</span> Ω</div>
+                <div class="info-item">Capacitive Reactance (X_C): <span id="infoCapacitiveReactance">0</span> Ω</div>
+                <div class="info-item">Impedance (Z): <span id="infoImpedance">0</span> Ω</div>
+                <div class="info-item">Peak Current (I_peak): <span id="infoPeakCurrent">0</span> A</div>
+                <div class="info-item">Phase Angle (φ): <span id="infoPhaseAngle">0</span> °</div>
+                <div class="info-item">Resonance Frequency: <span id="infoResonanceFrequency">0</span> Hz</div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId;
+    let mode = 'electricField'; // Initial mode
+    let simulationCanvas = null;
+    let simulationCtx = null;
+
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to draw an arrowhead at a given point and angle.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate of the arrow tip.
+     * @param {number} y - The y-coordinate of the arrow tip.
+     * @param {number} angle - The angle of the arrow in radians.
+     * @param {string} color - The color of the arrowhead.
+     */
+    function drawArrowhead(ctx, x, y, angle, color) {
+      const length = 10;
+      const width = 6;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-length, -width / 2);
+      ctx.lineTo(-length, width / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Draggable functionality for HTML elements.
+     * @param {HTMLElement} element - The element to make draggable.
+     */
+    function makeDraggable(element) {
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        element.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - element.getBoundingClientRect().left;
+            offsetY = e.clientY - element.getBoundingClientRect().top;
+            element.style.cursor = 'grabbing';
+            e.preventDefault(); // Prevent default browser drag behavior
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const simArea = element.closest('.simulation-area');
+            if (!simArea) return;
+
+            const simAreaRect = simArea.getBoundingClientRect();
+
+            let newX = e.clientX - offsetX - simAreaRect.left;
+            let newY = e.clientY - offsetY - simAreaRect.top;
+
+            // Keep element within simulation area bounds
+            newX = Math.max(0, Math.min(simAreaRect.width - element.offsetWidth, newX));
+            newY = Math.max(0, Math.min(simAreaRect.height - element.offsetHeight, newY));
+
+            element.style.left = `${newX}px`;
+            element.style.top = `${newY}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            element.style.cursor = 'grab';
+        });
+    }
+
+
+    /**
+     * Updates the info panel dynamically based on the current simulation mode.
+     * This function is crucial for displaying real-time data from each simulator.
+     */
+    function updateInfoPanel() {
+      // Get info panels for new simulators
+      const electricFieldInfo = document.getElementById('electricFieldInfo');
+      const staticElectricityInfo = document.getElementById('staticElectricityInfo');
+      const currentElectricityInfo = document.getElementById('currentElectricityInfo');
+      const capacitorsInfo = document.getElementById('capacitorsInfo');
+      const magneticFieldsInfo = document.getElementById('magneticFieldsInfo');
+      const acCircuitsInfo = document.getElementById('acCircuitsInfo');
+
+
+      if (mode === 'electricField') {
+          const charge1Val = parseFloat(document.getElementById('charge1Value').value);
+          const charge2Val = parseFloat(document.getElementById('charge2Value').value);
+          const numCharges = parseInt(document.getElementById('numCharges').value);
+          let totalCharge = charge1Val + charge2Val;
+          if (numCharges >= 3) totalCharge += parseFloat(document.getElementById('charge3Value').value);
+          if (numCharges >= 4) totalCharge += parseFloat(document.getElementById('charge4Value').value);
+          if (numCharges >= 5) totalCharge += parseFloat(document.getElementById('charge5Value').value);
+
+          // Calculate approximate field strength at center for two charges for display
+          let fieldStrength = 0;
+          if (numCharges === 2) {
+              const k = 8.99e9; // Coulomb's constant
+              const dist = electricFieldSim.canvas.width / 4; // Distance from center to each charge
+              const E1 = k * (charge1Val * 1e-9) / (dist * dist);
+              const E2 = k * (charge2Val * 1e-9) / (dist * dist);
+              // For two charges at opposite sides, field adds up if charges are opposite, or cancels if same
+              fieldStrength = Math.abs(E1) + Math.abs(E2); // Simplified for display
+          }
+
+          let testChargeForce = 0;
+          const testChargeElement = document.getElementById('testCharge');
+          if (testChargeElement.style.display !== 'none') {
+              const testChargeVal = parseFloat(document.getElementById('testChargeValue').value);
+              const testChargeX = parseFloat(testChargeElement.style.left) + 10; // Center of test charge
+              const testChargeY = parseFloat(testChargeElement.style.top) + 10; // Center of test charge
+              const fieldAtTestCharge = electricFieldSim.calculateElectricField(testChargeX, testChargeY);
+              testChargeForce = fieldAtTestCharge.magnitude * (testChargeVal * 1e-9);
+          }
+
+
+          if (electricFieldInfo) {
+              electricFieldInfo.innerHTML = `
+                <div class="info-item">Total Charge: <span>${totalCharge.toFixed(0)}</span> nC</div>
+                <div class="info-item">Field Strength at Center: <span>${fieldStrength.toExponential(2)}</span> N/C</div>
+                <div class="info-item">Force on Test Charge: <span>${testChargeForce.toExponential(2)}</span> N</div>
+              `;
+          }
+      } else if (mode === 'staticElectricity') {
+          const q1 = staticElectricitySim.charge1;
+          const q2 = staticElectricitySim.charge2;
+          const r = staticElectricitySim.distance / 100; // Convert pixels to meters for force calculation
+          const k = 8.99e9; // Coulomb's constant (N·m²/C²)
+
+          let force = 0;
+          if (r > 0) {
+              // Convert nC to C
+              force = k * (q1 * 1e-9) * (q2 * 1e-9) / (r * r);
+          }
+
+          let interactionType = 'None';
+          if (q1 > 0 && q2 > 0) interactionType = 'Repulsion';
+          else if (q1 < 0 && q2 < 0) interactionType = 'Repulsion';
+          else if (q1 !== 0 && q2 !== 0 && ((q1 > 0 && q2 < 0) || (q1 < 0 && q2 > 0))) interactionType = 'Attraction';
+
+          if (staticElectricityInfo) {
+              staticElectricityInfo.innerHTML = `
+                <div class="info-item">Charge on Object 1: <span>${q1.toFixed(0)}</span> nC</div>
+                <div class="info-item">Charge on Object 2: <span>${q2.toFixed(0)}</span> nC</div>
+                <div class="info-item">Force between Objects: <span>${Math.abs(force).toExponential(2)}</span> N</div>
+                <div class="info-item">Interaction: <span>${interactionType}</span></div>
+              `;
+          }
+      } else if (mode === 'currentElectricity') {
+          const V = parseFloat(document.getElementById('voltageInput').value);
+          const R1 = parseFloat(document.getElementById('resistor1Input').value);
+          const R2 = parseFloat(document.getElementById('resistor2Input').value);
+          const numResistors = parseInt(document.getElementById('numResistors').value);
+          const R3 = numResistors === 3 ? parseFloat(document.getElementById('resistor3Input').value) : 0;
+          const circuitType = document.getElementById('circuitType').value;
+          const circuitClosed = document.getElementById('circuitSwitch').checked;
+          const ammeterLocation = document.getElementById('ammeterLocation').value;
+          const voltmeterLocation = document.getElementById('voltmeterLocation').value;
+
+
+          let totalR;
+          if (circuitType === 'series') {
+              totalR = R1 + R2 + R3;
+          } else { // parallel
+              let r12_parallel = (R1 * R2) / (R1 + R2);
+              if (numResistors === 3) {
+                  totalR = (r12_parallel * R3) / (r12_parallel + R3);
+              } else {
+                  totalR = r12_parallel;
+              }
+          }
+          const I_total = circuitClosed ? (V / totalR) : 0; // Ohm's Law: I = V/R
+          const P = circuitClosed ? (V * I_total) : 0; // Power: P = V*I
+
+          let ammeterReading = 0;
+          let voltmeterReading = 0;
+
+          if (circuitClosed) {
+              if (ammeterLocation === 'total') {
+                  ammeterReading = I_total;
+              } else if (ammeterLocation === 'R1') {
+                  if (circuitType === 'series') ammeterReading = I_total;
+                  else ammeterReading = V / R1; // Current through R1 in parallel
+              } else if (ammeterLocation === 'R2') {
+                  if (circuitType === 'series') ammeterReading = I_total;
+                  else ammeterReading = V / R2; // Current through R2 in parallel
+              }
+
+              if (voltmeterLocation === 'battery') {
+                  voltmeterReading = V;
+              } else if (voltmeterLocation === 'R1') {
+                  if (circuitType === 'series') voltmeterReading = I_total * R1;
+                  else voltmeterReading = V; // Voltage across R1 in parallel is source voltage
+              } else if (voltmeterLocation === 'R2') {
+                  if (circuitType === 'series') voltmeterReading = I_total * R2;
+                  else voltmeterReading = V; // Voltage across R2 in parallel is source voltage
+              }
+          }
+
+
+          if (currentElectricityInfo) {
+              document.getElementById('infoVoltage').textContent = V.toFixed(1);
+              document.getElementById('infoResistor1').textContent = R1.toFixed(1);
+              document.getElementById('infoResistor2').textContent = R2.toFixed(1);
+
+              const infoR3Item = document.getElementById('infoResistor3Item');
+              const infoR3 = document.getElementById('infoResistor3');
+              if (numResistors === 3) {
+                  infoR3Item.style.display = 'block';
+                  infoR3.textContent = R3.toFixed(1);
+              } else {
+                  infoR3Item.style.display = 'none';
+              }
+
+              document.getElementById('infoCircuitType').textContent = circuitType === 'series' ? 'Series' : 'Parallel';
+              document.getElementById('totalResistance').textContent = totalR.toFixed(2);
+              document.getElementById('totalCurrent').textContent = I_total.toFixed(2);
+              document.getElementById('powerDissipated').textContent = P.toFixed(2);
+
+              const ammeterReadingItem = document.getElementById('ammeterReadingItem');
+              const ammeterReadingSpan = document.getElementById('ammeterReading');
+              if (ammeterLocation !== 'none') {
+                  ammeterReadingItem.style.display = 'block';
+                  ammeterReadingSpan.textContent = ammeterReading.toFixed(2);
+              } else {
+                  ammeterReadingItem.style.display = 'none';
+              }
+
+              const voltmeterReadingItem = document.getElementById('voltmeterReadingItem');
+              const voltmeterReadingSpan = document.getElementById('voltmeterReading');
+              if (voltmeterLocation !== 'none') {
+                  voltmeterReadingItem.style.display = 'block';
+                  voltmeterReadingSpan.textContent = voltmeterReading.toFixed(2);
+              } else {
+                  voltmeterReadingItem.style.display = 'none';
+              }
+
+              // Update draggable meter displays
+              document.getElementById('ammeterDisplay').textContent = `Ammeter: ${ammeterReading.toFixed(2)} A`;
+              document.getElementById('voltmeterDisplay').textContent = `Voltmeter: ${voltmeterReading.toFixed(2)} V`;
+          }
+      } else if (mode === 'capacitors') {
+          const C_uF = parseFloat(document.getElementById('capacitanceInput').value); // microFarads
+          const V_source = parseFloat(document.getElementById('capacitorVoltageSource').value);
+          const R = parseFloat(document.getElementById('capacitorResistance').value);
+
+          const C_farads = C_uF * 1e-6; // Convert μF to F
+          const tau = R * C_farads; // Time constant in seconds
+
+          const Q = capacitorSim.currentCharge; // microCoulombs
+          const V_capacitor = Q / C_uF; // Voltage across capacitor (using microFarads for consistency with Q)
+          const E_stored = 0.5 * C_uF * V_capacitor * V_capacitor; // Energy stored in microJoules
+
+          // Current calculation for charging/discharging
+          let current = 0;
+          if (capacitorSim.charging) {
+              current = (V_source - V_capacitor) / R; // (V_source - V_c) / R
+          } else if (capacitorSim.discharging) {
+              current = -V_capacitor / R; // -V_c / R
+          }
+
+
+          if (capacitorsInfo) {
+              capacitorsInfo.innerHTML = `
+                <div class="info-item">Capacitance: <span>${C_uF.toFixed(0)}</span> μF</div>
+                <div class="info-item">Source Voltage: <span>${V_source.toFixed(1)}</span> V</div>
+                <div class="info-item">Resistance: <span>${R.toFixed(0)}</span> Ω</div>
+                <div class="info-item">Time Constant ($\tau$): <span>${tau.toFixed(3)}</span> s</div>
+                <div class="info-item">Current: <span>${current.toFixed(3)}</span> A</div>
+                <div class="info-item">Charge Stored: <span>${Q.toFixed(2)}</span> μC</div>
+                <div class="info-item">Capacitor Voltage: <span>${V_capacitor.toFixed(2)}</span> V</div>
+                <div class="info-item">Energy Stored: <span>${E_stored.toFixed(2)}</span> μJ</div>
+              `;
+          }
+      } else if (mode === 'magneticFields') {
+          const fieldSource = document.getElementById('fieldSource').value;
+          const currentValue = parseFloat(document.getElementById('currentValue').value);
+          const numTurns = parseFloat(document.getElementById('numTurns').value);
+
+          let exampleFieldStrength = 0;
+          const mu0 = 4 * Math.PI * 1e-7; // Permeability of free space (T·m/A)
+
+          if (fieldSource === 'straightWire') {
+              // Example: Field strength at 0.1m from a straight wire
+              const r = 0.1; // meters
+              exampleFieldStrength = (mu0 * currentValue) / (2 * Math.PI * r);
+          } else if (fieldSource === 'currentLoop') {
+              // Example: Field strength at the center of a loop with radius 0.1m
+              const R_loop = 0.1; // meters
+              exampleFieldStrength = (mu0 * currentValue) / (2 * R_loop);
+          } else if (fieldSource === 'solenoid') {
+              // Example: Field strength inside a solenoid with length 0.2m
+              const L_solenoid = 0.2; // meters
+              const n = numTurns / L_solenoid; // turns per meter
+              exampleFieldStrength = mu0 * n * currentValue;
+          }
+
+
+          if (magneticFieldsInfo) {
+              document.getElementById('infoSourceType').textContent = fieldSource.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              document.getElementById('infoCurrentValue').textContent = currentValue.toFixed(1);
+
+              const infoNumTurnsItem = document.getElementById('infoNumTurnsItem');
+              const infoNumTurns = document.getElementById('infoNumTurns');
+              if (fieldSource === 'solenoid') {
+                  infoNumTurnsItem.style.display = 'block';
+                  infoNumTurns.textContent = numTurns.toFixed(0);
+              } else {
+                  infoNumTurnsItem.style.display = 'none';
+              }
+              document.getElementById('infoFieldStrength').textContent = exampleFieldStrength.toExponential(2);
+          }
+      } else if (mode === 'acCircuits') {
+          const V_peak = parseFloat(document.getElementById('acVoltagePeak').value);
+          const freq = parseFloat(document.getElementById('acFrequency').value);
+          const R = parseFloat(document.getElementById('acResistance').value);
+          const L_mH = parseFloat(document.getElementById('acInductance').value);
+          const C_uF = parseFloat(document.getElementById('acCapacitance').value);
+
+          const L = L_mH * 1e-3; // Convert mH to H
+          const C = C_uF * 1e-6; // Convert μF to F
+          const omega = 2 * Math.PI * freq; // Angular frequency
+
+          const X_L = omega * L; // Inductive Reactance
+          const X_C = 1 / (omega * C); // Capacitive Reactance
+          const Z = Math.sqrt(R*R + (X_L - X_C)*(X_L - X_C)); // Impedance
+          const I_peak = V_peak / Z; // Peak Current
+          const phaseAngleRad = Math.atan2((X_L - X_C), R); // Phase angle in radians
+          const phaseAngleDeg = phaseAngleRad * (180 / Math.PI); // Phase angle in degrees
+
+          let resonanceFreq = 0;
+          if (L > 0 && C > 0) {
+              resonanceFreq = 1 / (2 * Math.PI * Math.sqrt(L * C));
+          }
+
+
+          if (acCircuitsInfo) {
+              document.getElementById('infoAcVoltagePeak').textContent = V_peak.toFixed(1);
+              document.getElementById('infoAcFrequency').textContent = freq.toFixed(0);
+              document.getElementById('infoAcResistance').textContent = R.toFixed(0);
+              document.getElementById('infoAcInductance').textContent = L_mH.toFixed(0);
+              document.getElementById('infoAcCapacitance').textContent = C_uF.toFixed(1);
+              document.getElementById('infoInductiveReactance').textContent = X_L.toFixed(2);
+              document.getElementById('infoCapacitiveReactance').textContent = X_C.toFixed(2);
+              document.getElementById('infoImpedance').textContent = Z.toFixed(2);
+              document.getElementById('infoPeakCurrent').textContent = I_peak.toFixed(2);
+              document.getElementById('infoPhaseAngle').textContent = phaseAngleDeg.toFixed(2);
+              document.getElementById('infoResonanceFrequency').textContent = resonanceFreq.toFixed(2);
+          }
+      }
+    }
+
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations
+        cancelAnimationFrame(animationId);
+        if (currentElectricitySim.animationFrameId) cancelAnimationFrame(currentElectricitySim.animationFrameId);
+        if (capacitorSim.animationFrameId) cancelAnimationFrame(capacitorSim.animationFrameId);
+        if (acCircuitSim.animationFrameId) cancelAnimationFrame(acCircuitSim.animationFrameId);
+        // Static electricity uses CSS transitions, no JS animation frame to cancel.
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Reset and set up for the new tab
+        mode = tabId; // Update global mode
+
+        // Initialize canvas and context for the active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set for drawing
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Specific initializations/resets for each tab
+        if (mode === 'electricField') {
+            electricFieldSim.init();
+        } else if (mode === 'staticElectricity') {
+            staticElectricitySim.init();
+        } else if (mode === 'currentElectricity') {
+            currentElectricitySim.init();
+        } else if (mode === 'capacitors') {
+            capacitorSim.init();
+        } else if (mode === 'magneticFields') {
+            magneticFieldSim.init();
+        } else if (mode === 'acCircuits') {
+            acCircuitSim.init();
+        }
+
+        // Re-start main animation loop if current tab needs it
+        if (mode === 'electricField' || mode === 'currentElectricity' || mode === 'capacitors' || mode === 'magneticFields' || mode === 'acCircuits') {
+            animate();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- Electric Field Simulation ---
+    const electricFieldCanvas = document.getElementById('electricFieldCanvas');
+    const numChargesInput = document.getElementById('numCharges');
+    const chargeInputs = [];
+    const chargeControls = [];
+
+    for (let i = 1; i <= 5; i++) {
+        const input = document.getElementById(`charge${i}Value`);
+        const control = document.getElementById(`charge${i}Control`);
+        if (input) chargeInputs.push(input);
+        if (control) chargeControls.push(control);
+    }
+
+    const fieldLinesToggle = document.getElementById('fieldLinesToggle');
+    const equipotentialToggle = document.getElementById('equipotentialToggle');
+    const fieldVectorsToggle = document.getElementById('fieldVectorsToggle');
+    const testChargeValueInput = document.getElementById('testChargeValue');
+    const showTestChargeForceToggle = document.getElementById('showTestChargeForce');
+    const testChargeElement = document.getElementById('testCharge');
+
+
+    const electricFieldSim = {
+        ctx: null,
+        canvas: null,
+        charges: [], // Array of {x, y, value, isDragging}
+        draggedCharge: null,
+        draggedTestCharge: false,
+        offsetX: 0,
+        offsetY: 0,
+        init: function() {
+            this.canvas = electricFieldCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.resetCharges();
+            this.addEventListeners();
+            this.draw();
+        },
+        addEventListeners: function() {
+            this.canvas.onmousedown = this.onMouseDown.bind(this);
+            this.canvas.onmousemove = this.onMouseMove.bind(this);
+            this.canvas.onmouseup = this.onMouseUp.bind(this);
+            this.canvas.onmouseout = this.onMouseUp.bind(this); // Stop dragging if mouse leaves canvas
+
+            testChargeElement.onmousedown = this.onTestChargeMouseDown.bind(this);
+        },
+        onMouseDown: function(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            for (let i = 0; i < this.charges.length; i++) {
+                const charge = this.charges[i];
+                const dx = mouseX - charge.x;
+                const dy = mouseY - charge.y;
+                if (Math.sqrt(dx * dx + dy * dy) < 15) { // Check if click is on a charge (radius 15)
+                    this.draggedCharge = charge;
+                    this.offsetX = dx;
+                    this.offsetY = dy;
+                    break;
+                }
+            }
+        },
+        onTestChargeMouseDown: function(e) {
+            this.draggedTestCharge = true;
+            const rect = testChargeElement.getBoundingClientRect();
+            this.offsetX = e.clientX - rect.left;
+            this.offsetY = e.clientY - rect.top;
+            e.preventDefault(); // Prevent default drag behavior
+        },
+        onMouseMove: function(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (this.draggedCharge) {
+                this.draggedCharge.x = mouseX - this.offsetX;
+                this.draggedCharge.y = mouseY - this.offsetY;
+
+                // Keep charge within canvas bounds
+                this.draggedCharge.x = Math.max(15, Math.min(this.canvas.width - 15, this.draggedCharge.x));
+                this.draggedCharge.y = Math.max(15, Math.min(this.canvas.height - 15, this.draggedCharge.y));
+
+                this.draw();
+            } else if (this.draggedTestCharge) {
+                let newX = mouseX - this.offsetX;
+                let newY = mouseY - this.offsetY;
+
+                // Keep test charge within simulation area bounds
+                newX = Math.max(0, Math.min(this.canvas.width - testChargeElement.offsetWidth, newX));
+                newY = Math.max(0, Math.min(this.canvas.height - testChargeElement.offsetHeight, newY));
+
+                testChargeElement.style.left = `${newX}px`;
+                testChargeElement.style.top = `${newY}px`;
+                this.draw(); // Redraw canvas to update force vector
+            }
+        },
+        onMouseUp: function() {
+            this.draggedCharge = null;
+            this.draggedTestCharge = false;
+        },
+        resetCharges: function() {
+            this.charges = [];
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            const num = parseInt(numChargesInput.value);
+
+            // Dynamically show/hide charge controls
+            chargeControls.forEach((control, index) => {
+                control.style.display = index < num ? 'grid' : 'none';
+            });
+
+            // Set default positions for up to 5 charges
+            const positions = [
+                { x: width * 0.25, y: height * 0.5 }, // Charge 1 (left)
+                { x: width * 0.75, y: height * 0.5 }, // Charge 2 (right)
+                { x: width * 0.5, y: height * 0.25 }, // Charge 3 (top)
+                { x: width * 0.5, y: height * 0.75 }, // Charge 4 (bottom)
+                { x: width * 0.5, y: height * 0.5 }   // Charge 5 (center)
+            ];
+
+            for (let i = 0; i < num; i++) {
+                const chargeValue = parseFloat(chargeInputs[i].value);
+                this.charges.push({
+                    x: positions[i].x,
+                    y: positions[i].y,
+                    value: chargeValue
+                });
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const showFieldLines = fieldLinesToggle.checked;
+            const showEquipotentialLines = equipotentialToggle.checked;
+            const showFieldVectors = fieldVectorsToggle.checked;
+            const showTestChargeForce = showTestChargeForceToggle.checked;
+
+            // Draw charges
+            this.charges.forEach(charge => {
+                this.ctx.beginPath();
+                this.ctx.arc(charge.x, charge.y, 15, 0, Math.PI * 2);
+                this.ctx.fillStyle = charge.value > 0 ? 'var(--positive-charge-color)' : 'var(--negative-charge-color)';
+                this.ctx.fill();
+                this.ctx.strokeStyle = 'var(--dark-color)';
+                this.ctx.lineWidth = 1;
+                this.ctx.stroke();
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = 'bold 16px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(charge.value > 0 ? '+' : '-', charge.x, charge.y);
+            });
+
+            if (showFieldLines) {
+                this.drawFieldLines();
+            }
+            if (showEquipotentialLines) {
+                this.drawEquipotentialLines();
+            }
+            if (showFieldVectors) {
+                this.drawFieldVectors();
+            }
+
+            // Draw test charge and force
+            if (showTestChargeForce) {
+                testChargeElement.style.display = 'block';
+                const testChargeVal = parseFloat(testChargeValueInput.value);
+                const testChargeX = parseFloat(testChargeElement.style.left) + 10; // Center of test charge
+                const testChargeY = parseFloat(testChargeElement.style.top) + 10; // Center of test charge
+
+                // Draw force vector on test charge
+                const fieldAtTestCharge = this.calculateElectricField(testChargeX, testChargeY);
+                const forceMagnitude = fieldAtTestCharge.magnitude * (testChargeVal * 1e-9); // Force = E * q
+                const forceVectorScale = 1e10; // Adjust for visual scale
+                const forceLength = Math.min(50, forceMagnitude * forceVectorScale); // Max length 50px
+                let forceAngle = fieldAtTestCharge.angle;
+
+                if (testChargeVal < 0) { // Force is opposite to E-field for negative charge
+                    forceAngle += Math.PI;
+                }
+
+                if (forceLength > 0.1) { // Only draw if significant force
+                    this.ctx.strokeStyle = 'purple';
+                    this.ctx.lineWidth = 2;
+                    const startX = testChargeX;
+                    const startY = testChargeY;
+                    const endX = startX + forceLength * Math.cos(forceAngle);
+                    const endY = startY + forceLength * Math.sin(forceAngle);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, endX, endY, forceAngle, 'purple');
+                }
+            } else {
+                testChargeElement.style.display = 'none';
+            }
+
+            updateInfoPanel();
+        },
+        drawFieldLines: function() {
+            const stepSize = 10; // How far to step along a field line
+            const numLinesPerCharge = 10; // Number of field lines emanating from each charge
+
+            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.lineWidth = 1;
+
+            this.charges.forEach(sourceCharge => {
+                if (sourceCharge.value === 0) return;
+
+                const startAngleOffset = sourceCharge.value > 0 ? 0 : Math.PI; // Lines start outwards for positive, inwards for negative
+                for (let i = 0; i < numLinesPerCharge; i++) {
+                    let angle = (i / numLinesPerCharge) * Math.PI * 2 + startAngleOffset;
+                    let x = sourceCharge.x + 15 * Math.cos(angle); // Start slightly away from the charge
+                    let y = sourceCharge.y + 15 * Math.sin(angle);
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y);
+
+                    // Trace the field line
+                    for (let step = 0; step < 100; step++) { // Max steps to prevent infinite loops
+                        const field = this.calculateElectricField(x, y);
+                        if (field.magnitude === 0) break;
+
+                        let nextX = x + stepSize * Math.cos(field.angle);
+                        let nextY = y + stepSize * Math.sin(field.angle);
+
+                        // Stop if out of bounds or too close to another charge
+                        if (nextX < 0 || nextX > this.canvas.width || nextY < 0 || nextY > this.canvas.height) break;
+                        let tooClose = false;
+                        for (const otherCharge of this.charges) {
+                            const dx = nextX - otherCharge.x;
+                            const dy = nextY - otherCharge.y;
+                            if (Math.sqrt(dx * dx + dy * dy) < 20 && otherCharge !== sourceCharge) { // Close to another charge
+                                tooClose = true;
+                                break;
+                            }
+                        }
+                        if (tooClose) break;
+
+                        this.ctx.lineTo(nextX, nextY);
+                        x = nextX;
+                        y = nextY;
+                    }
+                    this.ctx.stroke();
+                }
+            });
+        },
+        drawEquipotentialLines: function() {
+            const potentialLevels = [-100, -50, -20, -10, -5, 0, 5, 10, 20, 50, 100]; // Example potential levels
+            const resolution = 10; // Grid resolution for potential calculation
+
+            this.ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
+            this.ctx.lineWidth = 1;
+
+            for (let i = 0; i < this.canvas.width; i += resolution) {
+                for (let j = 0; j < this.canvas.height; j += resolution) {
+                    const V_ij = this.calculateElectricPotential(i, j);
+                    const V_i1j = this.calculateElectricPotential(i + resolution, j);
+                    const V_ij1 = this.calculateElectricPotential(i, j + resolution);
+
+                    potentialLevels.forEach(level => {
+                        // Check for crossings
+                        if ((V_ij <= level && V_i1j > level) || (V_ij > level && V_i1j <= level)) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(i, j);
+                            this.ctx.lineTo(i + resolution, j);
+                            this.ctx.stroke();
+                        }
+                        if ((V_ij <= level && V_ij1 > level) || (V_ij > level && V_ij1 <= level)) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(i, j);
+                            this.ctx.lineTo(i, j + resolution);
+                            this.ctx.stroke();
+                        }
+                    });
+                }
+            }
+        },
+        drawFieldVectors: function() {
+            const gridSpacing = 30; // Spacing between vectors
+            const vectorLengthScale = 5; // Scale for vector length
+
+            this.ctx.strokeStyle = 'rgba(0, 128, 0, 0.7)'; // Green vectors
+            this.ctx.lineWidth = 1;
+
+            for (let x = gridSpacing; x < this.canvas.width; x += gridSpacing) {
+                for (let y = gridSpacing; y < this.canvas.height; y += gridSpacing) {
+                    const field = this.calculateElectricField(x, y);
+                    if (field.magnitude > 0.1) { // Only draw if field is significant
+                        const scaledLength = Math.min(gridSpacing / 2, field.magnitude * vectorLengthScale);
+                        const endX = x + scaledLength * Math.cos(field.angle);
+                        const endY = y + scaledLength * Math.sin(field.angle);
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x, y);
+                        this.ctx.lineTo(endX, endY);
+                        this.ctx.stroke();
+                        drawArrowhead(this.ctx, endX, endY, field.angle, 'rgba(0, 128, 0, 0.7)');
+                    }
+                }
+            }
+        },
+        calculateElectricField: function(px, py) {
+            let Ex = 0;
+            let Ey = 0;
+            const k = 1; // Simplified constant for visual scaling (Coulomb's constant)
+
+            this.charges.forEach(charge => {
+                const dx = px - charge.x;
+                const dy = py - charge.y;
+                const r = Math.sqrt(dx * dx + dy * dy);
+
+                if (r < 1) return; // Avoid division by zero or huge fields near charge
+
+                const E_magnitude = k * charge.value / (r * r); // E = kQ/r^2
+                const angle = Math.atan2(dy, dx);
+
+                if (charge.value > 0) { // Field points away from positive charge
+                    Ex += E_magnitude * Math.cos(angle);
+                    Ey += E_magnitude * Math.sin(angle);
+                } else { // Field points towards negative charge
+                    Ex -= E_magnitude * Math.cos(angle);
+                    Ey -= E_magnitude * Math.sin(angle);
+                }
+            });
+
+            const magnitude = Math.sqrt(Ex * Ex + Ey * Ey);
+            const angle = Math.atan2(Ey, Ex);
+            return { magnitude, angle };
+        },
+        calculateElectricPotential: function(px, py) {
+            let V = 0;
+            const k = 10; // Simplified constant for visual scaling
+
+            this.charges.forEach(charge => {
+                const dx = px - charge.x;
+                const dy = py - charge.y;
+                const r = Math.sqrt(dx * dx + dy * dy);
+
+                if (r < 1) return; // Avoid division by zero
+
+                V += k * charge.value / r; // V = kQ/r
+            });
+            return V;
+        }
+    };
+
+    // Event listeners for Electric Field simulation
+    numChargesInput.addEventListener('input', electricFieldSim.resetCharges.bind(electricFieldSim));
+    chargeInputs.forEach((input, index) => {
+        input.addEventListener('input', () => {
+            // Ensure the charge object exists before updating its value
+            if (electricFieldSim.charges[index]) {
+                electricFieldSim.charges[index].value = parseFloat(input.value); // Update charge value
+            }
+            electricFieldSim.draw();
+        });
+    });
+    fieldLinesToggle.addEventListener('change', electricFieldSim.draw.bind(electricFieldSim));
+    equipotentialToggle.addEventListener('change', electricFieldSim.draw.bind(electricFieldSim));
+    fieldVectorsToggle.addEventListener('change', electricFieldSim.draw.bind(electricFieldSim));
+    testChargeValueInput.addEventListener('input', electricFieldSim.draw.bind(electricFieldSim));
+    showTestChargeForceToggle.addEventListener('change', electricFieldSim.draw.bind(electricFieldSim));
+
+
+    // --- Static Electricity Simulation ---
+    const object1 = document.getElementById('object1');
+    const object2 = document.getElementById('object2');
+    const obj1ChargeDisplay = document.getElementById('obj1Charge');
+    const obj2ChargeDisplay = document.getElementById('obj2Charge');
+    const initialCharge1Input = document.getElementById('initialCharge1');
+    const initialCharge2Input = document.getElementById('initialCharge2');
+    const transferAmountInput = document.getElementById('transferAmount');
+    const transferChargeBtn = document.getElementById('transferChargeBtn');
+    const staticResetBtn = document.getElementById('staticResetBtn');
+    const staticResetPositionBtn = document.getElementById('staticResetPositionBtn');
+    const groundObject1Btn = document.getElementById('groundObject1Btn');
+    const groundObject2Btn = document.getElementById('groundObject2Btn');
+    const chargeTransferParticlesDiv = document.getElementById('chargeTransferParticles');
+
+    const staticElectricitySim = {
+        charge1: 0, // Charge on object 1 (nC)
+        charge2: 0, // Charge on object 2 (nC)
+        distance: 0, // Distance between centers of objects (pixels)
+        objectWidth: 100, // Fixed width of objects
+        initialObj1Left: 0, // Store initial left position for reset
+        initialObj2Left: 0,
+
+        init: function() {
+            this.initialObj1Left = object1.offsetLeft;
+            this.initialObj2Left = object2.offsetLeft;
+            this.reset();
+            // Initial positioning for responsiveness
+            this.updateObjectPositions();
+            window.addEventListener('resize', this.updateObjectPositions.bind(this));
+        },
+        reset: function() {
+            this.charge1 = parseFloat(initialCharge1Input.value);
+            this.charge2 = parseFloat(initialCharge2Input.value);
+            this.updateDisplay();
+            this.resetObjectPositions(); // Reset positions
+            chargeTransferParticlesDiv.innerHTML = ''; // Clear particles
+        },
+        resetObjectPositions: function() {
+            const simArea = object1.closest('.simulation-area');
+            if (!simArea) return;
+
+            const simAreaWidth = simArea.offsetWidth;
+            const simAreaHeight = simArea.offsetHeight;
+
+            object1.style.left = `${simAreaWidth * 0.1}px`;
+            object2.style.left = `${simAreaWidth * 0.9 - this.objectWidth}px`;
+            object1.style.top = `${simAreaHeight / 2 - this.objectWidth / 2}px`;
+            object2.style.top = `${simAreaHeight / 2 - this.objectWidth / 2}px`;
+
+            const obj1CenterX = parseFloat(object1.style.left) + this.objectWidth / 2;
+            const obj2CenterX = parseFloat(object2.style.left) + this.objectWidth / 2;
+            this.distance = Math.abs(obj2CenterX - obj1CenterX);
+            this.updateDisplay();
+        },
+        updateDisplay: function() {
+            obj1ChargeDisplay.textContent = `${this.charge1.toFixed(0)} nC`;
+            obj2ChargeDisplay.textContent = `${this.charge2.toFixed(0)} nC`;
+            updateInfoPanel(); // Update info panel with new charges and force
+            this.drawInteractionLine();
+        },
+        updateObjectPositions: function() {
+            const simArea = object1.closest('.simulation-area');
+            if (!simArea) return;
+
+            const simAreaWidth = simArea.offsetWidth;
+            const simAreaHeight = simArea.offsetHeight;
+
+            // Calculate current positions based on percentage from CSS
+            const obj1Left = simAreaWidth * 0.1;
+            const obj2Left = simAreaWidth * 0.9 - this.objectWidth;
+
+            object1.style.left = `${obj1Left}px`;
+            object2.style.left = `${obj2Left}px`;
+            object1.style.top = `${simAreaHeight / 2 - this.objectWidth / 2}px`;
+            object2.style.top = `${simAreaHeight / 2 - this.objectWidth / 2}px`;
+
+            // Calculate distance between centers
+            const obj1CenterX = obj1Left + this.objectWidth / 2;
+            const obj2CenterX = obj2Left + this.objectWidth / 2;
+            this.distance = Math.abs(obj2CenterX - obj1CenterX);
+
+            this.applyForce();
+        },
+        transferCharge: function() {
+            const transfer = parseFloat(transferAmountInput.value);
+            // Simulate transfer from object 1 to object 2 (e.g., rubbing)
+            // For simplicity, let's say object 1 loses charge, object 2 gains.
+            // This can be made more sophisticated (e.g., based on material properties).
+            this.charge1 -= transfer;
+            this.charge2 += transfer;
+            this.updateDisplay();
+            this.animateChargeTransfer(transfer);
+            this.applyForce();
+        },
+        groundObject: function(objectNum) {
+            if (objectNum === 1) {
+                this.charge1 = 0;
+            } else if (objectNum === 2) {
+                this.charge2 = 0;
+            }
+            this.updateDisplay();
+            this.applyForce();
+        },
+        animateChargeTransfer: function(amount) {
+            const numParticles = Math.min(20, Math.abs(amount)); // Max 20 particles for visual clarity
+            const isPositiveTransfer = amount < 0; // If amount is negative, object 1 gained electrons (lost positive charge)
+            const particleColor = isPositiveTransfer ? 'var(--positive-charge-color)' : 'var(--negative-charge-color)';
+
+            const startX = object1.offsetLeft + object1.offsetWidth / 2;
+            const startY = object1.offsetTop + object1.offsetHeight / 2;
+            const endX = object2.offsetLeft + object2.offsetWidth / 2;
+            const endY = object2.offsetTop + object2.offsetHeight / 2;
+
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'charge-particle';
+                particle.style.backgroundColor = particleColor;
+                particle.style.left = `${startX}px`;
+                particle.style.top = `${startY}px`;
+                chargeTransferParticlesDiv.appendChild(particle);
+
+                // Animate particle movement
+                const animationDuration = 1.5; // seconds
+                const delay = i * 0.05; // Stagger animation
+
+                particle.animate([
+                    { transform: `translate(0, 0)`, opacity: 1 },
+                    { transform: `translate(${endX - startX}px, ${endY - startY}px)`, opacity: 0 }
+                ], {
+                    duration: animationDuration * 1000,
+                    delay: delay * 1000,
+                    easing: 'ease-in-out',
+                    fill: 'forwards'
+                }).onfinish = () => particle.remove();
+            }
+        },
+        applyForce: function() {
+            const k = 1; // Visual scaling factor for force
+            const forceDirection = (this.charge1 * this.charge2 > 0) ? -1 : 1; // -1 for repulsion, 1 for attraction
+            const forceMagnitude = k * Math.abs(this.charge1 * this.charge2) / (this.distance * this.distance);
+
+            // Apply a small visual displacement based on force
+            const displacement = Math.min(50, forceMagnitude * 0.1); // Max displacement 50px
+
+            const simArea = object1.closest('.simulation-area');
+            const simAreaWidth = simArea.offsetWidth;
+
+            let obj1TargetLeft = simAreaWidth * 0.1;
+            let obj2TargetLeft = simAreaWidth * 0.9 - this.objectWidth;
+
+            if (forceDirection === 1) { // Attraction
+                obj1TargetLeft += displacement;
+                obj2TargetLeft -= displacement;
+            } else if (forceDirection === -1 && this.charge1 !== 0 && this.charge2 !== 0) { // Repulsion
+                obj1TargetLeft -= displacement;
+                obj2TargetLeft += displacement;
+            }
+
+            // Ensure objects don't go off screen or overlap too much
+            obj1TargetLeft = Math.max(0, obj1TargetLeft);
+            obj2TargetLeft = Math.min(simAreaWidth - this.objectWidth, obj2TargetLeft);
+
+            // Prevent overlap if repulsive force pushes them too far
+            if (obj1TargetLeft + this.objectWidth > obj2TargetLeft && forceDirection === -1) {
+                const overlap = (obj1TargetLeft + this.objectWidth) - obj2TargetLeft;
+                obj1TargetLeft -= overlap / 2;
+                obj2TargetLeft += overlap / 2;
+            }
+
+
+            object1.style.left = `${obj1TargetLeft}px`;
+            object2.style.left = `${obj2TargetLeft}px`;
+            this.updateDisplay(); // Update info panel after movement
+        },
+        drawInteractionLine: function() {
+            const simArea = object1.closest('.simulation-area');
+            if (!simArea) return;
+
+            const ctx = simulationCtx; // Assuming simulationCtx is available and points to the correct canvas
+            if (!ctx || mode !== 'staticElectricity') return; // Only draw if in static electricity mode
+
+            ctx.clearRect(0, 0, simArea.offsetWidth, simArea.offsetHeight); // Clear only the interaction line area
+
+            const obj1CenterX = object1.offsetLeft + object1.offsetWidth / 2;
+            const obj1CenterY = object1.offsetTop + object1.offsetHeight / 2;
+            const obj2CenterX = object2.offsetLeft + object2.offsetWidth / 2;
+            const obj2CenterY = object2.offsetTop + object2.offsetHeight / 2;
+
+            const q1 = this.charge1;
+            const q2 = this.charge2;
+
+            if (q1 === 0 || q2 === 0) {
+                // No interaction if one or both objects are neutral
+                return;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(obj1CenterX, obj1CenterY);
+            ctx.lineTo(obj2CenterX, obj2CenterY);
+
+            // Determine color and line style based on interaction
+            if ((q1 > 0 && q2 > 0) || (q1 < 0 && q2 < 0)) {
+                // Repulsion
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]); // Dashed line for repulsion
+            } else {
+                // Attraction
+                ctx.strokeStyle = 'blue';
+                ctx.setLineDash([]); // Solid line for attraction
+            }
+
+            // Line thickness based on force magnitude (simplified)
+            const forceMagnitude = Math.abs(q1 * q2); // Use product of charges as proxy for force
+            ctx.lineWidth = Math.min(5, 1 + forceMagnitude / 20); // Max thickness 5px
+
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash for other drawings
+        }
+    };
+
+    // Event listeners for Static Electricity simulation
+    initialCharge1Input.addEventListener('input', staticElectricitySim.reset.bind(staticElectricitySim));
+    initialCharge2Input.addEventListener('input', staticElectricitySim.reset.bind(staticElectricitySim));
+    transferChargeBtn.addEventListener('click', staticElectricitySim.transferCharge.bind(staticElectricitySim));
+    staticResetBtn.addEventListener('click', staticElectricitySim.reset.bind(staticElectricitySim));
+    staticResetPositionBtn.addEventListener('click', staticElectricitySim.resetObjectPositions.bind(staticElectricitySim));
+    groundObject1Btn.addEventListener('click', () => staticElectricitySim.groundObject(1));
+    groundObject2Btn.addEventListener('click', () => staticElectricitySim.groundObject(2));
+
+
+    // --- Current Electricity Simulation ---
+    const currentElectricityCanvas = document.getElementById('currentElectricityCanvas');
+    const voltageInput = document.getElementById('voltageInput');
+    const resistor1Input = document.getElementById('resistor1Input');
+    const resistor2Input = document.getElementById('resistor2Input');
+    const numResistorsSelect = document.getElementById('numResistors');
+    const resistor3Input = document.getElementById('resistor3Input');
+    const resistor3Control = document.getElementById('resistor3Control');
+    const circuitTypeSelect = document.getElementById('circuitType');
+    const showElectronFlowToggle = document.getElementById('showElectronFlow');
+    const resistor1IsBulbToggle = document.getElementById('resistor1IsBulb');
+    const circuitSwitchToggle = document.getElementById('circuitSwitch');
+    const ammeterLocationSelect = document.getElementById('ammeterLocation');
+    const voltmeterLocationSelect = document.getElementById('voltmeterLocation');
+    const circuitResetBtn = document.getElementById('circuitResetBtn');
+    const ammeterDisplay = document.getElementById('ammeterDisplay');
+    const voltmeterDisplay = document.getElementById('voltmeterDisplay');
+
+    makeDraggable(ammeterDisplay);
+    makeDraggable(voltmeterDisplay);
+
+
+    const currentElectricitySim = {
+        ctx: null,
+        canvas: null,
+        electrons: [],
+        animationFrameId: null,
+        isCircuitClosed: true,
+        init: function() {
+            this.canvas = currentElectricityCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.isCircuitClosed = circuitSwitchToggle.checked; // Initialize switch state
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationFrameId);
+            this.electrons = [];
+            ammeterDisplay.style.display = 'none';
+            voltmeterDisplay.style.display = 'none';
+            this.draw(); // Initial draw
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const V = parseFloat(voltageInput.value);
+            const R1 = parseFloat(resistor1Input.value);
+            const R2 = parseFloat(resistor2Input.value);
+            const numResistors = parseInt(numResistorsSelect.value);
+            const R3 = numResistors === 3 ? parseFloat(resistor3Input.value) : 0;
+            const circuitType = circuitTypeSelect.value;
+            const showElectronFlow = showElectronFlowToggle.checked;
+            const resistor1IsBulb = resistor1IsBulbToggle.checked;
+            const ammeterLocation = ammeterLocationSelect.value;
+            const voltmeterLocation = voltmeterLocationSelect.value;
+
+
+            // Show/hide R3 control
+            resistor3Control.style.display = numResistors === 3 ? 'grid' : 'none';
+
+            // Define circuit layout coordinates
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const circuitRadius = Math.min(width, height) * 0.35; // Radius for rectangular path
+
+            // Draw battery (voltage source)
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - 20, centerY - circuitRadius);
+            this.ctx.lineTo(centerX + 20, centerY - circuitRadius);
+            this.ctx.stroke();
+            this.ctx.beginPath(); // Long line for positive terminal
+            this.ctx.moveTo(centerX, centerY - circuitRadius - 15);
+            this.ctx.lineTo(centerX, centerY - circuitRadius + 15);
+            this.ctx.lineWidth = 5;
+            this.ctx.stroke();
+            this.ctx.beginPath(); // Short line for negative terminal
+            this.ctx.moveTo(centerX - 10, centerY - circuitRadius - 5);
+            this.ctx.lineTo(centerX - 10, centerY - circuitRadius + 5);
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.font = '14px Arial';
+            this.ctx.fillText(`V = ${V}V`, centerX + 25, centerY - circuitRadius + 5);
+
+            // Draw resistors and wires based on circuit type
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 2;
+
+            // Define common path nodes for electron flow
+            const topCenter = { x: centerX, y: centerY - circuitRadius };
+            const topRight = { x: centerX + circuitRadius, y: centerY - circuitRadius };
+            const bottomRight = { x: centerX + circuitRadius, y: centerY + circuitRadius };
+            const bottomLeft = { x: centerX - circuitRadius, y: centerY + circuitRadius };
+            const topLeft = { x: centerX - circuitRadius, y: centerY - circuitRadius };
+
+            // Path for electrons (simplified for visualization)
+            this.electronPath = [];
+
+            if (circuitType === 'series') {
+                // Draw a simple series circuit (rectangular loop)
+                this.ctx.beginPath();
+                this.ctx.moveTo(topCenter.x, topCenter.y);
+                this.ctx.lineTo(topRight.x, topRight.y);
+                this.ctx.lineTo(bottomRight.x, bottomRight.y);
+                this.ctx.lineTo(bottomLeft.x, bottomLeft.y);
+                this.ctx.lineTo(topLeft.x, topLeft.y);
+                this.ctx.lineTo(topCenter.x, topCenter.y); // Close loop
+                this.ctx.stroke();
+
+                // Draw R1
+                this.drawResistor(topRight.x, centerY - circuitRadius / 2, 'vertical', R1, resistor1IsBulb);
+                // Draw R2
+                this.drawResistor(bottomLeft.x, centerY + circuitRadius / 2, 'vertical', R2, false); // R2 is never a bulb
+
+                if (numResistors === 3) {
+                    // Draw R3 in the middle of the top segment
+                    this.drawResistor(centerX, topCenter.y, 'horizontal', R3, false);
+                }
+
+                // Electron path for series
+                this.electronPath = [
+                    topCenter,
+                    topRight,
+                    bottomRight,
+                    bottomLeft,
+                    topLeft,
+                    topCenter // Loop back
+                ];
+                if (numResistors === 3) {
+                    // Adjust path to go through R3
+                    this.electronPath.splice(1, 0, { x: centerX, y: topCenter.y });
+                }
+
+            } else { // parallel
+                // Draw a simple parallel circuit
+                const topY = centerY - circuitRadius;
+                const bottomY = centerY + circuitRadius;
+                const leftX = centerX - circuitRadius;
+                const rightX = centerX + circuitRadius;
+
+                // Main wires
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX, topY); // From battery
+                this.ctx.lineTo(rightX, topY);
+                this.ctx.lineTo(rightX, bottomY);
+                this.ctx.lineTo(centerX, bottomY);
+                this.ctx.lineTo(leftX, bottomY);
+                this.ctx.lineTo(leftX, topY);
+                this.ctx.lineTo(centerX, topY); // Back to battery
+                this.ctx.stroke();
+
+                // Parallel branches
+                this.ctx.beginPath();
+                this.ctx.moveTo(rightX, topY);
+                this.ctx.lineTo(leftX, topY);
+                this.ctx.stroke();
+
+                // Draw R1 (top branch)
+                this.drawResistor(centerX, topY, 'horizontal', R1, resistor1IsBulb);
+                // Draw R2 (bottom branch)
+                this.drawResistor(centerX, bottomY, 'horizontal', R2, false); // R2 is never a bulb
+
+                if (numResistors === 3) {
+                    // Draw R3 as another parallel branch
+                    this.drawResistor(centerX, centerY, 'horizontal', R3, false);
+                }
+
+
+                // Electron path for parallel (simplified, just main loop)
+                this.electronPath = [
+                    topCenter,
+                    topRight,
+                    bottomRight,
+                    bottomLeft,
+                    topLeft,
+                    topCenter // Loop back
+                ];
+                // For parallel, electrons split, but for visualization, we keep a single loop.
+                // A more complex visualization would show branching.
+            }
+
+            // Draw switch
+            this.drawSwitch(topLeft.x, topLeft.y, circuitRadius / 2, this.isCircuitClosed);
+
+
+            // Position and show/hide ammeter and voltmeter divs
+            this.positionMeters(ammeterLocation, voltmeterLocation, V, R1, R2, R3, circuitType, numResistors, this.isCircuitClosed);
+
+
+            // Draw electrons if enabled AND circuit is closed
+            if (showElectronFlow && this.isCircuitClosed) {
+                this.spawnElectrons(V, R1, R2, R3, circuitType, numResistors);
+                this.moveElectrons();
+            } else {
+                this.electrons = []; // Clear electrons if toggle off or circuit open
+            }
+
+            updateInfoPanel();
+            this.animationFrameId = requestAnimationFrame(() => this.draw());
+        },
+        drawResistor: function(x, y, orientation, resistance, isBulb) {
+            const size = 30; // Resistor visual size
+            this.ctx.strokeStyle = 'var(--component-color)';
+            this.ctx.lineWidth = 3;
+
+            if (isBulb) {
+                // Draw a circle for the bulb
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+                this.ctx.stroke();
+
+                // Fill with color based on current (brightness)
+                const V = parseFloat(voltageInput.value);
+                const R_total = this.calculateTotalResistance(V, parseFloat(resistor1Input.value), parseFloat(resistor2Input.value), parseFloat(resistor3Input.value), parseInt(numResistorsSelect.value), circuitTypeSelect.value);
+                const I = this.isCircuitClosed ? (V / R_total) : 0;
+                const brightness = Math.min(1, I / 0.5); // Scale current to brightness (0.5A max brightness)
+                const bulbColor = `rgba(255, 235, 59, ${brightness})`; // Yellow with alpha for brightness
+                this.ctx.fillStyle = bulbColor;
+                this.ctx.fill();
+
+                this.ctx.fillStyle = 'var(--dark-color)';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(`Bulb`, x, y + size / 2 + 10);
+
+            } else {
+                this.ctx.beginPath();
+                if (orientation === 'horizontal') {
+                    this.ctx.rect(x - size / 2, y - size / 2, size, size);
+                } else { // vertical
+                    this.ctx.rect(x - size / 2, y - size / 2, size, size);
+                }
+                this.ctx.stroke();
+                this.ctx.fillStyle = 'var(--dark-color)';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(`${resistance}Ω`, x, y + size / 2 + 10);
+            }
+        },
+        drawSwitch: function(x, y, length, isClosed) {
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 2;
+            const switchLength = 30;
+            const switchOffset = 15; // Offset from the wire for visual clarity
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, y); // Start of wire segment
+            this.ctx.lineTo(x, y + switchOffset); // Wire leading to switch
+            this.ctx.stroke();
+
+            this.ctx.beginPath();
+            this.ctx.arc(x, y + switchOffset, 3, 0, Math.PI * 2); // Connection point 1
+            this.ctx.fill();
+
+            this.ctx.beginPath();
+            this.ctx.arc(x + switchLength, y + switchOffset, 3, 0, Math.PI * 2); // Connection point 2
+            this.ctx.fill();
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, y + switchOffset); // Start of switch arm
+            if (isClosed) {
+                this.ctx.lineTo(x + switchLength, y + switchOffset); // Closed position
+            } else {
+                this.ctx.lineTo(x + switchLength, y + switchOffset - 15); // Open position
+            }
+            this.ctx.stroke();
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(x + switchLength, y + switchOffset); // Wire from switch
+            this.ctx.lineTo(x + switchLength, y + length); // Connect to next segment
+            this.ctx.stroke();
+        },
+        positionMeters: function(ammeterLocation, voltmeterLocation, V, R1, R2, R3, circuitType, numResistors, isClosed) {
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const circuitRadius = Math.min(this.canvas.width, this.canvas.height) * 0.35;
+
+            // Ammeter Positioning
+            if (ammeterLocation !== 'none' && isClosed) {
+                ammeterDisplay.style.display = 'block';
+                let meterX, meterY;
+                if (ammeterLocation === 'total') {
+                    meterX = centerX + circuitRadius + 20; // Outside the loop, right side
+                    meterY = centerY;
+                } else if (ammeterLocation === 'R1') {
+                    if (circuitType === 'series') {
+                        meterX = centerX + circuitRadius / 2;
+                        meterY = centerY - circuitRadius - 20;
+                    } else { // Parallel
+                        meterX = centerX - 50;
+                        meterY = centerY - circuitRadius + 20;
+                    }
+                } else if (ammeterLocation === 'R2') {
+                    if (circuitType === 'series') {
+                        meterX = centerX - circuitRadius / 2;
+                        meterY = centerY + circuitRadius + 20;
+                    } else { // Parallel
+                        meterX = centerX - 50;
+                        meterY = centerY + circuitRadius - 50;
+                    }
+                }
+                ammeterDisplay.style.left = `${meterX}px`;
+                ammeterDisplay.style.top = `${meterY}px`;
+            } else {
+                ammeterDisplay.style.display = 'none';
+            }
+
+            // Voltmeter Positioning
+            if (voltmeterLocation !== 'none' && isClosed) {
+                voltmeterDisplay.style.display = 'block';
+                let meterX, meterY;
+                if (voltmeterLocation === 'battery') {
+                    meterX = centerX - circuitRadius - 70; // Left of battery
+                    meterY = centerY - circuitRadius + 20;
+                } else if (voltmeterLocation === 'R1') {
+                    if (circuitType === 'series') {
+                        meterX = centerX + circuitRadius / 2 + 50;
+                        meterY = centerY - circuitRadius / 2;
+                    } else { // Parallel
+                        meterX = centerX + 50;
+                        meterY = centerY - circuitRadius + 20;
+                    }
+                } else if (voltmeterLocation === 'R2') {
+                    if (circuitType === 'series') {
+                        meterX = centerX - circuitRadius / 2 - 50;
+                        meterY = centerY + circuitRadius / 2;
+                    } else { // Parallel
+                        meterX = centerX + 50;
+                        meterY = centerY + circuitRadius - 50;
+                    }
+                }
+                voltmeterDisplay.style.left = `${meterX}px`;
+                voltmeterDisplay.style.top = `${meterY}px`;
+            } else {
+                voltmeterDisplay.style.display = 'none';
+            }
+        },
+        calculateTotalResistance: function(V, R1, R2, R3, numResistors, circuitType) {
+            let totalR;
+            if (circuitType === 'series') {
+                totalR = R1 + R2;
+                if (numResistors === 3) totalR += R3;
+            } else { // parallel
+                let r12_parallel = (R1 * R2) / (R1 + R2);
+                if (numResistors === 3) {
+                    totalR = (r12_parallel * R3) / (r12_parallel + R3);
+                } else {
+                    totalR = r12_parallel;
+                }
+            }
+            return totalR;
+        },
+        spawnElectrons: function(V, R1, R2, R3, circuitType, numResistors) {
+            const totalR = this.calculateTotalResistance(V, R1, R2, R3, numResistors, circuitType);
+            const current = V / totalR; // Current in Amperes
+
+            // Number of electrons proportional to current
+            const maxElectrons = 50;
+            const targetElectronCount = Math.min(maxElectrons, Math.max(5, Math.floor(current * 10))); // Scale current to electron count
+
+            // Only add new electrons if below target count
+            if (this.electrons.length < targetElectronCount) {
+                // Add new electron at the start of the path (negative terminal of battery)
+                const startPoint = this.electronPath[0]; // Assuming first point is near negative terminal
+                this.electrons.push({
+                    x: startPoint.x,
+                    y: startPoint.y,
+                    pathIndex: 0,
+                    progress: 0 // Progress along the current segment
+                });
+            }
+        },
+        moveElectrons: function() {
+            const V = parseFloat(voltageInput.value);
+            const R1 = parseFloat(resistor1Input.value);
+            const R2 = parseFloat(resistor2Input.value);
+            const numResistors = parseInt(numResistorsSelect.value);
+            const R3 = numResistors === 3 ? parseFloat(resistor3Input.value) : 0;
+            const circuitType = circuitTypeSelect.value;
+            const totalR = this.calculateTotalResistance(V, R1, R2, R3, numResistors, circuitType);
+            const current = V / totalR; // Current in Amperes
+
+            // Electron speed proportional to current
+            const electronSpeed = Math.max(0.5, Math.min(5, current * 5)); // Scale speed
+
+            this.electrons.forEach(e => {
+                const startNode = this.electronPath[e.pathIndex];
+                const endNode = this.electronPath[e.pathIndex + 1];
+
+                if (!startNode || !endNode) {
+                    // Electron completed path, reset to start
+                    e.x = this.electronPath[0].x;
+                    e.y = this.electronPath[0].y;
+                    e.pathIndex = 0;
+                    e.progress = 0;
+                    return;
+                }
+
+                const segmentLength = Math.sqrt(Math.pow(endNode.x - startNode.x, 2) + Math.pow(endNode.y - startNode.y, 2));
+                if (segmentLength === 0) { // Avoid division by zero if nodes are identical
+                    e.pathIndex++;
+                    e.progress = 0;
+                    return;
+                }
+
+                const distanceToMove = electronSpeed;
+                e.progress += distanceToMove / segmentLength;
+
+                if (e.progress >= 1) {
+                    e.pathIndex++;
+                    e.progress = 0;
+                    // If at the end of the full path, loop back to start
+                    if (e.pathIndex >= this.electronPath.length - 1) {
+                        e.pathIndex = 0;
+                        e.progress = 0;
+                    }
+                    // Set position to the new start of segment
+                    e.x = this.electronPath[e.pathIndex].x;
+                    e.y = this.electronPath[e.pathIndex].y;
+                } else {
+                    // Interpolate position along the current segment
+                    e.x = startNode.x + (endNode.x - startNode.x) * e.progress;
+                    e.y = startNode.y + (endNode.y - startNode.y) * e.progress;
+                }
+
+                // Draw electron
+                this.ctx.beginPath();
+                this.ctx.arc(e.x, e.y, 4, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'yellow'; // Electron color
+                this.ctx.fill();
+            });
+        }
+    };
+
+    // Event listeners for Current Electricity simulation
+    voltageInput.addEventListener('input', currentElectricitySim.draw.bind(currentElectricitySim));
+    resistor1Input.addEventListener('input', currentElectricitySim.draw.bind(currentElectricitySim));
+    resistor2Input.addEventListener('input', currentElectricitySim.draw.bind(currentElectricitySim));
+    numResistorsSelect.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    resistor3Input.addEventListener('input', currentElectricitySim.draw.bind(currentElectricitySim));
+    circuitTypeSelect.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    showElectronFlowToggle.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    resistor1IsBulbToggle.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    circuitSwitchToggle.addEventListener('change', (e) => {
+        currentElectricitySim.isCircuitClosed = e.target.checked;
+        currentElectricitySim.draw();
+    });
+    ammeterLocationSelect.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    voltmeterLocationSelect.addEventListener('change', currentElectricitySim.draw.bind(currentElectricitySim));
+    circuitResetBtn.addEventListener('click', currentElectricitySim.reset.bind(currentElectricitySim));
+
+
+    // --- Capacitors Simulation ---
+    const capacitorCanvas = document.getElementById('capacitorCanvas');
+    const capacitorGraphCanvas = document.getElementById('capacitorGraphCanvas');
+    const capacitorGraphCtx = capacitorGraphCanvas.getContext('2d');
+
+    const capacitanceInput = document.getElementById('capacitanceInput');
+    const capacitorVoltageSourceInput = document.getElementById('capacitorVoltageSource');
+    const capacitorResistanceInput = document.getElementById('capacitorResistance');
+    const chargeCapacitorBtn = document.getElementById('chargeCapacitorBtn');
+    const dischargeCapacitorBtn = document.getElementById('dischargeCapacitorBtn');
+    const resetCapacitorBtn = document.getElementById('resetCapacitorBtn');
+    const pauseResumeCapacitorBtn = document.getElementById('pauseResumeCapacitorBtn');
+
+
+    const capacitorSim = {
+        ctx: null,
+        canvas: null,
+        graphCtx: null,
+        graphCanvas: null,
+        currentCharge: 0, // in microCoulombs (μC)
+        charging: false,
+        discharging: false,
+        paused: false,
+        animationFrameId: null,
+        lastTime: 0,
+        timeElapsed: 0,
+        dataPoints: [], // For graph: [{time, voltage, charge}]
+        maxGraphTime: 5, // seconds for graph x-axis
+        maxGraphVoltage: 0, // dynamic based on source voltage
+        init: function() {
+            this.canvas = capacitorCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.graphCanvas = capacitorGraphCanvas;
+            this.graphCtx = capacitorGraphCtx;
+
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+              this.graphCanvas.width = parentContainer.offsetWidth * 0.9; // 90% width of sim area
+              this.graphCanvas.height = parentContainer.offsetHeight * 0.4; // 40% height of sim area
+            }
+            this.reset();
+        },
+        reset: function() {
+            cancelAnimationFrame(this.animationFrameId);
+            this.currentCharge = 0;
+            this.charging = false;
+            this.discharging = false;
+            this.paused = false;
+            this.timeElapsed = 0;
+            this.dataPoints = [];
+            this.maxGraphVoltage = parseFloat(capacitorVoltageSourceInput.value) * 1.1; // 10% more than source V
+            pauseResumeCapacitorBtn.textContent = 'Pause';
+            this.draw();
+            this.drawGraph();
+            updateInfoPanel();
+        },
+        startCharging: function() {
+            this.reset(); // Reset before starting new charge cycle
+            this.charging = true;
+            this.lastTime = performance.now(); // Initialize lastTime for animation
+            this.animateCapacitor();
+            pauseResumeCapacitorBtn.textContent = 'Pause';
+        },
+        startDischarging: function() {
+            // Only discharge if there's charge
+            if (this.currentCharge > 0) {
+                this.charging = false;
+                this.discharging = true;
+                this.lastTime = performance.now(); // Initialize lastTime for animation
+                this.timeElapsed = 0; // Reset time for discharge graph
+                // Capture initial charge for discharge calculation accurately
+                const initialChargeForDischarge = this.currentCharge;
+                const initialVoltageForDischarge = initialChargeForDischarge / (parseFloat(capacitanceInput.value) * 1e-6);
+                this.dataPoints = [{time: 0, voltage: initialVoltageForDischarge, charge: initialChargeForDischarge}];
+                this.animateCapacitor();
+                pauseResumeCapacitorBtn.textContent = 'Pause';
+            }
+        },
+        togglePauseResume: function() {
+            this.paused = !this.paused;
+            if (this.paused) {
+                cancelAnimationFrame(this.animationFrameId);
+                pauseResumeCapacitorBtn.textContent = 'Resume';
+            } else {
+                this.lastTime = performance.now(); // Reset lastTime to avoid jump in timeElapsed
+                this.animateCapacitor();
+                pauseResumeCapacitorBtn.textContent = 'Pause';
+            }
+        },
+        animateCapacitor: function(currentTime) {
+            if (this.paused) return;
+
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000; // Time in seconds
+            this.lastTime = currentTime;
+            this.timeElapsed += deltaTime;
+
+            const C = parseFloat(capacitanceInput.value) * 1e-6; // Convert μF to F
+            const V_source = parseFloat(capacitorVoltageSourceInput.value);
+            const R = parseFloat(capacitorResistanceInput.value);
+
+            const tau = R * C; // Time constant
+
+            if (this.charging) {
+                // Q(t) = Q_max * (1 - e^(-t/RC))
+                const Q_max = V_source * C;
+                this.currentCharge = Q_max * (1 - Math.exp(-this.timeElapsed / tau));
+                if (this.currentCharge >= Q_max * 0.99) { // Stop when almost fully charged
+                    this.currentCharge = Q_max;
+                    this.charging = false;
+                    this.paused = true; // Auto-pause when finished
+                    pauseResumeCapacitorBtn.textContent = 'Resume';
+                }
+            } else if (this.discharging) {
+                // Q(t) = Q_initial * e^(-t/RC)
+                const Q_initial = this.dataPoints[0] ? this.dataPoints[0].charge : (V_source * C); // Use initial charge from graph start
+                this.currentCharge = Q_initial * Math.exp(-this.timeElapsed / tau);
+                if (this.currentCharge <= 0.01) { // Stop when almost fully discharged
+                    this.currentCharge = 0;
+                    this.discharging = false;
+                    this.paused = true; // Auto-pause when finished
+                    pauseResumeCapacitorBtn.textContent = 'Resume';
+                }
+            }
+
+            const V_capacitor = this.currentCharge / C;
+            this.dataPoints.push({time: this.timeElapsed, voltage: V_capacitor, charge: this.currentCharge});
+
+            this.draw();
+            this.drawGraph();
+            updateInfoPanel();
+
+            if (this.charging || this.discharging) {
+                this.animationFrameId = requestAnimationFrame(this.animateCapacitor.bind(this));
+            } else {
+                cancelAnimationFrame(this.animationFrameId);
+            }
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+
+            const C = parseFloat(capacitanceInput.value); // μF for display
+            const V_source = parseFloat(capacitorVoltageSourceInput.value);
+            const R = parseFloat(capacitorResistanceInput.value);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const componentSpacing = 80;
+
+            // Draw Battery
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - 50, centerY - componentSpacing);
+            this.ctx.lineTo(centerX - 50, centerY - componentSpacing + 30);
+            this.ctx.lineWidth = 5; // Positive terminal (long)
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - 60, centerY - componentSpacing);
+            this.ctx.lineTo(centerX - 60, centerY - componentSpacing + 20);
+            this.ctx.lineWidth = 2; // Negative terminal (short)
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.font = '14px Arial';
+            this.ctx.fillText(`V = ${V_source}V`, centerX - 90, centerY - componentSpacing + 10);
+
+            // Draw Resistor
+            this.ctx.strokeStyle = 'var(--component-color)';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.rect(centerX + 20, centerY - componentSpacing - 15, 30, 30);
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.fillText(`${R}Ω`, centerX + 25, centerY - componentSpacing + 30);
+
+
+            // Draw Capacitor
+            const capacitorHeight = 60;
+            const capacitorWidth = 10;
+            const capacitorX = centerX - capacitorWidth / 2;
+            const capacitorY = centerY + componentSpacing - capacitorHeight / 2;
+
+            this.ctx.strokeStyle = 'var(--component-color)';
+            this.ctx.lineWidth = 3;
+            // Plate 1
+            this.ctx.beginPath();
+            this.ctx.moveTo(capacitorX, capacitorY);
+            this.ctx.lineTo(capacitorX, capacitorY + capacitorHeight);
+            this.ctx.stroke();
+            // Plate 2
+            this.ctx.beginPath();
+            this.ctx.moveTo(capacitorX + capacitorWidth, capacitorY);
+            this.ctx.lineTo(capacitorX + capacitorWidth, capacitorY + capacitorHeight);
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.fillText(`${C}μF`, capacitorX - 10, capacitorY + capacitorHeight + 20);
+
+            // Draw Wires (simplified rectangular circuit)
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 2;
+
+            this.ctx.beginPath();
+            // From battery positive to resistor
+            this.ctx.moveTo(centerX - 50, centerY - componentSpacing + 15);
+            this.ctx.lineTo(centerX + 20, centerY - componentSpacing + 15);
+            // From resistor to capacitor (top plate)
+            this.ctx.lineTo(centerX + 20, centerY + componentSpacing + capacitorHeight / 2);
+            this.ctx.lineTo(capacitorX + capacitorWidth, centerY + componentSpacing + capacitorHeight / 2);
+            this.ctx.lineTo(capacitorX + capacitorWidth, capacitorY + capacitorHeight / 2);
+            // From capacitor bottom plate to battery negative
+            this.ctx.moveTo(capacitorX, capacitorY + capacitorHeight / 2);
+            this.ctx.lineTo(centerX - 60, centerY + componentSpacing + capacitorHeight / 2);
+            this.ctx.lineTo(centerX - 60, centerY - componentSpacing + 5);
+            this.ctx.stroke();
+
+
+            // Animate charge on plates
+            const chargeFillHeight = (this.currentCharge / (V_source * C * 1e6)) * capacitorHeight; // Scale charge to visual height
+            if (chargeFillHeight > 0.1) { // Only draw if some charge
+                this.ctx.fillStyle = 'var(--positive-charge-color)';
+                this.ctx.fillRect(capacitorX + capacitorWidth, capacitorY + capacitorHeight - chargeFillHeight, 5, chargeFillHeight);
+                this.ctx.fillStyle = 'var(--negative-charge-color)';
+                this.ctx.fillRect(capacitorX - 5, capacitorY + capacitorHeight - chargeFillHeight, 5, chargeFillHeight);
+            }
+        },
+        drawGraph: function() {
+            if (!this.graphCtx) return;
+            this.graphCtx.clearRect(0, 0, this.graphCanvas.width, this.graphCanvas.height);
+
+            this.graphCtx.strokeStyle = '#ccc';
+            this.graphCtx.lineWidth = 1;
+
+            // Draw X and Y axes
+            this.graphCtx.beginPath();
+            this.graphCtx.moveTo(50, this.graphCanvas.height - 30);
+            this.graphCtx.lineTo(this.graphCanvas.width - 20, this.graphCanvas.height - 30); // X-axis
+            this.graphCtx.moveTo(50, this.graphCanvas.height - 30);
+            this.graphCtx.lineTo(50, 20); // Y-axis
+            this.graphCtx.stroke();
+
+            // Labels
+            this.graphCtx.fillStyle = 'var(--dark-color)';
+            this.graphCtx.font = '12px Arial';
+            this.graphCtx.textAlign = 'center';
+            this.graphCtx.textBaseline = 'top';
+            this.graphCtx.fillText('Time (s)', this.graphCanvas.width / 2, this.graphCanvas.height - 15);
+            this.graphCtx.save();
+            this.graphCtx.translate(20, this.graphCanvas.height / 2);
+            this.graphCtx.rotate(-Math.PI / 2);
+            this.graphCtx.fillText('Voltage (V) / Charge (μC)', 0, 0);
+            this.graphCtx.restore();
+
+            // Scale
+            const xMax = this.maxGraphTime;
+            const yMax = this.maxGraphVoltage;
+            const xScale = (this.graphCanvas.width - 70) / xMax;
+            const yScale = (this.graphCanvas.height - 50) / yMax;
+
+            // Draw grid lines
+            this.graphCtx.strokeStyle = '#eee';
+            for (let i = 0; i <= xMax; i += 1) { // 1-second intervals
+                const x = 50 + i * xScale;
+                this.graphCtx.beginPath();
+                this.graphCtx.moveTo(x, this.graphCanvas.height - 30);
+                this.graphCtx.lineTo(x, 20);
+                this.graphCtx.stroke();
+                this.graphCtx.fillText(i.toString(), x, this.graphCanvas.height - 25);
+            }
+            for (let i = 0; i <= yMax; i += Math.max(1, Math.floor(yMax / 5))) { // 5 major divisions
+                const y = this.graphCanvas.height - 30 - i * yScale;
+                this.graphCtx.beginPath();
+                this.graphCtx.moveTo(50, y);
+                this.graphCtx.lineTo(this.graphCanvas.width - 20, y);
+                this.graphCtx.stroke();
+                this.graphCtx.textAlign = 'right';
+                this.graphCtx.fillText(i.toFixed(0), 45, y + 5);
+            }
+            this.graphCtx.textAlign = 'center';
+
+
+            // Draw data points
+            this.graphCtx.beginPath();
+            this.graphCtx.strokeStyle = 'var(--waveform-voltage-color)';
+            this.graphCtx.lineWidth = 2;
+            let firstPoint = true;
+            this.dataPoints.forEach(point => {
+                const x = 50 + point.time * xScale;
+                const y = this.graphCanvas.height - 30 - point.voltage * yScale;
+                if (firstPoint) {
+                    this.graphCtx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    this.graphCtx.lineTo(x, y);
+                }
+            });
+            this.graphCtx.stroke();
+
+            // Draw charge data (scaled to voltage axis for simplicity)
+            this.graphCtx.beginPath();
+            this.graphCtx.strokeStyle = 'var(--waveform-current-color)';
+            this.graphCtx.lineWidth = 2;
+            firstPoint = true;
+            const C_microF = parseFloat(capacitanceInput.value);
+            this.dataPoints.forEach(point => {
+                const x = 50 + point.time * xScale;
+                const y = this.graphCanvas.height - 30 - (point.charge / C_microF) * yScale; // Q = C*V, so V = Q/C
+                if (firstPoint) {
+                    this.graphCtx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    this.graphCtx.lineTo(x, y);
+                }
+            });
+            this.graphCtx.stroke();
+        }
+    };
+
+    // Event listeners for Capacitors simulation
+    capacitanceInput.addEventListener('input', capacitorSim.draw.bind(capacitorSim));
+    capacitorVoltageSourceInput.addEventListener('input', capacitorSim.draw.bind(capacitorSim));
+    capacitorResistanceInput.addEventListener('input', capacitorSim.draw.bind(capacitorSim));
+    chargeCapacitorBtn.addEventListener('click', () => capacitorSim.startCharging());
+    dischargeCapacitorBtn.addEventListener('click', () => capacitorSim.startDischarging());
+    resetCapacitorBtn.addEventListener('click', () => capacitorSim.reset());
+    pauseResumeCapacitorBtn.addEventListener('click', () => capacitorSim.togglePauseResume());
+
+
+    // --- Magnetic Fields Simulation ---
+    const magneticFieldCanvas = document.getElementById('magneticFieldCanvas');
+    const fieldSourceSelect = document.getElementById('fieldSource');
+    const currentValueInput = document.getElementById('currentValue');
+    const numTurnsInput = document.getElementById('numTurns');
+    const numTurnsLabel = document.getElementById('numTurnsLabel');
+    const fieldDirectionSelect = document.getElementById('fieldDirection');
+
+    const magneticFieldSim = {
+        ctx: null,
+        canvas: null,
+        init: function() {
+            this.canvas = magneticFieldCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const fieldSource = fieldSourceSelect.value;
+            const currentValue = parseFloat(currentValueInput.value);
+            const numTurns = parseFloat(numTurnsInput.value);
+            const fieldDirection = fieldDirectionSelect.value;
+
+            // Show/hide numTurns control
+            if (fieldSource === 'solenoid') {
+                numTurnsLabel.style.display = 'block';
+                numTurnsInput.style.display = 'block';
+            } else {
+                numTurnsLabel.style.display = 'none';
+                numTurnsInput.style.display = 'none';
+            }
+
+            this.ctx.strokeStyle = 'var(--magnetic-field-color)';
+            this.ctx.lineWidth = 1;
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.font = '14px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+
+            if (fieldSource === 'straightWire') {
+                this.drawStraightWireField(currentValue, fieldDirection);
+            } else if (fieldSource === 'currentLoop') {
+                this.drawCurrentLoopField(currentValue, fieldDirection);
+            } else if (fieldSource === 'solenoid') {
+                this.drawSolenoidField(currentValue, numTurns, fieldDirection);
+            }
+            updateInfoPanel();
+        },
+        drawStraightWireField: function(current, direction) {
+            const centerX = this.canvas.width / 2;
+            const wireY = this.canvas.height / 2;
+
+            // Draw wire
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, 0);
+            this.ctx.lineTo(centerX, this.canvas.height);
+            this.ctx.stroke();
+
+            // Draw current direction arrow
+            this.ctx.fillStyle = 'var(--primary-color)';
+            if (direction === 'up') {
+                drawArrowhead(this.ctx, centerX, 30, -Math.PI / 2, 'var(--primary-color)');
+            } else {
+                drawArrowhead(this.ctx, centerX, this.canvas.height - 30, Math.PI / 2, 'var(--primary-color)');
+            }
+            this.ctx.fillText(`${current}A`, centerX + 20, 50);
+
+
+            // Draw magnetic field lines (concentric circles)
+            this.ctx.strokeStyle = 'var(--magnetic-field-color)';
+            this.ctx.lineWidth = 1;
+            for (let r = 50; r < Math.min(this.canvas.width, this.canvas.height) / 2 - 20; r += 20) {
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, wireY, r, 0, Math.PI * 2);
+                this.ctx.stroke();
+
+                // Add field direction arrows (Right Hand Rule)
+                const numArrows = 8;
+                for (let i = 0; i < numArrows; i++) {
+                    const angle = (i / numArrows) * Math.PI * 2;
+                    const arrowX = centerX + r * Math.cos(angle);
+                    const arrowY = wireY + r * Math.sin(angle);
+
+                    let arrowAngle;
+                    if (direction === 'up') { // Current up, field is counter-clockwise
+                        arrowAngle = angle + Math.PI / 2;
+                    } else { // Current down, field is clockwise
+                        arrowAngle = angle - Math.PI / 2;
+                    }
+                    drawArrowhead(this.ctx, arrowX, arrowY, arrowAngle, 'var(--magnetic-field-color)');
+                }
+            }
+        },
+        drawCurrentLoopField: function(current, direction) {
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            const loopRadius = Math.min(centerX, centerY) * 0.7;
+
+            // Draw current loop
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 5;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, loopRadius, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // Draw current direction arrow on loop
+            const arrowAngle = direction === 'clockwise' ? Math.PI / 4 : -Math.PI / 4;
+            const arrowX = centerX + loopRadius * Math.cos(arrowAngle);
+            const arrowY = centerY + loopRadius * Math.sin(arrowAngle);
+            const currentArrowDirection = direction === 'clockwise' ? arrowAngle + Math.PI / 2 : arrowAngle - Math.PI / 2;
+            drawArrowhead(this.ctx, arrowX, arrowY, currentArrowDirection, 'var(--primary-color)');
+            this.ctx.fillText(`${current}A`, arrowX + 20, arrowY);
+
+
+            // Draw magnetic field lines (simplified)
+            this.ctx.strokeStyle = 'var(--magnetic-field-color)';
+            this.ctx.lineWidth = 1;
+
+            // Field lines inside the loop
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, centerY - loopRadius);
+            this.ctx.lineTo(centerX, centerY + loopRadius);
+            this.ctx.stroke();
+            let centralArrowAngle = direction === 'clockwise' ? Math.PI / 2 : -Math.PI / 2;
+            drawArrowhead(this.ctx, centerX, centerY, centralArrowAngle, 'var(--magnetic-field-color)');
+
+
+            // Field lines outside the loop (simplified arcs)
+            for (let i = 1; i <= 3; i++) {
+                const offset = i * 20;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, loopRadius + offset, Math.PI * 0.2, Math.PI * 0.8);
+                this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, loopRadius + offset, Math.PI * 1.2, Math.PI * 1.8);
+                this.ctx.stroke();
+            }
+        },
+        drawSolenoidField: function(current, numTurns, direction) {
+            const solenoidWidth = this.canvas.width * 0.6;
+            const solenoidHeight = this.canvas.height * 0.3;
+            const startX = (this.canvas.width - solenoidWidth) / 2;
+            const startY = (this.canvas.height - solenoidHeight) / 2;
+            const turnSpacing = solenoidWidth / (numTurns - 1);
+
+            // Draw solenoid coils
+            this.ctx.strokeStyle = 'var(--wire-color)';
+            this.ctx.lineWidth = 3;
+            for (let i = 0; i < numTurns; i++) {
+                this.ctx.beginPath();
+                this.ctx.ellipse(startX + i * turnSpacing, startY + solenoidHeight / 2, 10, solenoidHeight / 2, 0, 0, Math.PI * 2);
+                this.ctx.stroke();
+            }
+
+            // Draw current direction arrows on solenoid (simplified)
+            this.ctx.fillStyle = 'var(--primary-color)';
+            const arrowY = startY + solenoidHeight / 2;
+            if (direction === 'clockwise') { // Current goes into top, out bottom
+                drawArrowhead(this.ctx, startX + 10, arrowY - 15, -Math.PI / 2, 'var(--primary-color)');
+                drawArrowhead(this.ctx, startX + solenoidWidth - 10, arrowY + 15, Math.PI / 2, 'var(--primary-color)');
+            } else { // Current goes out top, into bottom
+                drawArrowhead(this.ctx, startX + 10, arrowY + 15, Math.PI / 2, 'var(--primary-color)');
+                drawArrowhead(this.ctx, startX + solenoidWidth - 10, arrowY - 15, -Math.PI / 2, 'var(--primary-color)');
+            }
+            this.ctx.fillText(`${current}A`, startX + solenoidWidth / 2, startY + solenoidHeight + 20);
+
+
+            // Draw magnetic field lines (simplified straight lines inside, loops outside)
+            this.ctx.strokeStyle = 'var(--magnetic-field-color)';
+            this.ctx.lineWidth = 1;
+
+            // Inside solenoid
+            for (let i = 0; i < 5; i++) {
+                const lineY = startY + (i + 1) * (solenoidHeight / 6);
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX, lineY);
+                this.ctx.lineTo(startX + solenoidWidth, lineY);
+                this.ctx.stroke();
+                let internalArrowAngle = direction === 'clockwise' ? 0 : Math.PI; // Right for clockwise, Left for counter-clockwise
+                drawArrowhead(this.ctx, startX + solenoidWidth / 2, lineY, internalArrowAngle, 'var(--magnetic-field-color)');
+            }
+
+            // Outside solenoid (looping lines)
+            const loopOffset = 50;
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.bezierCurveTo(startX - loopOffset, startY - loopOffset, startX + solenoidWidth + loopOffset, startY - loopOffset, startX + solenoidWidth, startY);
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY + solenoidHeight);
+            this.ctx.bezierCurveTo(startX - loopOffset, startY + solenoidHeight + loopOffset, startX + solenoidWidth + loopOffset, startY + solenoidHeight + loopOffset, startX + solenoidWidth, startY + solenoidHeight);
+            this.ctx.stroke();
+        }
+    };
+
+    // Event listeners for Magnetic Fields simulation
+    fieldSourceSelect.addEventListener('change', magneticFieldSim.draw.bind(magneticFieldSim));
+    currentValueInput.addEventListener('input', magneticFieldSim.draw.bind(magneticFieldSim));
+    numTurnsInput.addEventListener('input', magneticFieldSim.draw.bind(magneticFieldSim));
+    fieldDirectionSelect.addEventListener('change', magneticFieldSim.draw.bind(magneticFieldSim));
+
+
+    // --- AC Circuits Simulation ---
+    const acCircuitCanvas = document.getElementById('acCircuitCanvas');
+    const acVoltagePeakInput = document.getElementById('acVoltagePeak');
+    const acFrequencyInput = document.getElementById('acFrequency');
+    const acResistanceInput = document.getElementById('acResistance');
+    const acInductanceInput = document.getElementById('acInductance');
+    const acCapacitanceInput = document.getElementById('acCapacitance');
+
+    const acCircuitSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null,
+        time: 0,
+        init: function() {
+            this.canvas = acCircuitCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.time = 0; // Reset time for animation
+            this.draw();
+        },
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const V_peak = parseFloat(acVoltagePeakInput.value);
+            const freq = parseFloat(acFrequencyInput.value);
+            const R = parseFloat(acResistanceInput.value);
+            const L_mH = parseFloat(acInductanceInput.value);
+            const C_uF = parseFloat(acCapacitanceInput.value);
+
+            const L = L_mH * 1e-3; // Convert mH to H
+            const C = C_uF * 1e-6; // Convert μF to F
+            const omega = 2 * Math.PI * freq; // Angular frequency
+
+            const X_L = omega * L; // Inductive Reactance
+            const X_C = 1 / (omega * C); // Capacitive Reactance
+            const Z = Math.sqrt(R*R + (X_L - X_C)*(X_L - X_C)); // Impedance
+            const I_peak = V_peak / Z; // Peak Current
+            const phaseAngleRad = Math.atan2((X_L - X_C), R); // Phase angle in radians
+
+
+            // Draw axes
+            this.ctx.strokeStyle = '#ccc';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, this.canvas.height / 2); // X-axis (time)
+            this.ctx.lineTo(this.canvas.width, this.canvas.height / 2);
+            this.ctx.moveTo(20, 0); // Y-axis (voltage/current)
+            this.ctx.lineTo(20, this.canvas.height);
+            this.ctx.stroke();
+
+            // Labels
+            this.ctx.fillStyle = 'var(--dark-color)';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText('Time', this.canvas.width / 2, this.canvas.height - 20);
+            this.ctx.save();
+            this.ctx.translate(10, this.canvas.height / 2);
+            this.ctx.rotate(-Math.PI / 2);
+            this.ctx.fillText('Amplitude', 0, 0);
+            this.ctx.restore();
+
+            // Draw waveforms
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = 'var(--waveform-voltage-color)';
+            this.ctx.lineWidth = 2;
+            for (let x = 0; x < this.canvas.width; x++) {
+                const t = (x / this.canvas.width) * (2 * Math.PI / omega) * 5 + this.time; // Scale x to time, show 5 cycles
+                const voltage = V_peak * Math.sin(omega * t);
+                const y = this.canvas.height / 2 - (voltage / V_peak) * (this.canvas.height / 2 - 30); // Scale to canvas height
+                if (x === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            this.ctx.stroke();
+            this.ctx.fillText('Voltage', this.canvas.width - 50, 20);
+
+
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = 'var(--waveform-current-color)';
+            this.ctx.lineWidth = 2;
+            for (let x = 0; x < this.canvas.width; x++) {
+                const t = (x / this.canvas.width) * (2 * Math.PI / omega) * 5 + this.time;
+                const current = I_peak * Math.sin(omega * t - phaseAngleRad);
+                const y = this.canvas.height / 2 - (current / I_peak) * (this.canvas.height / 2 - 30); // Scale to canvas height
+                if (x === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            this.ctx.stroke();
+            this.ctx.fillText('Current', this.canvas.width - 50, 40);
+
+
+            this.time += 0.01; // Advance time for animation
+            updateInfoPanel();
+            this.animationFrameId = requestAnimationFrame(this.draw.bind(this));
+        }
+    };
+
+    // Event listeners for AC Circuits simulation
+    acVoltagePeakInput.addEventListener('input', acCircuitSim.init.bind(acCircuitSim));
+    acFrequencyInput.addEventListener('input', acCircuitSim.init.bind(acCircuitSim));
+    acResistanceInput.addEventListener('input', acCircuitSim.init.bind(acCircuitSim));
+    acInductanceInput.addEventListener('input', acCircuitSim.init.bind(acCircuitSim));
+    acCapacitanceInput.addEventListener('input', acCircuitSim.init.bind(acCircuitSim));
+
+
+    // Main animation loop - this function runs repeatedly and calls the drawing function
+    // for the currently active simulation tab if it's a canvas-based animation.
+    function animate() {
+      if (!simulationCtx) {
+          animationId = requestAnimationFrame(animate); // Keep trying until ctx is set
+          return;
+      }
+
+      // Resize canvas if container size changes
+      const parentContainer = simulationCanvas.closest('.simulation-area');
+      if (parentContainer && (simulationCanvas.width !== parentContainer.offsetWidth || simulationCanvas.height !== parentContainer.offsetHeight)) {
+          simulationCanvas.width = parentContainer.offsetWidth;
+          simulationCanvas.height = parentContainer.offsetHeight;
+          // Redraw after resize
+          if (mode === 'electricField') {
+              electricFieldSim.init(); // Re-init to re-position charges
+          } else if (mode === 'currentElectricity') {
+              currentElectricitySim.init(); // Re-init to re-draw circuit
+          } else if (mode === 'capacitors') {
+              capacitorSim.init(); // Re-init to re-draw capacitor
+          } else if (mode === 'magneticFields') {
+              magneticFieldSim.init();
+          } else if (mode === 'acCircuits') {
+              acCircuitSim.init();
+          }
+      }
+
+      if (mode === 'electricField') {
+          electricFieldSim.draw();
+      } else if (mode === 'currentElectricity') {
+          currentElectricitySim.draw();
+      } else if (mode === 'capacitors') {
+          // Capacitor animation is handled by its own requestAnimationFrame loop
+          // only when charging/discharging. Otherwise, just draw static state.
+          if (!capacitorSim.charging && !capacitorSim.discharging) {
+              capacitorSim.draw();
+          }
+      } else if (mode === 'magneticFields') {
+          magneticFieldSim.draw();
+      } else if (mode === 'acCircuits') {
+          acCircuitSim.draw();
+      }
+      // Static electricity does not use this continuous animation loop, it uses CSS transitions.
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Initialize the simulators that need an initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            mode = tabId; // Set initial mode
+        }
+
+        // Initialize all simulators
+        electricFieldSim.init();
+        staticElectricitySim.init();
+        currentElectricitySim.init();
+        capacitorSim.init(); // Initialize the new capacitor sim
+        magneticFieldSim.init(); // Initialize magnetic field sim
+        acCircuitSim.init(); // Initialize AC circuit sim
+
+        updateInfoPanel(); // Initial update of the info panel for the active tab
+
+        // Start the main animation loop only if the active tab is one that uses it
+        if (mode === 'electricField' || mode === 'currentElectricity' || mode === 'capacitors' || mode === 'magneticFields' || mode === 'acCircuits') {
+            animate();
+        }
+    });
+
+  </script>
+</body>
+</html>

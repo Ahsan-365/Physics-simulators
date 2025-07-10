@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclear Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Root variables for consistent theming across the application */
+    :root {
+      --primary-color: #ff6f00; /* Deep Orange for main accents */
+      --secondary-color: #424242; /* Dark Gray for secondary elements */
+      --accent-color: #4caf50; /* Green for positive outcomes/energy */
+      --dark-color: #212121; /* General text color */
+      --light-color: #f5f5f5; /* Light background elements */
+      --background-gradient: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); /* Soft gradient for body background */
+      --panel-bg: #ffffff; /* Background for content panels */
+      --border-radius: 12px; /* Rounded corners for major elements */
+      --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
+      --input-bg: #fbe9e7; /* Background for control groups */
+      --button-hover-scale: 1.03; /* Scale effect on button hover */
+      --button-active-scale: 0.98; /* Scale effect on button click */
+    }
+
+    /* Global reset for consistent box-sizing and removal of default margins/paddings */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Body styling: font, background, layout */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-gradient);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align content to the top */
+      min-height: 100vh; /* Ensure body takes full viewport height */
+    }
+
+    /* Main container for the entire application layout */
+    .container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px; /* Spacing between sections */
+    }
+
+    /* Header section styling */
+    header {
+      text-align: center;
+      padding: 25px;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      font-size: 2.8rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.3rem;
+    }
+
+    /* Tab navigation buttons styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 12px;
+    }
+
+    .tab-btn {
+      padding: 14px 28px;
+      background: var(--panel-bg);
+      border: none;
+      border-radius: 30px; /* Pill-shaped buttons */
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      color: var(--dark-color);
+      flex-shrink: 0; /* Prevent buttons from shrinking */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-4px); /* Lift effect on hover */
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(255, 111, 0, 0.4); /* Primary color shadow for active state */
+    }
+
+    /* Tab content area styling, hidden by default */
+    .tab-content {
+      display: none;
+      background: var(--panel-bg);
+      padding: 35px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .tab-content.active {
+      display: block; /* Show active tab content */
+      animation: fadeIn 0.6s ease-out; /* Fade-in animation */
+    }
+
+    /* Keyframe animation for fading in tab content */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Container for each simulation section */
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    /* Grid layout for simulation controls */
+    .controls {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Responsive grid columns */
+      gap: 25px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08); /* Inner shadow for depth */
+    }
+
+    /* Styling for individual control groups (label + input) */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    /* Styling for number input fields and select dropdowns */
+    .control-group input[type="number"],
+    .control-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      transition: border-color 0.3s ease;
+    }
+
+    .control-group input[type="number"]:focus,
+    .control-group select:focus {
+      border-color: var(--primary-color); /* Highlight on focus */
+      outline: none;
+    }
+
+    /* Grouping for action buttons */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* General styling for all buttons */
+    button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    /* Area where simulations are visually displayed */
+    .simulation-area {
+      width: 100%;
+      max-width: 900px;
+      height: 550px; /* Fixed height for consistent layout */
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden; /* Hide overflowing particles */
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative; /* Needed for absolute positioning of particles */
+    }
+
+    /* Canvas element styling within the simulation area */
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: var(--panel-bg);
+      border-radius: var(--border-radius);
+    }
+
+    /* Information panel styling */
+    .info-panel {
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 25px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .info-item {
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      line-height: 1.5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed #eee; /* Separator for info items */
+    }
+    .info-item:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-item strong {
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    .info-item span {
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    /* Specific styles for nuclear particles (neutrons, nuclei, products, bursts) */
+    .neutron, .nucleus, .fission-product, .fusion-product, .energy-burst {
+      position: absolute;
+      border-radius: 50%; /* Make them circular */
+      transform: translate(-50%, -50%); /* Center elements based on their own size */
+    }
+
+    .neutron {
+      background-color: var(--secondary-color); /* Dark Gray */
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 5px var(--secondary-color);
+      z-index: 10; /* Ensure neutrons are on top */
+    }
+
+    .nucleus {
+      background-color: var(--primary-color); /* Deep Orange */
+      width: 60px;
+      height: 60px;
+      box-shadow: 0 0 15px rgba(255, 111, 0, 0.7);
+      border: 2px solid #e65100;
+      z-index: 5; /* Below neutrons */
+    }
+
+    .fission-product {
+      background-color: #fdd835; /* Yellow */
+      width: 30px;
+      height: 30px;
+      box-shadow: 0 0 10px rgba(253, 216, 53, 0.7);
+      border: 1px solid #fbc02d;
+      z-index: 8; /* Between neutrons and nuclei */
+    }
+
+    .fusion-product {
+      background-color: var(--accent-color); /* Green */
+      width: 40px;
+      height: 40px;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+      border: 2px solid #388e3c;
+      z-index: 8;
+    }
+
+    .energy-burst {
+      background: radial-gradient(circle, rgba(255, 255, 0, 0.8) 0%, rgba(255, 165, 0, 0.6) 50%, rgba(255, 0, 0, 0) 100%);
+      animation: burst 0.5s forwards; /* Animation for the energy burst */
+      z-index: 1; /* Behind other particles */
+    }
+
+    /* Keyframe animation for the energy burst effect */
+    @keyframes burst {
+      from {
+        transform: translate(-50%, -50%) scale(0); /* Start small */
+        opacity: 1;
+      }
+      to {
+        transform: translate(-50%, -50%) scale(2); /* Expand and fade out */
+        opacity: 0;
+      }
+    }
+
+    /* Responsive Adjustments for smaller screens */
+    @media (max-width: 992px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        gap: 15px;
+      }
+      header {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 2.2rem;
+      }
+      .subtitle {
+        font-size: 1.1rem;
+      }
+      .tabs {
+        gap: 8px;
+      }
+      .tab-btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
+      .tab-content {
+        padding: 25px;
+      }
+      .simulation-title {
+        font-size: 1.8rem;
+      }
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 15px;
+      }
+      .control-group label {
+        font-size: 0.9rem;
+      }
+      .control-group input[type="number"],
+      .control-group select {
+        padding: 10px;
+        font-size: 0.95rem;
+      }
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 450px;
+      }
+      .info-panel {
+        padding: 20px;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tab-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      .simulation-area {
+        height: 380px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Nuclear Simulator</h1>
+      <p class="subtitle">Exploring the Power of the Atom: Fission, Fusion, and Chain Reactions</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="fission">Nuclear Fission</button>
+      <button class="tab-btn" data-tab="fusion">Nuclear Fusion</button>
+      <button class="tab-btn" data-tab="chainReaction">Chain Reaction</button>
+    </div>
+
+    <!-- Nuclear Fission Tab -->
+    <div id="fission" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Nuclear Fission</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="neutronEnergy">Neutron Energy (MeV):</label>
+            <input type="number" id="neutronEnergy" min="0.01" max="5" value="0.025" step="0.01">
+          </div>
+          <div class="control-group">
+            <label for="targetNucleus">Target Nucleus:</label>
+            <select id="targetNucleus">
+              <option value="U-235">Uranium-235</option>
+              <option value="Pu-239">Plutonium-239</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startFissionBtn">Start Fission</button>
+          <button class="secondary" id="resetFissionBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="fissionCanvas"></canvas>
+          <div id="fissionParticles"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Neutron Energy:</strong> <span id="infoNeutronEnergy">0.025 MeV (Thermal)</span></div>
+          <div class="info-item"><strong>Target Nucleus:</strong> <span id="infoTargetNucleus">Uranium-235</span></div>
+          <div class="info-item"><strong>Fission Products:</strong> <span id="infoFissionProducts">N/A</span></div>
+          <div class="info-item"><strong>Neutrons Released:</strong> <span id="infoFissionNeutrons">0</span></div>
+          <div class="info-item"><strong>Energy Released:</strong> <span id="infoFissionEnergy">0 MeV</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nuclear Fusion Tab -->
+    <div id="fusion" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Nuclear Fusion</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="fusionTemperature">Temperature (Million K):</label>
+            <input type="number" id="fusionTemperature" min="50" max="200" value="100" step="10">
+          </div>
+          <div class="control-group">
+            <label for="fusionReactants">Reactants:</label>
+            <select id="fusionReactants">
+              <option value="DT">Deuterium + Tritium</option>
+              <option value="DD">Deuterium + Deuterium</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startFusionBtn">Start Fusion</button>
+          <button class="secondary" id="resetFusionBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="fusionCanvas"></canvas>
+          <div id="fusionParticles"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Temperature:</strong> <span id="infoFusionTemperature">100 Million K</span></div>
+          <div class="info-item"><strong>Reactants:</strong> <span id="infoFusionReactants">Deuterium + Tritium</span></div>
+          <div class="info-item"><strong>Fusion Product:</strong> <span id="infoFusionProduct">N/A</span></div>
+          <div class="info-item"><strong>Particles Released:</strong> <span id="infoFusionParticles">0</span></div>
+          <div class="info-item"><strong>Energy Released:</strong> <span id="infoFusionEnergy">0 MeV</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chain Reaction Tab -->
+    <div id="chainReaction" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Nuclear Chain Reaction</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="neutronMultiplier">Neutron Multiplier (k):</label>
+            <input type="number" id="neutronMultiplier" min="0.5" max="2.0" value="1.0" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="initialNeutrons">Initial Neutrons:</label>
+            <input type="number" id="initialNeutrons" min="1" max="10" value="3" step="1">
+          </div>
+          <div class="control-group">
+            <label for="materialType">Material Type:</label>
+            <select id="materialType">
+              <option value="subcritical">Subcritical (k &lt; 1)</option>
+              <option value="critical">Critical (k = 1)</option>
+              <option value="supercritical">Supercritical (k &gt; 1)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="startChainReactionBtn">Start Reaction</button>
+          <button class="secondary" id="resetChainReactionBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="chainReactionCanvas"></canvas>
+          <div id="chainReactionElements"></div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-item"><strong>Neutron Multiplier (k):</strong> <span id="infoNeutronMultiplier">1.0</span></div>
+          <div class="info-item"><strong>Initial Neutrons:</strong> <span id="infoInitialNeutrons">3</span></div>
+          <div class="info-item"><strong>Current Neutrons:</strong> <span id="infoCurrentNeutrons">0</span></div>
+          <div class="info-item"><strong>Total Fissions:</strong> <span id="infoTotalFissions">0</span></div>
+          <div class="info-item"><strong>Reaction Status:</strong> <span id="infoReactionStatus">Idle</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for animation and canvas context
+    let animationId; // Stores requestAnimationFrame ID for potential global animation loop (currently not used for continuous loop)
+    let currentTabMode = 'fission'; // Tracks the currently active simulation tab
+    let simulationCanvas = null; // Reference to the canvas element of the active tab
+    let simulationCtx = null; // Reference to the 2D rendering context of the active canvas
+
+    /**
+     * Updates the information panel based on the currently active simulation tab
+     * and its parameters.
+     */
+    function updateInfoPanel() {
+      // Update info for Nuclear Fission tab
+      if (currentTabMode === 'fission') {
+        const neutronEnergy = parseFloat(document.getElementById('neutronEnergy').value);
+        const targetNucleus = document.getElementById('targetNucleus').value;
+
+        let energyDescription = 'Thermal'; // Default for low energy
+        if (neutronEnergy > 0.1) energyDescription = 'Fast'; // Higher energy
+
+        document.getElementById('infoNeutronEnergy').textContent = `${neutronEnergy.toFixed(3)} MeV (${energyDescription})`;
+        document.getElementById('infoTargetNucleus').textContent = targetNucleus === 'U-235' ? 'Uranium-235' : 'Plutonium-239';
+        // Fission products, neutrons, and energy are updated dynamically by the simulation's `performFission` method
+      }
+      // Update info for Nuclear Fusion tab
+      else if (currentTabMode === 'fusion') {
+        const temperature = parseFloat(document.getElementById('fusionTemperature').value);
+        const reactants = document.getElementById('fusionReactants').value;
+
+        let reactantDisplay = '';
+        let product = 'N/A';
+        let particlesReleased = '0';
+        let energyReleased = '0 MeV';
+
+        // Set display values based on selected reactants
+        if (reactants === 'DT') { // Deuterium-Tritium fusion
+            reactantDisplay = 'Deuterium + Tritium';
+            product = 'Helium-4';
+            particlesReleased = '1 Neutron';
+            energyReleased = '17.6 MeV';
+        } else if (reactants === 'DD') { // Deuterium-Deuterium fusion
+            reactantDisplay = 'Deuterium + Deuterium';
+            product = 'Helium-3 / Tritium'; // Two possible outcomes
+            particlesReleased = '1 Neutron / 1 Proton';
+            energyReleased = '3.3 - 4.0 MeV';
+        }
+
+        document.getElementById('infoFusionTemperature').textContent = `${temperature.toFixed(0)} Million K`;
+        document.getElementById('infoFusionReactants').textContent = reactantDisplay;
+        document.getElementById('infoFusionProduct').textContent = product;
+        document.getElementById('infoFusionParticles').textContent = particlesReleased;
+        document.getElementById('infoFusionEnergy').textContent = energyReleased;
+      }
+      // Update info for Chain Reaction tab
+      else if (currentTabMode === 'chainReaction') {
+        const multiplier = parseFloat(document.getElementById('neutronMultiplier').value);
+        const initialNeutrons = parseFloat(document.getElementById('initialNeutrons').value);
+
+        let status = 'Idle';
+        if (chainReactionSim.isRunning) {
+            if (multiplier < 1) status = 'Decaying'; // Reaction dies out
+            else if (multiplier === 1) status = 'Critical (Steady)'; // Stable reaction
+            else status = 'Supercritical (Growing)'; // Reaction grows exponentially
+        }
+
+        document.getElementById('infoNeutronMultiplier').textContent = multiplier.toFixed(1);
+        document.getElementById('infoInitialNeutrons').textContent = initialNeutrons.toFixed(0);
+        document.getElementById('infoReactionStatus').textContent = status;
+        // Current neutrons and total fissions are updated dynamically by the simulation's `updateSimulation` method
+      }
+    }
+
+    /**
+     * Handles tab switching logic: stops current animations, updates active tab,
+     * initializes new tab's visuals, and updates info panel.
+     */
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop and reset any ongoing animations in all simulators
+        fissionSim.reset();
+        fusionSim.reset();
+        chainReactionSim.reset();
+
+        // Remove 'active' class from all tab buttons and content areas
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add 'active' class to the clicked button and its corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Update the global current tab mode
+        currentTabMode = tabId;
+
+        // Get and set the canvas and its context for the newly active tab
+        const currentCanvas = document.querySelector(`#${tabId} canvas`);
+        if (currentCanvas) {
+            simulationCanvas = currentCanvas;
+            simulationCtx = currentCanvas.getContext('2d');
+            // Ensure canvas dimensions are correctly set to fill its parent container
+            const parentContainer = currentCanvas.closest('.simulation-area');
+            if (parentContainer) {
+              currentCanvas.width = parentContainer.offsetWidth;
+              currentCanvas.height = parentContainer.offsetHeight;
+            }
+        } else {
+            simulationCanvas = null;
+            simulationCtx = null;
+        }
+
+        // Initialize the specific simulator for the newly active tab
+        if (currentTabMode === 'fission') {
+            fissionSim.init();
+        } else if (currentTabMode === 'fusion') {
+            fusionSim.init();
+        } else if (currentTabMode === 'chainReaction') {
+            chainReactionSim.init();
+        }
+
+        updateInfoPanel(); // Update info panel for the newly active tab
+      });
+    });
+
+    // --- Nuclear Fission Simulation Object ---
+    const fissionCanvas = document.getElementById('fissionCanvas');
+    const startFissionBtn = document.getElementById('startFissionBtn');
+    const resetFissionBtn = document.getElementById('resetFissionBtn');
+    const neutronEnergyInput = document.getElementById('neutronEnergy');
+    const targetNucleusInput = document.getElementById('targetNucleus');
+    const fissionParticlesDiv = document.getElementById('fissionParticles'); // Container for DOM-based particles
+
+    const fissionSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null, // Not used for continuous animation, but for potential future use
+        targetNucleus: null, // Reference to the target nucleus DOM element
+        
+        /** Initializes the fission simulation, setting up canvas and initial visuals. */
+        init: function() {
+            this.canvas = fissionCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.resetVisuals(); // Clear and set up initial state
+            this.draw(); // Initial draw (mainly for info panel update)
+        },
+
+        /** Resets all visual elements and info panel data for the fission simulation. */
+        resetVisuals: function() {
+            cancelAnimationFrame(this.animationFrameId); // Ensure any ongoing animation is stopped
+            fissionParticlesDiv.innerHTML = ''; // Clear all particles from the DOM
+            document.getElementById('infoFissionProducts').textContent = 'N/A';
+            document.getElementById('infoFissionNeutrons').textContent = '0';
+            document.getElementById('infoFissionEnergy').textContent = '0 MeV';
+            this.createTargetNucleus(); // Re-create the target nucleus
+            this.draw(); // Update visuals
+        },
+
+        /** Creates and positions the target nucleus in the center of the simulation area. */
+        createTargetNucleus: function() {
+            if (this.targetNucleus) this.targetNucleus.remove(); // Remove existing nucleus if any
+            const nucleus = document.createElement('div');
+            nucleus.className = 'nucleus';
+            nucleus.style.left = `${this.canvas.width / 2}px`;
+            nucleus.style.top = `${this.canvas.height / 2}px`;
+            fissionParticlesDiv.appendChild(nucleus);
+            this.targetNucleus = nucleus;
+        },
+
+        /** Initiates a single fission event: sends a neutron towards the target nucleus. */
+        startFission: function() {
+            this.resetVisuals(); // Reset before starting a new fission event
+            const neutron = document.createElement('div');
+            neutron.className = 'neutron';
+            const startX = 0; // Neutron starts from the left edge
+            const startY = this.canvas.height / 2;
+            neutron.style.left = `${startX}px`;
+            neutron.style.top = `${startY}px`;
+            fissionParticlesDiv.appendChild(neutron);
+
+            const targetX = this.canvas.width / 2;
+            const targetY = this.canvas.height / 2;
+            const duration = 1000; // Animation duration in milliseconds
+
+            // Force browser reflow to ensure the initial position is rendered before the transition starts.
+            // This makes the transition visible.
+            neutron.offsetHeight;
+
+            // Apply CSS transform for animation
+            neutron.style.transition = `transform ${duration / 1000}s linear`;
+            neutron.style.transform = `translate(${targetX - startX}px, ${targetY - startY}px)`;
+
+            // Event listener for when the neutron animation finishes
+            neutron.addEventListener('transitionend', () => {
+                neutron.remove(); // Remove the neutron after it reaches the target
+                this.performFission(targetX, targetY); // Trigger the fission process
+            }, { once: true }); // Ensure the event listener is removed after first use
+        },
+
+        /** Performs the visual effects of fission: energy burst, fission products, and new neutrons. */
+        performFission: function(x, y) {
+            if (this.targetNucleus) this.targetNucleus.remove(); // Remove the target nucleus as it has fissioned
+
+            // Create and animate an energy burst effect
+            const burst = document.createElement('div');
+            burst.className = 'energy-burst';
+            burst.style.left = `${x}px`;
+            burst.style.top = `${y}px`;
+            burst.style.width = '0px'; // Start small for burst animation
+            burst.style.height = '0px'; // Start small for burst animation
+            fissionParticlesDiv.appendChild(burst);
+            burst.addEventListener('animationend', () => burst.remove(), { once: true });
+
+            // Create and animate fission product particles
+            const numFissionProducts = 2; // Typically two large fragments
+            for (let i = 0; i < numFissionProducts; i++) {
+                const product = document.createElement('div');
+                product.className = 'fission-product';
+                product.style.left = `${x}px`;
+                product.style.top = `${y}px`;
+                fissionParticlesDiv.appendChild(product);
+
+                const angle = Math.random() * Math.PI * 2; // Random direction
+                const distance = Math.random() * 150 + 100; // Random distance for dispersal
+                const finalX = x + distance * Math.cos(angle);
+                const finalY = y + distance * Math.sin(angle);
+
+                product.offsetHeight; // Force reflow
+                product.style.transition = `transform 1s ease-out`;
+                product.style.transform = `translate(${finalX - x}px, ${finalY - y}px)`;
+                product.addEventListener('transitionend', () => product.remove(), { once: true });
+            }
+
+            // Create and animate new neutrons released during fission
+            const numNewNeutrons = Math.floor(Math.random() * 2) + 2; // Typically 2 or 3 neutrons
+            for (let i = 0; i < numNewNeutrons; i++) {
+                const newNeutron = document.createElement('div');
+                newNeutron.className = 'neutron';
+                newNeutron.style.left = `${x}px`;
+                newNeutron.style.top = `${y}px`;
+                fissionParticlesDiv.appendChild(newNeutron);
+
+                const angle = Math.random() * Math.PI * 2; // Random direction
+                const distance = this.canvas.width / 2; // Travel across half the canvas
+                const finalX = x + distance * Math.cos(angle);
+                const finalY = y + distance * Math.sin(angle);
+
+                newNeutron.offsetHeight; // Force reflow
+                newNeutron.style.transition = `transform 1.5s linear`;
+                newNeutron.style.transform = `translate(${finalX - x}px, ${finalY - y}px)`;
+                newNeutron.addEventListener('transitionend', () => newNeutron.remove(), { once: true });
+            }
+
+            // Update info panel with fission results
+            document.getElementById('infoFissionProducts').textContent = 'Krypton + Barium (example)';
+            document.getElementById('infoFissionNeutrons').textContent = numNewNeutrons;
+            document.getElementById('infoFissionEnergy').textContent = '200 MeV';
+        },
+
+        /** Placeholder for canvas drawing (not actively used for continuous animation in this sim). */
+        draw: function() {
+            if (!this.ctx) return;
+            // Clear canvas if needed, but DOM elements handle visuals here
+            updateInfoPanel(); // Ensure info panel is updated on initial draw
+        },
+
+        /** Resets the entire fission simulation to its initial state. */
+        reset: function() {
+            this.resetVisuals();
+            this.init(); // Re-initialize to ensure target nucleus is present
+        }
+    };
+
+    // Event listeners for Fission tab controls
+    startFissionBtn.addEventListener('click', () => fissionSim.startFission());
+    resetFissionBtn.addEventListener('click', () => fissionSim.reset());
+    neutronEnergyInput.addEventListener('input', updateInfoPanel);
+    targetNucleusInput.addEventListener('change', updateInfoPanel);
+
+    // --- Nuclear Fusion Simulation Object ---
+    const fusionCanvas = document.getElementById('fusionCanvas');
+    const startFusionBtn = document.getElementById('startFusionBtn');
+    const resetFusionBtn = document.getElementById('resetFusionBtn');
+    const fusionTemperatureInput = document.getElementById('fusionTemperature');
+    const fusionReactantsInput = document.getElementById('fusionReactants');
+    const fusionParticlesDiv = document.getElementById('fusionParticles'); // Container for DOM-based particles
+
+    const fusionSim = {
+        ctx: null,
+        canvas: null,
+        animationFrameId: null, // Not used for continuous animation
+        
+        /** Initializes the fusion simulation, setting up canvas and initial visuals. */
+        init: function() {
+            this.canvas = fusionCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.resetVisuals();
+            this.draw(); // Initial draw (mainly for info panel update)
+        },
+
+        /** Resets all visual elements and info panel data for the fusion simulation. */
+        resetVisuals: function() {
+            cancelAnimationFrame(this.animationFrameId); // Ensure any ongoing animation is stopped
+            fusionParticlesDiv.innerHTML = ''; // Clear all particles from the DOM
+            document.getElementById('infoFusionProduct').textContent = 'N/A';
+            document.getElementById('infoFusionParticles').textContent = '0';
+            document.getElementById('infoFusionEnergy').textContent = '0 MeV';
+            this.draw(); // Update visuals
+        },
+
+        /** Initiates a single fusion attempt: creates two reactant particles and moves them to collide. */
+        startFusion: function() {
+            this.resetVisuals(); // Reset before starting a new fusion attempt
+            const temp = parseFloat(fusionTemperatureInput.value);
+            const reactants = fusionReactantsInput.value;
+
+            // Create the first reactant particle (e.g., Deuterium)
+            const p1 = document.createElement('div');
+            p1.className = 'nucleus'; // Reusing 'nucleus' class for general atoms/ions
+            p1.style.width = '30px'; p1.style.height = '30px';
+            p1.style.backgroundColor = '#6200ea'; // Deuterium color (purple)
+            p1.style.left = `${this.canvas.width * 0.1}px`;
+            p1.style.top = `${this.canvas.height / 2 - 50}px`;
+            fusionParticlesDiv.appendChild(p1);
+
+            // Create the second reactant particle (Tritium or another Deuterium)
+            const p2 = document.createElement('div');
+            p2.className = 'nucleus';
+            p2.style.width = '30px'; p2.style.height = '30px';
+            p2.style.backgroundColor = (reactants === 'DT') ? '#03dac6' : '#6200ea'; // Tritium (teal) or Deuterium
+            p2.style.left = `${this.canvas.width * 0.9}px`;
+            p2.style.top = `${this.canvas.height / 2 + 50}px`;
+            fusionParticlesDiv.appendChild(p2);
+
+            const collisionX = this.canvas.width / 2;
+            const collisionY = this.canvas.height / 2;
+            const speedFactor = temp / 100; // Higher temperature means faster collision
+            const duration = 2000 / speedFactor; // Animation duration inversely proportional to speed
+
+            // Force reflow for both particles to ensure their initial positions are rendered
+            p1.offsetHeight;
+            p2.offsetHeight;
+
+            // Apply CSS transforms for animation towards the center
+            p1.style.transition = `transform ${duration / 1000}s linear`;
+            p2.style.transition = `transform ${duration / 1000}s linear`;
+            p1.style.transform = `translate(${collisionX - parseFloat(p1.style.left)}px, ${collisionY - parseFloat(p1.style.top)}px)`;
+            p2.style.transform = `translate(${collisionX - parseFloat(p2.style.left)}px, ${collisionY - parseFloat(p2.style.top)}px)`;
+
+            let fusionOccurred = false;
+            // Probability of fusion success increases with temperature
+            const successThreshold = temp / 150;
+
+            // Event listener for when the first particle's animation finishes (assuming both finish simultaneously)
+            p1.addEventListener('transitionend', () => {
+                p1.remove();
+                p2.remove(); // Remove both reactant particles after collision
+
+                if (Math.random() < successThreshold) { // Check if fusion successfully occurs
+                    fusionOccurred = true;
+                    // Create and animate an energy burst effect at the collision point
+                    const burst = document.createElement('div');
+                    burst.className = 'energy-burst';
+                    burst.style.left = `${collisionX}px`;
+                    burst.style.top = `${collisionY}px`;
+                    burst.style.width = '0px'; // Start small for burst animation
+                    burst.style.height = '0px'; // Start small for burst animation
+                    fusionParticlesDiv.appendChild(burst);
+                    burst.addEventListener('animationend', () => burst.remove(), { once: true });
+
+                    // Create the fusion product particle
+                    const product = document.createElement('div');
+                    product.className = 'fusion-product';
+                    product.style.left = `${collisionX}px`;
+                    product.style.top = `${collisionY}px`;
+                    fusionParticlesDiv.appendChild(product);
+                    // Keep product visible for a short duration before removing
+                    setTimeout(() => product.remove(), 1000);
+
+                    // If DT fusion, release a neutron
+                    if (reactants === 'DT') {
+                        const releasedNeutron = document.createElement('div');
+                        releasedNeutron.className = 'neutron';
+                        releasedNeutron.style.left = `${collisionX}px`;
+                        releasedNeutron.style.top = `${collisionY}px`;
+                        fusionParticlesDiv.appendChild(releasedNeutron);
+                        const angle = Math.random() * Math.PI * 2; // Random direction
+                        const distance = this.canvas.width / 2; // Travel across half the canvas
+                        releasedNeutron.offsetHeight; // Force reflow
+                        releasedNeutron.style.transition = `transform 1s linear`;
+                        releasedNeutron.style.transform = `translate(${distance * Math.cos(angle)}px, ${distance * Math.sin(angle)}px)`;
+                        releasedNeutron.addEventListener('transitionend', () => releasedNeutron.remove(), { once: true });
+                    }
+                    updateInfoPanel(); // Update info panel with successful fusion results
+                } else {
+                    // No fusion, update info panel to reflect failure
+                    document.getElementById('infoFusionProduct').textContent = 'No Fusion (Insufficient Temp/Collision)';
+                    document.getElementById('infoFusionParticles').textContent = '0';
+                    document.getElementById('infoFusionEnergy').textContent = '0 MeV';
+                }
+            }, { once: true });
+        },
+
+        /** Placeholder for canvas drawing (not actively used for continuous animation in this sim). */
+        draw: function() {
+            if (!this.ctx) return;
+            // Clear canvas if needed, but DOM elements handle visuals here
+            updateInfoPanel(); // Ensure info panel is updated on initial draw
+        },
+
+        /** Resets the entire fusion simulation to its initial state. */
+        reset: function() {
+            this.resetVisuals();
+            this.init();
+        }
+    };
+
+    // Event listeners for Fusion tab controls
+    startFusionBtn.addEventListener('click', () => fusionSim.startFusion());
+    resetFusionBtn.addEventListener('click', () => fusionSim.reset());
+    fusionTemperatureInput.addEventListener('input', updateInfoPanel);
+    fusionReactantsInput.addEventListener('change', updateInfoPanel);
+
+    // --- Nuclear Chain Reaction Simulation Object ---
+    const chainReactionCanvas = document.getElementById('chainReactionCanvas');
+    const startChainReactionBtn = document.getElementById('startChainReactionBtn');
+    const resetChainReactionBtn = document.getElementById('resetChainReactionBtn');
+    const neutronMultiplierInput = document.getElementById('neutronMultiplier');
+    const initialNeutronsInput = document = document.getElementById('initialNeutrons');
+    const materialTypeInput = document.getElementById('materialType');
+    const chainReactionElementsDiv = document.getElementById('chainReactionElements'); // Container for DOM-based particles
+
+    const chainReactionSim = {
+        ctx: null,
+        canvas: null,
+        animationIntervalId: null, // Stores setInterval ID for continuous simulation updates
+        neutrons: [], // Array of active neutron objects { element, x, y, vx, vy, active }
+        nuclei: [], // Array of target nuclei objects { element, active, x, y }
+        totalFissions: 0, // Counter for total fission events
+        isRunning: false, // Flag to indicate if the simulation is active
+
+        /** Initializes the chain reaction simulation, setting up canvas and initial nuclei. */
+        init: function() {
+            this.canvas = chainReactionCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.resetVisuals(); // Clear and set up initial state
+            this.populateNuclei(); // Place initial target nuclei
+            this.draw(); // Initial draw (mainly for info panel update)
+        },
+
+        /** Resets all visual elements, counters, and stops the simulation. */
+        resetVisuals: function() {
+            clearInterval(this.animationIntervalId); // Stop the simulation interval
+            this.neutrons = []; // Clear all neutron data
+            this.nuclei = []; // Clear all nuclei data
+            this.totalFissions = 0;
+            this.isRunning = false;
+            chainReactionElementsDiv.innerHTML = ''; // Remove all DOM elements (neutrons, nuclei, bursts)
+            document.getElementById('infoCurrentNeutrons').textContent = '0';
+            document.getElementById('infoTotalFissions').textContent = '0';
+            updateInfoPanel(); // Update info panel to reflect reset state
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear canvas (if any drawings were there)
+        },
+
+        /** Populates the simulation area with a set number of target nuclei. */
+        populateNuclei: function() {
+            const numNuclei = 30; // Number of target nuclei to place
+            for (let i = 0; i < numNuclei; i++) {
+                const nucleus = document.createElement('div');
+                nucleus.className = 'nucleus';
+                // Randomly position nuclei within bounds, avoiding edges
+                nucleus.style.left = `${Math.random() * (this.canvas.width - 120) + 60}px`;
+                nucleus.style.top = `${Math.random() * (this.canvas.height - 120) + 60}px`;
+                chainReactionElementsDiv.appendChild(nucleus);
+                this.nuclei.push({
+                    element: nucleus, // Reference to the DOM element
+                    active: true, // Flag to indicate if this nucleus can still fission
+                    x: parseFloat(nucleus.style.left), // Current X position
+                    y: parseFloat(nucleus.style.top) // Current Y position
+                });
+            }
+        },
+
+        /** Starts the chain reaction simulation. */
+        startReaction: function() {
+            this.resetVisuals(); // Clear previous state and re-populate nuclei
+            this.populateNuclei();
+            this.isRunning = true;
+            const initialNeutrons = parseInt(initialNeutronsInput.value);
+            // Create initial neutrons at random positions
+            for (let i = 0; i < initialNeutrons; i++) {
+                const startX = Math.random() * this.canvas.width;
+                const startY = Math.random() * this.canvas.height;
+                this.createNeutron(startX, startY);
+            }
+            document.getElementById('infoCurrentNeutrons').textContent = this.neutrons.length;
+            // Start the continuous simulation update loop
+            this.animationIntervalId = setInterval(() => this.updateSimulation(), 50); // Update every 50ms
+            updateInfoPanel();
+        },
+
+        /** Creates a new neutron particle at a given position with a random velocity. */
+        createNeutron: function(x, y) {
+            const neutron = document.createElement('div');
+            neutron.className = 'neutron';
+            neutron.style.left = `${x}px`;
+            neutron.style.top = `${y}px`;
+            chainReactionElementsDiv.appendChild(neutron);
+
+            const angle = Math.random() * Math.PI * 2; // Random direction
+            const speed = 5; // Pixels per update step
+            this.neutrons.push({
+                element: neutron,
+                x: x,
+                y: y,
+                vx: speed * Math.cos(angle), // X velocity component
+                vy: speed * Math.sin(angle), // Y velocity component
+                active: true // Flag to indicate if the neutron is still active
+            });
+        },
+
+        /** Updates the state of the simulation: moves neutrons, checks for collisions, and creates new particles. */
+        updateSimulation: function() {
+            if (!this.isRunning) return; // Only update if simulation is running
+
+            const newNeutronsToCreate = []; // Array to store positions of new neutrons to be created
+            this.neutrons.forEach(n => {
+                if (!n.active) return; // Skip neutrons that have already collided or left bounds
+
+                // Update neutron position
+                n.x += n.vx;
+                n.y += n.vy;
+
+                // Update DOM element position
+                n.element.style.left = `${n.x}px`;
+                n.element.style.top = `${n.y}px`;
+
+                // Check for collision with nuclei
+                let collided = false;
+                for (let i = 0; i < this.nuclei.length; i++) {
+                    const nucleus = this.nuclei[i];
+                    if (nucleus.active) { // Only check against active (un-fissioned) nuclei
+                        // Calculate distance between neutron and nucleus center
+                        const dist = Math.sqrt(Math.pow(n.x - nucleus.x, 2) + Math.pow(n.y - nucleus.y, 2));
+                        // Collision threshold: neutron radius (5px) + nucleus radius (30px) = 35px
+                        if (dist < 35) {
+                            collided = true;
+                            nucleus.active = false; // Mark nucleus as fissioned
+                            // Change nucleus color to indicate it has fissioned
+                            nucleus.element.style.backgroundColor = '#e0e0e0';
+                            nucleus.element.style.borderColor = '#9e9e9e';
+
+                            // Create energy burst effect at the fission location
+                            const burst = document.createElement('div');
+                            burst.className = 'energy-burst';
+                            burst.style.left = `${nucleus.x}px`;
+                            burst.style.top = `${nucleus.y}px`;
+                            chainReactionElementsDiv.appendChild(burst);
+                            burst.addEventListener('animationend', () => burst.remove(), { once: true });
+
+                            this.totalFissions++; // Increment total fission count
+                            document.getElementById('infoTotalFissions').textContent = this.totalFissions;
+
+                            // Release new neutrons based on the neutron multiplier (k)
+                            const multiplier = parseFloat(neutronMultiplierInput.value);
+                            const baseReleased = 2.5; // Average neutrons released per U-235 fission
+                            const numReleased = Math.round(baseReleased * multiplier); // Calculate actual neutrons to release
+                            for (let j = 0; j < numReleased; j++) {
+                                newNeutronsToCreate.push({ x: nucleus.x, y: nucleus.y }); // Store new neutron positions
+                            }
+                            n.active = false; // Mark the current neutron as absorbed
+                            n.element.remove(); // Remove the absorbed neutron from DOM
+                            break; // A neutron can only collide with one nucleus per update
+                        }
+                    }
+                }
+
+                // Remove neutrons that leave the canvas area if they haven't collided
+                if (!collided && (n.x < -20 || n.x > this.canvas.width + 20 || n.y < -20 || n.y > this.canvas.height + 20)) {
+                    n.active = false;
+                    n.element.remove();
+                }
+            });
+
+            // Create any new neutrons that were generated during this update cycle
+            newNeutronsToCreate.forEach(pos => this.createNeutron(pos.x, pos.y));
+
+            // Filter out inactive neutrons from the main array
+            this.neutrons = this.neutrons.filter(n => n.active);
+            document.getElementById('infoCurrentNeutrons').textContent = this.neutrons.length;
+
+            // Check for simulation termination conditions
+            const activeNucleiCount = this.nuclei.filter(n => n.active).length;
+            if (this.neutrons.length === 0 && this.isRunning) {
+                // If no more neutrons are active
+                if (activeNucleiCount === 0) {
+                    // And no more fissionable nuclei, reaction has fully ended
+                    this.isRunning = false;
+                    clearInterval(this.animationIntervalId);
+                    updateInfoPanel(); // Update status to 'Ended'
+                } else {
+                    // Still nuclei, but no neutrons means reaction died out (subcritical)
+                    this.isRunning = false;
+                    clearInterval(this.animationIntervalId);
+                    updateInfoPanel(); // Update status to 'Ended (Subcritical)'
+                }
+            }
+            // The canvas itself doesn't need continuous redrawing for this sim, DOM elements handle visuals.
+            updateInfoPanel(); // Always update info panel for latest status
+        },
+
+        /** Placeholder for canvas drawing (not actively used for continuous animation in this sim). */
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear canvas
+            // No specific canvas drawing for chain reaction, DOM elements handle visuals.
+        },
+
+        /** Resets the entire chain reaction simulation to its initial state. */
+        reset: function() {
+            this.resetVisuals();
+            this.init(); // Re-initialize to populate target nuclei
+        }
+    };
+
+    // Event listeners for Chain Reaction tab controls
+    startChainReactionBtn.addEventListener('click', () => chainReactionSim.startReaction());
+    resetChainReactionBtn.addEventListener('click', () => chainReactionSim.reset());
+    neutronMultiplierInput.addEventListener('input', updateInfoPanel);
+    initialNeutronsInput.addEventListener('input', updateInfoPanel);
+    // Event listener for material type dropdown to auto-adjust neutron multiplier
+    materialTypeInput.addEventListener('change', (event) => {
+        const type = event.target.value;
+        let multiplierValue = 1.0; // Default to critical
+        if (type === 'subcritical') multiplierValue = 0.8;
+        else if (type === 'supercritical') multiplierValue = 1.2;
+        neutronMultiplierInput.value = multiplierValue; // Update the number input
+        updateInfoPanel(); // Refresh info panel
+    });
+
+
+    // Helper function to get CSS variable color values
+    function varToRgb(variable) {
+        const style = getComputedStyle(document.documentElement);
+        return style.getPropertyValue(variable).trim();
+    }
+
+    // Initialize all simulators when the DOM content is fully loaded.
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the initially active tab and set up its canvas and context
+        const activeTabBtn = document.querySelector('.tab-btn.active');
+        if (activeTabBtn) {
+            const tabId = activeTabBtn.getAttribute('data-tab');
+            const initialCanvas = document.querySelector(`#${tabId} canvas`);
+            if (initialCanvas) {
+                simulationCanvas = initialCanvas;
+                simulationCtx = initialCanvas.getContext('2d');
+                const parentContainer = initialCanvas.closest('.simulation-area');
+                if (parentContainer) {
+                  initialCanvas.width = parentContainer.offsetWidth;
+                  initialCanvas.height = parentContainer.offsetHeight;
+                }
+            }
+            currentTabMode = tabId; // Set the initial global tab mode
+        }
+
+        // Initialize all simulation modules
+        fissionSim.init();
+        fusionSim.init();
+        chainReactionSim.init();
+
+        updateInfoPanel(); // Perform an initial update of the info panel for the active tab
+    });
+
+  </script>
+</body>
+</html>

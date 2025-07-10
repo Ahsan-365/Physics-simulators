@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Optics Simulator</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group select { /* Removed range input from here */
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .control-group input[type="range"] { /* Specific style for range input if needed elsewhere */
+        padding: 5px 10px; /* Adjust padding for slider */
+    }
+
+
+    .control-group.checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .control-group.checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin-right: 0;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .tab-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+      }
+      .simulation-area {
+        height: 350px;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+        .tabs {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .tab-btn {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Physics Optics Simulator</h1>
+      <p class="subtitle">Interactive simulations for Light Reflection, Refraction, Lenses, Mirrors, and Human Eye Vision</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="lightOptics">Light Reflection & Refraction</button>
+      <button class="tab-btn" data-tab="lensMirror">Lens & Mirror Optics</button>
+      <button class="tab-btn" data-tab="humanEye">Human Eye</button>
+      <button class="tab-btn" data-tab="lensPowerCalculator">Lens Power Calculator</button>
+      <button class="tab-btn" data-tab="lightSpectrum">Light Spectrum</button>
+    </div>
+
+    <!-- Light Reflection and Refraction Tab -->
+    <div id="lightOptics" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Light Reflection and Refraction (Snell's Law)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="incidentAngle">Incident Angle (°):</label>
+            <input type="number" id="incidentAngle" min="0" max="89" value="45" step="1">
+          </div>
+          <div class="control-group">
+            <label for="refractiveIndex1">Refractive Index (n1):</label>
+            <input type="number" id="refractiveIndex1" min="1.0" max="2.5" value="1.0" step="0.01">
+          </div>
+          <div class="control-group">
+            <label for="refractiveIndex2">Refractive Index (n2):</label>
+            <input type="number" id="refractiveIndex2" min="1.0" max="2.5" value="1.5" step="0.01">
+          </div>
+          <div class="control-group">
+            <label for="lightSourceX">Light Source X Position (0-100%):</label>
+            <input type="number" id="lightSourceX" min="10" max="90" value="25" step="1">
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showIncidentRay" checked>
+            <label for="showIncidentRay">Show Incident Ray</label>
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showReflectedRay" checked>
+            <label for="showReflectedRay">Show Reflected Ray</label>
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showRefractedRay" checked>
+            <label for="showRefractedRay">Show Refracted Ray</label>
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="lightOpticsCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="lightOpticsInfo">
+          <div class="info-item">Incident Angle: <span id="infoIncidentAngle">?</span>°</div>
+          <div class="info-item">Reflected Angle: <span id="infoReflectedAngle">?</span>°</div>
+          <div class="info-item">Refracted Angle: <span id="infoRefractedAngle">?</span>°</div>
+          <div class="info-item">Critical Angle (n1 > n2): <span id="infoCriticalAngle">N/A</span>°</div>
+          <div class="info-item">Total Internal Reflection: <span id="infoTIRStatus">No</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lens and Mirror Optics Tab -->
+    <div id="lensMirror" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Lens and Mirror Optics (Ray Tracing)</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="opticsType">Optic Type:</label>
+            <select id="opticsType">
+              <option value="convex_lens">Convex Lens</option>
+              <option value="concave_lens">Concave Lens</option>
+              <option value="convex_mirror">Convex Mirror</option>
+              <option value="concave_mirror">Concave Mirror</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="focalLengthOptics">Focal Length (px):</label>
+            <input type="number" id="focalLengthOptics" min="30" max="250" value="100" step="5">
+          </div>
+          <div class="control-group">
+            <label for="objectDistance">Object Distance (px):</label>
+            <input type="number" id="objectDistance" min="10" max="300" value="150" step="5">
+          </div>
+          <div class="control-group">
+            <label for="objectHeight">Object Height (px):</label>
+            <input type="number" id="objectHeight" min="10" max="100" value="50" step="5">
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showParallelRay" checked>
+            <label for="showParallelRay">Show Parallel Ray</label>
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showCentralRay" checked>
+            <label for="showCentralRay">Show Central Ray</label>
+          </div>
+          <div class="control-group checkbox-group">
+            <input type="checkbox" id="showFocalRay" checked>
+            <label for="showFocalRay">Show Focal Ray</label>
+          </div>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="lensMirrorCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="lensMirrorInfo">
+          <div class="info-item">Image Distance: <span id="imageDistance">?</span> px</div>
+          <div class="info-item">Image Height: <span id="imageHeight">?</span> px</div>
+          <div class="info-item">Magnification: <span id="magnification">?</span></div>
+          <div class="info-item">Image Type: <span id="imageType">?</span></div>
+          <div class="info-item">Image Orientation: <span id="imageOrientation">?</span></div>
+          <div class="info-item">Image Size: <span id="imageSize">?</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Human Eye Functioning Tab -->
+    <div id="humanEye" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">Human Eye Functioning</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="eyeObjectDistance">Object Distance (relative 1-100):</label>
+                    <input type="number" id="eyeObjectDistance" min="1" max="100" value="10" step="1">
+                </div>
+                <div class="control-group">
+                    <label for="eyeLensPower">Crystalline Lens Power (Diopters):</label>
+                    <input type="number" id="eyeLensPower" min="17" max="21" value="17" step="0.5">
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="humanEyeCanvas"></canvas>
+            </div>
+
+            <div class="info-panel" id="humanEyeInfo">
+                <div class="info-item">Object Distance: <span id="infoEyeObjectDistance">?</span> (relative)</div>
+                <div class="info-item">Crystalline Lens Power: <span id="infoEyeLensPower">?</span> diopters</div>
+                <div class="info-item">Total Eye Power: <span id="infoTotalEyePower">?</span> diopters</div>
+                <div class="info-item">Image Position: <span id="infoEyeImagePosition">?</span></div>
+                <div class="info-item">Focus Status: <span id="infoEyeFocusStatus">?</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lens Power Calculator Tab (Replaces Myopia & Hypermetropia) -->
+    <div id="lensPowerCalculator" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">Corrective Lens Power Calculator</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="farPointCm">Far Point (cm): (e.g., -200 for myopia, 0 for normal)</label>
+                    <input type="number" id="farPointCm" value="-200" step="10">
+                </div>
+                <div class="control-group">
+                    <label for="nearPointCm">Near Point (cm): (e.g., 50 for hypermetropia, 25 for normal)</label>
+                    <input type="number" id="nearPointCm" value="50" step="5">
+                </div>
+                <div class="control-group">
+                    <button class="primary" id="calculateLensPower">Calculate Lens Power</button>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="lensPowerCalculatorCanvas"></canvas>
+            </div>
+
+            <div class="info-panel" id="lensPowerCalculatorInfo">
+                <div class="info-item">For Myopia (Far Point): <span id="myopiaCorrectivePower">?</span> Diopters</div>
+                <div class="info-item">For Hypermetropia (Near Point): <span id="hypermetropiaCorrectivePower">?</span> Diopters</div>
+                <div class="info-item">Recommended Reading Distance (Normal): <span>25 cm</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Light Spectrum Tab -->
+    <div id="lightSpectrum" class="tab-content">
+        <div class="simulation-container">
+            <h2 class="simulation-title">Light Spectrum & Dispersion</h2>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="wavelengthInput">Wavelength (nm): <span id="wavelengthValue">550</span></label>
+                    <input type="number" id="wavelengthInput" min="380" max="780" value="550" step="1">
+                </div>
+                <div class="control-group checkbox-group">
+                    <input type="checkbox" id="showPrism">
+                    <label for="showPrism">Show Dispersion with Prism</label>
+                </div>
+            </div>
+
+            <div class="simulation-area">
+                <canvas id="lightSpectrumCanvas"></canvas>
+            </div>
+
+            <div class="info-panel" id="lightSpectrumInfo">
+                <div class="info-item">Selected Wavelength: <span id="infoWavelength">?</span> nm</div>
+                <div class="info-item">Color: <span id="infoColorBlock" style="display:inline-block; width:20px; height:20px; vertical-align:middle; border:1px solid #ccc;"></span></div>
+                <div class="info-item">Light Type: <span id="infoLightType">?</span></div>
+                <div class="info-item">Dispersion Active: <span id="infoDispersionStatus">No</span></div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to draw an arrowhead at a given point and angle.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x - The x-coordinate of the arrow tip.
+     * @param {number} y - The y-coordinate of the arrow tip.
+     * @param {number} angle - The angle of the arrow in radians.
+     * @param {string} color - The color of the arrowhead.
+     * @param {number} size - Size of the arrowhead.
+     */
+    function drawArrowhead(ctx, x, y, angle, color, size = 15) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * Helper function to draw a ray segment and an arrowhead at the end.
+     * Moved to global scope to be accessible by all simulations.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} x1 - Start X coordinate.
+     * @param {number} y1 - Start Y coordinate.
+     * @param {number} x2 - End X coordinate.
+     * @param {number} y2 - End Y coordinate.
+     * @param {string} color - Stroke color of the ray.
+     * @param {boolean} isDashed - True if the ray should be dashed, false otherwise.
+     */
+    function drawRaySegment(ctx, x1, y1, x2, y2, color, isDashed = false) {
+        ctx.strokeStyle = color;
+        if (isDashed) { ctx.setLineDash([5, 5]); }
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        if (isDashed) { ctx.setLineDash([]); }
+        drawArrowhead(ctx, x2, y2, Math.atan2(y2 - y1, x2 - x1), color, 8);
+    }
+
+
+    /**
+     * Draws a lens shape on the canvas.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} centerX - X coordinate of the lens center.
+     * @param {number} centerY - Y coordinate of the lens center (principal axis).
+     * @param {number} opticHeight - Total height of the lens.
+     * @param {string} type - 'convex_lens' or 'concave_lens'.
+     * @param {string} strokeStyle - Color of the lens stroke.
+     * @param {number} lineWidth - Width of the lens stroke.
+     */
+    function drawLens(ctx, centerX, centerY, opticHeight, type, strokeStyle, lineWidth) {
+        const lensThickness = 20; // Visual thickness for lenses
+        const lensTop = centerY - opticHeight / 2;
+        const lensBottom = centerY + opticHeight / 2;
+
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+
+        if (type === 'convex_lens') {
+            ctx.beginPath();
+            ctx.moveTo(centerX, lensTop);
+            ctx.bezierCurveTo(centerX + lensThickness, lensTop + opticHeight / 4,
+                               centerX + lensThickness, lensBottom - opticHeight / 4,
+                               centerX, lensBottom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, lensTop);
+            ctx.bezierCurveTo(centerX - lensThickness, lensTop + opticHeight / 4,
+                               centerX - lensThickness, lensBottom - opticHeight / 4,
+                               centerX, lensBottom);
+            ctx.stroke();
+        } else if (type === 'concave_lens') {
+            ctx.beginPath();
+            ctx.moveTo(centerX, lensTop);
+            ctx.bezierCurveTo(centerX - lensThickness, lensTop + opticHeight / 4,
+                               centerX - lensThickness, lensBottom - opticHeight / 4,
+                               centerX, lensBottom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, lensTop);
+            ctx.bezierCurveTo(centerX + lensThickness, lensTop + opticHeight / 4,
+                               centerX + lensThickness, lensBottom - opticHeight / 4,
+                               centerX, lensBottom);
+            ctx.stroke();
+        }
+    }
+
+    /**
+     * Draws a mirror shape on the canvas.
+     * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+     * @param {number} centerX - X coordinate of the mirror center.
+     * @param {number} centerY - Y coordinate of the mirror center (principal axis).
+     * @param {number} opticHeight - Total height of the mirror.
+     * @param {string} type - 'convex_mirror' or 'concave_mirror'.
+     * @param {string} strokeStyle - Color of the mirror stroke.
+     * @param {number} lineWidth - Width of the mirror stroke.
+     */
+    function drawMirror(ctx, centerX, centerY, opticHeight, type, strokeStyle, lineWidth) {
+        const mirrorCurvature = 50; // How much the mirror curves
+        const mirrorTop = centerY - opticHeight / 2;
+        const mirrorBottom = centerY + opticHeight / 2;
+
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+
+        if (type === 'concave_mirror') {
+            ctx.beginPath();
+            ctx.moveTo(centerX, mirrorTop);
+            ctx.quadraticCurveTo(centerX - mirrorCurvature, centerY,
+                                 centerX, mirrorBottom);
+            ctx.stroke();
+
+            // Draw shading lines on the non-reflecting (right) side
+            ctx.strokeStyle = '#ccc';
+            for (let i = -opticHeight / 2; i <= opticHeight / 2; i += 10) {
+              ctx.beginPath();
+              ctx.moveTo(centerX, centerY + i);
+              ctx.lineTo(centerX + 15, centerY + i + 5);
+              ctx.stroke();
+            }
+            ctx.strokeStyle = strokeStyle; // Reset stroke style
+
+          } else if (type === 'convex_mirror') {
+            ctx.beginPath();
+            ctx.moveTo(centerX, mirrorTop);
+            ctx.quadraticCurveTo(centerX + mirrorCurvature, centerY,
+                                 centerX, mirrorBottom);
+            ctx.stroke();
+
+            // Draw shading lines on the non-reflecting (left) side
+            ctx.strokeStyle = '#ccc';
+            for (let i = -opticHeight / 2; i <= opticHeight / 2; i += 10) {
+              ctx.beginPath();
+              ctx.moveTo(centerX, centerY + i);
+              ctx.lineTo(centerX - 15, centerY + i + 5);
+              ctx.stroke();
+            }
+            ctx.strokeStyle = strokeStyle; // Reset stroke style
+          }
+    }
+
+    /**
+     * Converts a wavelength in nanometers to an RGB color string.
+     * Based on: http://www.noah.org/wiki/Wavelength_to_RGB_in_Python
+     * @param {number} wavelength - Wavelength in nanometers (380-780nm).
+     * @returns {string} - CSS RGB color string.
+     */
+    function wavelengthToColor(wavelength) {
+        let R, G, B;
+        let gamma = 0.8;
+        let intensityMax = 255;
+
+        // Wavelength outside visible spectrum
+        if (wavelength < 380 || wavelength > 780) {
+            return 'rgb(0, 0, 0)'; // Black
+        }
+
+        if (wavelength >= 380 && wavelength < 440) {
+            R = -(wavelength - 440) / (440 - 380);
+            G = 0.0;
+            B = 1.0;
+        } else if (wavelength >= 440 && wavelength < 490) {
+            R = 0.0;
+            G = (wavelength - 440) / (490 - 440);
+            B = 1.0;
+        } else if (wavelength >= 490 && wavelength < 510) {
+            R = 0.0;
+            G = 1.0;
+            B = -(wavelength - 510) / (510 - 490);
+        } else if (wavelength >= 510 && wavelength < 580) {
+            R = (wavelength - 510) / (580 - 510);
+            G = 1.0;
+            B = 0.0;
+        } else if (wavelength >= 580 && wavelength < 645) {
+            R = 1.0;
+            G = -(wavelength - 645) / (645 - 580);
+            B = 0.0;
+        } else if (wavelength >= 645 && wavelength <= 780) { // Changed to <= 780
+            R = 1.0;
+            G = 0.0;
+            B = 0.0;
+        } else {
+            R = 0.0; G = 0.0; B = 0.0; // Should not be reached
+        }
+
+        // Intensity correction
+        let factor;
+        if (wavelength >= 380 && wavelength < 420) factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+        else if (wavelength >= 420 && wavelength < 701) factor = 1.0;
+        else if (wavelength >= 701 && wavelength <= 780) factor = 0.3 + 0.7 * (780 - wavelength) / (780 - 700);
+        else factor = 0.0;
+
+        R = Math.pow(R * factor, gamma);
+        G = Math.pow(G * factor, gamma);
+        B = Math.pow(B * factor, gamma);
+
+        return `rgb(${Math.round(R * intensityMax)}, ${Math.round(G * intensityMax)}, ${Math.round(B * intensityMax)})`;
+    }
+
+    /**
+     * Determines the type of light based on wavelength.
+     * @param {number} wavelength - Wavelength in nanometers.
+     * @returns {string} - Type of light (e.g., "Ultraviolet", "Visible - Red").
+     */
+    function getLightType(wavelength) {
+        if (wavelength < 10) return "Gamma/X-ray"; // Very short wavelengths
+        if (wavelength >= 10 && wavelength < 380) return "Ultraviolet";
+        if (wavelength >= 380 && wavelength <= 780) {
+            // Visible light spectrum
+            if (wavelength >= 380 && wavelength < 450) return "Visible - Violet";
+            if (wavelength >= 450 && wavelength < 495) return "Visible - Blue";
+            if (wavelength >= 495 && wavelength < 570) return "Visible - Green";
+            if (wavelength >= 570 && wavelength < 590) return "Visible - Yellow";
+            if (wavelength >= 590 && wavelength < 620) return "Visible - Orange";
+            if (wavelength >= 620 && wavelength <= 780) return "Visible - Red";
+        }
+        if (wavelength > 780 && wavelength <= 1000000) return "Infrared"; // Up to 1mm
+        if (wavelength > 1000000) return "Microwave/Radio"; // Longer wavelengths
+        return "Unknown";
+    }
+
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Initialize and draw the simulation for the new tab
+        // Re-initialize all to ensure consistent state and canvas sizing
+        lightOpticsSim.init();
+        lensMirrorSim.init();
+        humanEyeSim.init(); // Re-initialize humanEyeSim
+        lensPowerCalculatorSim.init();
+        lightSpectrumSim.init();
+
+        // Draw only the currently selected tab to avoid redundant drawing
+        if (tabId === 'lightOptics') {
+          lightOpticsSim.draw();
+        } else if (tabId === 'lensMirror') {
+          lensMirrorSim.draw();
+        } else if (tabId === 'humanEye') { // Draw humanEyeSim
+          humanEyeSim.draw();
+        } else if (tabId === 'lensPowerCalculator') {
+          lensPowerCalculatorSim.draw();
+        } else if (tabId === 'lightSpectrum') {
+          lightSpectrumSim.draw();
+        }
+      });
+    });
+
+
+    // --- Light Reflection and Refraction Simulation Object ---
+    const lightOpticsSim = {
+      canvas: null,
+      ctx: null,
+      // Declare UI elements as null initially
+      incidentAngleInput: null,
+      refractiveIndex1Input: null,
+      refractiveIndex2Input: null,
+      lightSourceXInput: null,
+      showIncidentRayCheckbox: null,
+      showReflectedRayCheckbox: null,
+      showRefractedRayCheckbox: null,
+      infoPanel: null,
+
+      init: function() {
+        this.canvas = document.getElementById('lightOpticsCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        // Assign UI elements here to ensure DOM is ready
+        this.incidentAngleInput = document.getElementById('incidentAngle');
+        this.refractiveIndex1Input = document.getElementById('refractiveIndex1');
+        this.refractiveIndex2Input = document.getElementById('refractiveIndex2');
+        this.lightSourceXInput = document.getElementById('lightSourceX');
+        this.showIncidentRayCheckbox = document.getElementById('showIncidentRay');
+        this.showReflectedRayCheckbox = document.getElementById('showReflectedRay');
+        this.showRefractedRayCheckbox = document.getElementById('showRefractedRay');
+        this.infoPanel = document.getElementById('lightOpticsInfo');
+
+
+        // Explicitly bind 'this' for the draw method to ensure its context
+        this.draw = this.draw.bind(this);
+
+        // Add event listeners for controls (with defensive checks)
+        if (this.incidentAngleInput) this.incidentAngleInput.addEventListener('input', () => this.draw());
+        if (this.refractiveIndex1Input) this.refractiveIndex1Input.addEventListener('input', () => this.draw());
+        if (this.refractiveIndex2Input) this.refractiveIndex2Input.addEventListener('input', () => this.draw());
+        if (this.lightSourceXInput) this.lightSourceXInput.addEventListener('input', () => this.draw());
+        if (this.showIncidentRayCheckbox) this.showIncidentRayCheckbox.addEventListener('change', () => this.draw());
+        if (this.showReflectedRayCheckbox) this.showReflectedRayCheckbox.addEventListener('change', () => this.draw());
+        if (this.showRefractedRayCheckbox) this.showRefractedRayCheckbox.addEventListener('change', () => this.draw());
+      },
+
+      draw: function() {
+        if (!this.ctx || !this.canvas || !this.incidentAngleInput || !this.refractiveIndex1Input || !this.refractiveIndex2Input || !this.lightSourceXInput || !this.infoPanel) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+
+        const incidentAngleDeg = parseFloat(this.incidentAngleInput.value);
+        const n1 = parseFloat(this.refractiveIndex1Input.value);
+        const n2 = parseFloat(this.refractiveIndex2Input.value);
+        const lightSourceXPercent = parseFloat(this.lightSourceXInput.value);
+
+        const interfaceY = height / 2; // Horizontal interface line
+        const normalX = (lightSourceXPercent / 100) * width; // X position where the light hits the interface
+
+        // Draw medium 1 (top)
+        this.ctx.fillStyle = 'rgba(74, 107, 255, 0.1)'; // Light blue
+        this.ctx.fillRect(0, 0, width, interfaceY);
+        this.ctx.fillStyle = 'rgba(74, 107, 255, 0.8)';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`n1 = ${n1.toFixed(2)}`, 20, 30);
+
+        // Draw medium 2 (bottom)
+        this.ctx.fillStyle = 'rgba(255, 107, 107, 0.1)'; // Light red
+        this.ctx.fillRect(0, interfaceY, width, height / 2);
+        this.ctx.fillStyle = 'rgba(255, 107, 107, 0.8)';
+        this.ctx.fillText(`n2 = ${n2.toFixed(2)}`, 20, height - 20);
+
+        // Draw interface
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, interfaceY);
+        this.ctx.lineTo(width, interfaceY);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+
+        // Draw normal
+        this.ctx.beginPath();
+        this.ctx.moveTo(normalX, 0);
+        this.ctx.lineTo(normalX, height);
+        this.ctx.strokeStyle = '#aaa';
+        this.ctx.setLineDash([5, 5]); // Dashed line
+        this.ctx.stroke();
+        this.ctx.setLineDash([]); // Reset line dash
+        this.ctx.fillStyle = '#666';
+        this.ctx.fillText('Normal', normalX + 5, 20);
+
+        const incidentAngleRad = incidentAngleDeg * Math.PI / 180;
+
+        // Incident Ray
+        if (this.showIncidentRayCheckbox.checked) {
+          const incidentLength = Math.min(width, height) / 2 * 0.8;
+          const incidentStartX = normalX - incidentLength * Math.sin(incidentAngleRad);
+          const incidentStartY = interfaceY - incidentLength * Math.cos(incidentAngleRad);
+          this.ctx.beginPath();
+          this.ctx.moveTo(incidentStartX, incidentStartY);
+          this.ctx.lineTo(normalX, interfaceY);
+          this.ctx.strokeStyle = 'red';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+          drawArrowhead(this.ctx, normalX, interfaceY, Math.PI + incidentAngleRad, 'red'); // Arrow at interface
+        }
+
+        // Reflected Ray
+        if (this.showReflectedRayCheckbox.checked) {
+          const reflectedAngleRad = incidentAngleRad; // Angle of reflection equals angle of incidence
+          const reflectedEndX = normalX + 200 * Math.sin(reflectedAngleRad); // Fixed length for visibility
+          const reflectedEndY = interfaceY - 200 * Math.cos(reflectedAngleRad);
+          this.ctx.beginPath();
+          this.ctx.moveTo(normalX, interfaceY);
+          this.ctx.lineTo(reflectedEndX, reflectedEndY);
+          this.ctx.strokeStyle = 'orange';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+          drawArrowhead(this.ctx, reflectedEndX, reflectedEndY, reflectedAngleRad, 'orange'); // Arrowhead
+        }
+
+        // Refracted Ray (Snell's Law: n1 sin(theta1) = n2 sin(theta2))
+        let refractedAngleRad;
+        let tir = false;
+        let criticalAngleDeg = 'N/A';
+
+        // Check for Total Internal Reflection (TIR) only if light goes from denser to rarer medium (n1 > n2)
+        if (n1 > n2) {
+          // Ensure argument for asin is within [-1, 1] for real results
+          const sinArgument = n2 / n1;
+          if (sinArgument >= -1 && sinArgument <= 1) {
+            const criticalAngleRad = Math.asin(sinArgument);
+            criticalAngleDeg = (criticalAngleRad * 180 / Math.PI).toFixed(2);
+            if (incidentAngleRad >= criticalAngleRad) {
+              tir = true; // Total Internal Reflection
+            } else {
+              refractedAngleRad = Math.asin((n1 * Math.sin(incidentAngleRad)) / n2);
+            }
+          } else {
+            criticalAngleDeg = 'N/A'; // Should not happen with valid n1, n2
+          }
+        } else {
+          // If n1 <= n2, TIR is not possible, always refracts (unless angle is 90 deg)
+          const sinTheta2 = (n1 * Math.sin(incidentAngleRad)) / n2;
+          if (Math.abs(sinTheta2) <= 1) {
+            refractedAngleRad = Math.asin(sinTheta2);
+          } else {
+            refractedAngleRad = NaN; // Should not happen with valid n1, n2, incidentAngle
+          }
+        }
+
+        if (this.showRefractedRayCheckbox.checked && !tir && !isNaN(refractedAngleRad)) {
+          const refractedEndX = normalX + 200 * Math.sin(refractedAngleRad); // Fixed length
+          const refractedEndY = interfaceY + 200 * Math.cos(refractedAngleRad);
+          this.ctx.beginPath();
+          this.ctx.moveTo(normalX, interfaceY);
+          this.ctx.lineTo(refractedEndX, refractedEndY);
+          this.ctx.strokeStyle = 'blue';
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+          drawArrowhead(this.ctx, refractedEndX, refractedEndY, refractedAngleRad, 'blue'); // Arrowhead
+        }
+
+        this.updateInfoPanel(incidentAngleDeg, tir, criticalAngleDeg, refractedAngleRad);
+      },
+
+      updateInfoPanel: function(incidentAngleDeg, tir, criticalAngleDeg, refractedAngleRad) {
+        const refractedAngleText = isNaN(refractedAngleRad) ? 'N/A' : (refractedAngleRad * 180 / Math.PI).toFixed(2);
+        const tirStatus = tir ? 'Yes' : 'No';
+        if (this.infoPanel) {
+          this.infoPanel.innerHTML = `
+            <div class="info-item">Incident Angle: <span>${incidentAngleDeg.toFixed(0)}</span>°</div>
+            <div class="info-item">Reflected Angle: <span>${incidentAngleDeg.toFixed(0)}</span>°</div>
+            <div class="info-item">Refracted Angle: <span>${refractedAngleText}</span>°</div>
+            <div class="info-item">Critical Angle (n1 > n2): <span id="infoCriticalAngle">${criticalAngleDeg}</span>°</div>
+            <div class="info-item">Total Internal Reflection: <span id="infoTIRStatus">${tirStatus}</span></div>
+          `;
+        }
+      }
+    };
+
+    // --- Lens and Mirror Optics Simulation Object ---
+    const lensMirrorSim = {
+      canvas: null,
+      ctx: null,
+      // Declare UI elements as null initially
+      opticsTypeSelect: null,
+      focalLengthOpticsInput: null,
+      objectDistanceInput: null,
+      objectHeightInput: null,
+      showParallelRayCheckbox: null,
+      showCentralRayCheckbox: null,
+      showFocalRayCheckbox: null,
+      infoPanel: null,
+
+      init: function() {
+        this.canvas = document.getElementById('lensMirrorCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        // Assign UI elements here to ensure DOM is ready
+        this.opticsTypeSelect = document.getElementById('opticsType');
+        this.focalLengthOpticsInput = document.getElementById('focalLengthOptics');
+        this.objectDistanceInput = document.getElementById('objectDistance');
+        this.objectHeightInput = document.getElementById('objectHeight');
+        this.showParallelRayCheckbox = document.getElementById('showParallelRay');
+        this.showCentralRayCheckbox = document.getElementById('showCentralRay');
+        this.showFocalRayCheckbox = document.getElementById('showFocalRay');
+        this.infoPanel = document.getElementById('lensMirrorInfo');
+
+        // Explicitly bind 'this' for the draw method to ensure its context
+        this.draw = this.draw.bind(this);
+
+        // Add event listeners for controls (with defensive checks)
+        if (this.opticsTypeSelect) this.opticsTypeSelect.addEventListener('input', () => this.draw());
+        if (this.focalLengthOpticsInput) this.focalLengthOpticsInput.addEventListener('input', () => this.draw());
+        if (this.objectDistanceInput) this.objectDistanceInput.addEventListener('input', () => this.draw());
+        if (this.objectHeightInput) this.objectHeightInput.addEventListener('input', () => this.draw());
+        if (this.showParallelRayCheckbox) this.showParallelRayCheckbox.addEventListener('change', () => this.draw());
+        if (this.showCentralRayCheckbox) this.showCentralRayCheckbox.addEventListener('change', () => this.draw());
+        if (this.showFocalRayCheckbox) this.showFocalRayCheckbox.addEventListener('change', () => this.draw());
+      },
+
+      draw: function() {
+        if (!this.ctx || !this.canvas || !this.opticsTypeSelect || !this.focalLengthOpticsInput || !this.objectDistanceInput || !this.objectHeightInput || !this.infoPanel) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+
+        const opticsType = this.opticsTypeSelect.value;
+        const f_magnitude = parseFloat(this.focalLengthOpticsInput.value); // Magnitude of focal length
+        const u_magnitude = parseFloat(this.objectDistanceInput.value); // Magnitude of object distance
+        const h_obj_magnitude = parseFloat(this.objectHeightInput.value); // Magnitude of object height
+
+        const centerX = width / 2; // X-coordinate of the optic center
+        const principalAxisY = height / 2; // Y-coordinate of the principal axis
+        const opticHeight = 200; // Total height of the lens/mirror for drawing
+
+        // --- Cartesian Sign Convention for Calculations ---
+        // f_signed: focal length with sign based on type and convention
+        let f_signed;
+        if (opticsType === 'convex_lens' || opticsType === 'concave_mirror') {
+          // Converging for lenses, converging for mirrors (focal point on right/left for lens/mirror resp.)
+          f_signed = f_magnitude;
+        } else {
+          // concave_lens, convex_mirror (Diverging for lenses, diverging for mirrors)
+          f_signed = -f_magnitude;
+        }
+
+        // u_signed: object distance with sign (always negative for real object on left)
+        const u_signed = -u_magnitude;
+        // h_obj_signed: object height with sign (positive for upright object)
+        const h_obj_signed = h_obj_magnitude; // Object is always drawn upright initially
+
+        // --- Calculate Image properties using Lens/Mirror Equation ---
+        let v_signed; // Image distance with sign
+        let h_img_signed; // Image height with sign
+        let imageType = "N/A";
+        let imageOrientation = "N/A";
+        let imageSize = "N/A";
+
+        // Handle special cases: object at focal point (image at infinity)
+        // For converging optics (convex lens, concave mirror) if object is at F, image is at infinity.
+        if (Math.abs(u_magnitude) === Math.abs(f_magnitude) && (opticsType === 'convex_lens' || opticsType === 'concave_mirror')) {
+            v_signed = Infinity;
+            h_img_signed = Infinity;
+        } else if (u_magnitude === 0) { // Object at optic center/pole
+            v_signed = 0;
+            h_img_signed = h_obj_signed; // Same size, same orientation (conceptually)
+        }
+        else {
+            let reciprocal_v;
+            if (opticsType.includes('lens')) {
+                // Lens formula (Cartesian): 1/v - 1/u = 1/f  => 1/v = 1/f + 1/u
+                reciprocal_v = (1 / f_signed) + (1 / u_signed);
+            } else { // Mirror
+                // Mirror formula (Cartesian): 1/v + 1/u = 1/f  => 1/v = 1/f - 1/u
+                reciprocal_v = (1 / f_signed) - (1 / u_signed);
+            }
+
+            if (reciprocal_v === 0) { // Implies v is infinity (e.g., object at focal point for converging optics)
+                v_signed = Infinity;
+                h_img_signed = Infinity;
+            } else {
+                v_signed = 1 / reciprocal_v;
+                // Magnification M = -v/u
+                h_img_signed = (-v_signed / u_signed) * h_obj_signed;
+            }
+        }
+
+        // --- Determine Image Characteristics ---
+        if (v_signed === Infinity || isNaN(v_signed)) {
+            imageType = "At Infinity";
+            imageOrientation = "N/A";
+            imageSize = "N/A";
+        } else if (v_signed > 0) { // Real image (forms on the right of optic for lenses, left for mirrors)
+            imageType = "Real";
+            imageOrientation = h_img_signed < 0 ? "Inverted" : "Upright";
+            imageSize = Math.abs(h_img_signed) > h_obj_magnitude ? "Magnified" : (Math.abs(h_img_signed) < h_obj_magnitude ? "Diminished" : "Same Size");
+        } else { // Virtual image (forms on the left of optic for lenses, right for mirrors)
+            imageType = "Virtual";
+            imageOrientation = h_img_signed < 0 ? "Inverted" : "Upright";
+            imageSize = Math.abs(h_img_signed) > h_obj_magnitude ? "Magnified" : (Math.abs(h_img_signed) < h_obj_magnitude ? "Diminished" : "Same Size");
+        }
+
+
+        // --- Drawing ---
+        // Principal Axis
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, principalAxisY);
+        this.ctx.lineTo(width, principalAxisY);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 1;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+        this.ctx.fillText('Principal Axis', width - 100, principalAxisY - 10);
+
+        // Optic (Lens or Mirror)
+        if (opticsType.includes('lens')) {
+            drawLens(this.ctx, centerX, principalAxisY, opticHeight, opticsType, 'grey', 3);
+        } else {
+            drawMirror(this.ctx, centerX, principalAxisY, opticHeight, opticsType, 'grey', 3);
+        }
+        this.ctx.fillText(opticsType.replace('_', ' ').toUpperCase(), centerX + 10, principalAxisY - opticHeight / 2 - 10);
+
+        // Focal Points
+        const focalX_left = centerX - f_magnitude;
+        const focalX_right = centerX + f_magnitude;
+
+        this.ctx.beginPath();
+        this.ctx.arc(focalX_left, principalAxisY, 5, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'blue';
+        this.ctx.fill();
+        this.ctx.fillText('F', focalX_left - 15, principalAxisY + 20); // F on object side
+
+        this.ctx.beginPath();
+        this.ctx.arc(focalX_right, principalAxisY, 5, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'blue';
+        this.ctx.fill();
+        this.ctx.fillText('F\'', focalX_right + 10, principalAxisY + 20); // F' on image side
+
+
+        // Object
+        const objectDrawX = centerX + u_signed;
+        const objectDrawY = principalAxisY - h_obj_signed; // Drawing y is inverted for canvas
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(objectDrawX, principalAxisY);
+        this.ctx.lineTo(objectDrawX, objectDrawY);
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        drawArrowhead(this.ctx, objectDrawX, objectDrawY, -Math.PI / 2, 'red'); // Arrow pointing up
+        this.ctx.fillText('Object', objectDrawX - 30, objectDrawY - 10);
+
+
+        // Image
+        const imageDrawX = centerX + v_signed;
+        const imageDrawY = principalAxisY - h_img_signed; // Drawing y is inverted for canvas
+
+        if (v_signed !== Infinity && v_signed !== 0 && !isNaN(v_signed)) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(imageDrawX, principalAxisY);
+            this.ctx.lineTo(imageDrawX, imageDrawY);
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, imageDrawX, imageDrawY, h_img_signed < 0 ? Math.PI / 2 : -Math.PI / 2, 'green'); // Arrow points up or down
+            this.ctx.fillText('Image', imageDrawX + 10, imageDrawY + (h_img_signed < 0 ? 10 : -5));
+        } else if (v_signed === Infinity) {
+            this.ctx.fillText('Image at ∞', centerX + 10, principalAxisY + 50);
+        } else if (v_signed === 0) { // Object at pole of mirror/center of lens
+            this.ctx.fillText('Image at Optic', centerX + 10, principalAxisY + 50);
+        }
+
+
+        // Ray Tracing
+        const rayColor = 'purple';
+        const arrowSize = 8;
+
+        // Ray 1: Parallel to principal axis -> through F' (lens) / F (mirror)
+        if (this.showParallelRayCheckbox.checked) {
+            drawRaySegment(this.ctx, objectDrawX, objectDrawY, centerX, objectDrawY, rayColor); // Incident ray
+            if (opticsType.includes('lens')) { // Lens: parallel to F'
+                if (v_signed !== Infinity) {
+                    drawRaySegment(this.ctx, centerX, objectDrawY, imageDrawX, imageDrawY, rayColor);
+                } else { // Image at infinity, ray emerges parallel
+                    // This specific ray goes through F' for convex, or appears from F' for concave.
+                    // For the ray parallel to principal axis, it must go through F'
+                    drawRaySegment(this.ctx, centerX, objectDrawY, focalX_right, principalAxisY, rayColor);
+                    // Extend further if real, or backwards if virtual
+                    if (f_signed > 0) { // Converging (convex lens)
+                        drawRaySegment(this.ctx, centerX, objectDrawY, width, objectDrawY + (width - centerX) * (principalAxisY - objectDrawY) / (focalX_right - centerX) , rayColor);
+                    } else { // Diverging (concave lens)
+                        const intersectY = objectDrawY;
+                        const angle = Math.atan2(intersectY - principalAxisY, centerX - focalX_right);
+                        const endX = centerX - 200 * Math.cos(angle); // Extend backwards
+                        const endY = intersectY - 200 * Math.sin(angle);
+                        drawRaySegment(this.ctx, centerX, objectDrawY, endX, endY, rayColor, true); // Dashed for virtual extension
+                        drawRaySegment(this.ctx, centerX, objectDrawY, centerX + 200, objectDrawY + (200) * Math.tan(angle) , rayColor); // Refracted ray
+                    }
+                }
+            } else { // Mirror: parallel to F
+                 if (v_signed !== Infinity) {
+                    drawRaySegment(this.ctx, centerX, objectDrawY, imageDrawX, imageDrawY, rayColor);
+                } else {
+                    // For mirror, ray parallel reflects through focal point
+                    drawRaySegment(this.ctx, centerX, objectDrawY, focalX_left, principalAxisY, rayColor);
+                }
+            }
+        }
+
+
+        // Ray 2: Through optic center (lens) / pole (mirror) -> undeviated
+        if (this.showCentralRayCheckbox.checked) {
+            drawRaySegment(this.ctx, objectDrawX, objectDrawY, centerX, principalAxisY, rayColor); // Incident ray
+            if (v_signed !== Infinity) {
+                drawRaySegment(this.ctx, centerX, principalAxisY, imageDrawX, imageDrawY, rayColor); // Refracted/Reflected ray
+            } else {
+                // If image at infinity, ray continues indefinitely straight through optic center
+                const endX = centerX + (centerX - objectDrawX) * 2;
+                const endY = principalAxisY + (principalAxisY - objectDrawY) * 2;
+                drawRaySegment(this.ctx, centerX, principalAxisY, endX, endY, rayColor);
+            }
+        }
+
+        // Ray 3: Through F (lens) / F' (mirror) -> parallel to principal axis
+        if (this.showFocalRayCheckbox.checked) {
+            if (opticsType.includes('lens')) { // Lens: through F then parallel
+                drawRaySegment(this.ctx, objectDrawX, objectDrawY, focalX_left, principalAxisY, rayColor); // Incident ray
+                // Calculate where it hits the lens
+                const intersectionY = principalAxisY + (objectDrawY - principalAxisY) * (centerX - focalX_left) / (objectDrawX - focalX_left);
+                drawRaySegment(this.ctx, centerX, intersectionY, width, intersectionY, rayColor); // Refracted ray parallel
+            } else { // Mirror: through F' then parallel
+                 drawRaySegment(this.ctx, objectDrawX, objectDrawY, focalX_right, principalAxisY, rayColor); // Incident ray
+                 // Calculate where it hits the mirror
+                const intersectionY = principalAxisY + (objectDrawY - principalAxisY) * (centerX - focalX_right) / (objectDrawX - focalX_right);
+                drawRaySegment(this.ctx, centerX, intersectionY, 0, intersectionY, rayColor); // Reflected ray parallel (towards left)
+            }
+        }
+
+
+        // Update info panel
+        document.getElementById('imageDistance').textContent = v_signed === Infinity ? 'Infinity' : v_signed.toFixed(2);
+        document.getElementById('imageHeight').textContent = h_img_signed === Infinity ? 'Infinity' : h_img_signed.toFixed(2);
+        document.getElementById('magnification').textContent = v_signed === Infinity ? 'Infinity' : (-v_signed / u_signed).toFixed(2);
+        document.getElementById('imageType').textContent = imageType;
+        document.getElementById('imageOrientation').textContent = imageOrientation;
+        document.getElementById('imageSize').textContent = imageSize;
+      }
+    };
+
+    // --- Human Eye Simulation Object (MODIFIED) ---
+    const humanEyeSim = {
+        canvas: null,
+        ctx: null,
+        eyeObjectDistanceInput: null,
+        eyeLensPowerInput: null,
+        infoPanel: null,
+
+        // Eye parameters (fixed for this simulation, but can be made adjustable)
+        RETINA_DISTANCE_M_NORMAL: 0.024, // 2.4 cm = 0.024 meters (typical axial length from cornea)
+        CORNEA_POWER_D: 43,             // Diopters, typical cornea power
+        PRINCIPAL_PLANE_OFFSET_M: 0.0017, // Approx 1.7mm from cornea for effective principal plane
+
+        // Drawing specific parameters (derived or set for visual clarity)
+        CANVAS_METER_SCALE: 0, // Pixels per meter, will be calculated dynamically
+        RETINA_THRESHOLD_M: 0.0005, // 0.5 mm tolerance for "in focus" (0.05 cm)
+
+        init: function() {
+            this.canvas = document.getElementById('humanEyeCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+
+            // Calculate a dynamic scale for the drawing based on canvas width
+            const eyeSystemWidthMeters = 0.04; // Roughly 4 cm of real space for eye drawing
+            this.CANVAS_METER_SCALE = this.canvas.width * 0.5 / eyeSystemWidthMeters; // Adjust factor for visual appeal
+
+            this.eyeObjectDistanceInput = document.getElementById('eyeObjectDistance');
+            this.eyeLensPowerInput = document.getElementById('eyeLensPower');
+            this.infoPanel = document.getElementById('humanEyeInfo');
+
+            this.draw = this.draw.bind(this);
+
+            if (this.eyeObjectDistanceInput) this.eyeObjectDistanceInput.addEventListener('input', () => this.draw());
+            if (this.eyeLensPowerInput) this.eyeLensPowerInput.addEventListener('input', () => this.draw());
+
+            // Initial draw
+            this.draw();
+        },
+
+        draw: function() {
+            if (!this.ctx || !this.canvas || !this.eyeObjectDistanceInput || !this.eyeLensPowerInput || !this.infoPanel) return;
+
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            this.ctx.clearRect(0, 0, width, height);
+            this.ctx.font = '14px Arial';
+
+            const objectDistanceRelative = parseFloat(this.eyeObjectDistanceInput.value);
+            const crystallineLensPower = parseFloat(this.eyeLensPowerInput.value);
+
+            // Convert relative object distance to actual distance in meters (from near point to far point)
+            const minObjDistMeters = 0.25; // 25 cm
+            const maxObjDistMeters = 6;    // 6 meters (approximate far point)
+            const objectDistanceMeters = minObjDistMeters + (objectDistanceRelative - 1) * (maxObjDistMeters - minObjDistMeters) / (100 - 1);
+
+            // --- Eye Geometry in Pixels ---
+            const eyeCenterY = height / 2; // Principal axis Y position
+
+            // Position of the eye's effective principal plane (where the "thin lens" sits)
+            const principalPlaneX = width * 0.6; // Place it to the right, leaving space for object and rays
+
+            // Retina position relative to the principal plane
+            const retinaDistance_from_principal_plane_M = this.RETINA_DISTANCE_M_NORMAL - this.PRINCIPAL_PLANE_OFFSET_M;
+            const retinaX = principalPlaneX + retinaDistance_from_principal_plane_M * this.CANVAS_METER_SCALE;
+
+            // --- Optical Calculations ---
+            const totalEyePower = this.CORNEA_POWER_D + crystallineLensPower; // Diopters
+            const effectiveFocalLengthM = 1 / totalEyePower; // meters (f = 1/P)
+
+            // Object distance for thin lens formula (negative for real object on left)
+            const u_signed_m = -objectDistanceMeters;
+
+            let v_signed_m; // Image distance from principal plane (in meters)
+            let imageHeightMeters;
+
+            // Thin lens formula: 1/v = P + 1/u
+            const reciprocal_v = totalEyePower + (1 / u_signed_m);
+            if (Math.abs(reciprocal_v) < 1e-9) { // Effectively zero, means image at infinity
+                v_signed_m = Infinity;
+            } else {
+                v_signed_m = 1 / reciprocal_v;
+            }
+
+            const objectHeightMeters = 0.03; // 3 cm object height for drawing purposes
+            imageHeightMeters = (-v_signed_m / u_signed_m) * objectHeightMeters;
+
+            // Convert to pixels for drawing
+            const objectX_px = principalPlaneX + u_signed_m * this.CANVAS_METER_SCALE;
+            const objectHeightPx = objectHeightMeters * this.CANVAS_METER_SCALE;
+            const objectTipY_px = eyeCenterY - objectHeightPx;
+
+            const imageX_px = principalPlaneX + v_signed_m * this.CANVAS_METER_SCALE;
+            const imageHeightPx = imageHeightMeters * this.CANVAS_METER_SCALE;
+
+
+            // --- Drawing Eye Structure ---
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+
+            // Draw Eyeball (elliptical for more realistic look)
+            const eyeWidthPx = (this.RETINA_DISTANCE_M_NORMAL + 0.01) * this.CANVAS_METER_SCALE;
+            const eyeHeightPx = eyeWidthPx * 0.8;
+            const eyeCenterX = principalPlaneX + (this.RETINA_DISTANCE_M_NORMAL / 2) * this.CANVAS_METER_SCALE;
+
+            this.ctx.beginPath();
+            this.ctx.ellipse(eyeCenterX, eyeCenterY, eyeWidthPx / 2, eyeHeightPx / 2, 0, 0, 2 * Math.PI);
+            this.ctx.stroke();
+            this.ctx.fillStyle = 'rgba(100, 100, 255, 0.05)';
+            this.ctx.fill();
+
+            // Draw Cornea (front surface)
+            this.ctx.beginPath();
+            this.ctx.arc(principalPlaneX - this.PRINCIPAL_PLANE_OFFSET_M * this.CANVAS_METER_SCALE, eyeCenterY, eyeHeightPx / 2, -Math.PI * 0.4, Math.PI * 0.4);
+            this.ctx.strokeStyle = '#4a6bff';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+            this.ctx.fillText('Cornea', principalPlaneX - this.PRINCIPAL_PLANE_OFFSET_M * this.CANVAS_METER_SCALE - 30, eyeCenterY - eyeHeightPx / 2 - 10);
+
+
+            // Draw Retina Line
+            this.ctx.beginPath();
+            this.ctx.moveTo(retinaX, eyeCenterY - eyeHeightPx / 2);
+            this.ctx.lineTo(retinaX, eyeCenterY + eyeHeightPx / 2);
+            this.ctx.strokeStyle = 'green';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            this.ctx.fillText('Retina', retinaX + 5, eyeCenterY + eyeHeightPx / 2 + 10);
+
+            // Draw Effective Eye Lens (Principal Plane) - a vertical line
+            this.ctx.beginPath();
+            this.ctx.moveTo(principalPlaneX, eyeCenterY - eyeHeightPx / 2);
+            this.ctx.lineTo(principalPlaneX, eyeCenterY + eyeHeightPx / 2);
+            this.ctx.strokeStyle = 'black';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+            this.ctx.fillText('Effective Lens', principalPlaneX + 5, eyeCenterY - eyeHeightPx / 2 - 5);
+
+
+            // Principal axis
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, eyeCenterY);
+            this.ctx.lineTo(width, eyeCenterY);
+            this.ctx.strokeStyle = '#ccc';
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+            this.ctx.fillText('Principal Axis', width - 100, eyeCenterY - 10);
+
+            // Secondary Focal point F' (image side, right of principal plane)
+            const fPrimeX = principalPlaneX + effectiveFocalLengthM * this.CANVAS_METER_SCALE;
+            this.ctx.beginPath();
+            this.ctx.arc(fPrimeX, eyeCenterY, 3, 0, 2 * Math.PI);
+            this.ctx.fillStyle = 'blue';
+            this.ctx.fill();
+            this.ctx.fillText('F\'', fPrimeX + 5, eyeCenterY - 5);
+
+            // Primary Focal point F (object side, left of principal plane)
+            const fX = principalPlaneX - effectiveFocalLengthM * this.CANVAS_METER_SCALE;
+            this.ctx.beginPath();
+            this.ctx.arc(fX, eyeCenterY, 3, 0, 2 * Math.PI);
+            this.ctx.fillStyle = 'blue';
+            this.ctx.fill();
+            this.ctx.fillText('F', fX - 15, eyeCenterY - 5);
+
+
+            // Object
+            this.ctx.beginPath();
+            this.ctx.moveTo(objectX_px, eyeCenterY);
+            this.ctx.lineTo(objectX_px, objectTipY_px);
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, objectX_px, objectTipY_px, -Math.PI / 2, 'red', 10);
+            this.ctx.fillText('Object', objectX_px - 40, objectTipY_px - 5);
+
+
+            // --- Ray Tracing ---
+            this.ctx.strokeStyle = 'purple';
+            this.ctx.lineWidth = 1;
+            const rayDrawLength = width * 0.7; // How far rays extend visually
+
+            // Ray 1: From object top, parallel to principal axis, then through F'
+            drawRaySegment(this.ctx, objectX_px, objectTipY_px, principalPlaneX, objectTipY_px, 'purple'); // Incident ray
+            if (isFinite(v_signed_m) && v_signed_m > 0) { // Real image, ray passes through F'
+                drawRaySegment(this.ctx, principalPlaneX, objectTipY_px, imageX_px, eyeCenterY + imageHeightPx, 'purple');
+            } else if (v_signed_m === Infinity) {
+                 const intersectionY = objectTipY_px;
+                 // For image at infinity, the refracted ray is parallel to the principal axis if it passed through F before the lens.
+                 // For ray 1 (parallel incident), it should pass through F' after lens.
+                 // So the refracted ray goes from principalPlaneX, objectTipY_px through F' and extends.
+                 const angle = Math.atan2(eyeCenterY - objectTipY_px, fPrimeX - principalPlaneX);
+                 drawRaySegment(this.ctx, principalPlaneX, objectTipY_px, principalPlaneX + rayDrawLength * Math.cos(angle), objectTipY_px + rayDrawLength * Math.sin(angle), 'purple');
+            } else { // Virtual image (v_signed_m < 0), ray appears to diverge from F'
+                // Incident ray (parallel) then *appears* to diverge from F'.
+                const angleOut = Math.atan2(objectTipY_px - eyeCenterY, principalPlaneX - fPrimeX);
+                drawRaySegment(this.ctx, principalPlaneX, objectTipY_px, principalPlaneX + rayDrawLength * Math.cos(angleOut), objectTipY_px + rayDrawLength * Math.sin(angleOut), 'purple');
+                drawRaySegment(this.ctx, principalPlaneX, objectTipY_px, fPrimeX, eyeCenterY, 'purple', true); // Dashed extension back to F'
+            }
+
+
+            // Ray 2: From object top, through optical center (principalPlaneX, eyeCenterY), undeviated
+            drawRaySegment(this.ctx, objectX_px, objectTipY_px, principalPlaneX, eyeCenterY, 'purple'); // Incident ray
+            if (isFinite(v_signed_m)) {
+                drawRaySegment(this.ctx, principalPlaneX, eyeCenterY, imageX_px, eyeCenterY + imageHeightPx, 'purple'); // Refracted/undeviated ray
+            } else { // Image at infinity, ray continues indefinitely straight
+                const angle = Math.atan2(eyeCenterY - objectTipY_px, principalPlaneX - objectX_px);
+                drawRaySegment(this.ctx, principalPlaneX, eyeCenterY, principalPlaneX + rayDrawLength * Math.cos(angle), eyeCenterY + rayDrawLength * Math.sin(angle), 'purple');
+            }
+
+
+            // Ray 3: From object top, through primary focal point (F), then parallel to principal axis
+            // Incident ray: From object top, passes through F, hits principal plane
+            const focalRayIntersectY = eyeCenterY + (objectTipY_px - eyeCenterY) * (principalPlaneX - fX) / (objectX_px - fX);
+            drawRaySegment(this.ctx, objectX_px, objectTipY_px, principalPlaneX, focalRayIntersectY, 'purple'); // Incident ray
+
+            if (isFinite(v_signed_m) && v_signed_m > 0) { // Real image, ray emerges parallel
+                drawRaySegment(this.ctx, principalPlaneX, focalRayIntersectY, imageX_px, eyeCenterY + imageHeightPx, 'purple');
+            } else if (v_signed_m === Infinity) { // Image at infinity, ray emerges parallel
+                drawRaySegment(this.ctx, principalPlaneX, focalRayIntersectY, principalPlaneX + rayDrawLength, focalRayIntersectY, 'purple'); // Emerges parallel
+            } else { // Virtual image, ray emerges parallel, dashed extension to image
+                drawRaySegment(this.ctx, principalPlaneX, focalRayIntersectY, principalPlaneX + rayDrawLength, focalRayIntersectY, 'purple'); // Emerges parallel
+                drawRaySegment(this.ctx, principalPlaneX + rayDrawLength, focalRayIntersectY, imageX_px, eyeCenterY + imageHeightPx, 'purple', true); // Dashed extension backwards to virtual image
+            }
+
+
+            // Image (drawn at the calculated position or as a blurred region)
+            let focusStatus = "N/A";
+            if (isFinite(v_signed_m)) {
+                if (v_signed_m > 0) { // Real Image
+                    if (Math.abs(v_signed_m - retinaDistance_from_principal_plane_M) < this.RETINA_THRESHOLD_M) {
+                        focusStatus = "In Focus";
+                        this.ctx.strokeStyle = 'blue';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(retinaX, eyeCenterY);
+                        this.ctx.lineTo(retinaX, eyeCenterY + imageHeightPx);
+                        this.ctx.stroke();
+                        drawArrowhead(this.ctx, retinaX, eyeCenterY + imageHeightPx, Math.PI / 2, 'blue', 10);
+                        this.ctx.fillText('Image', retinaX + 10, eyeCenterY + imageHeightPx + 15);
+                    } else {
+                        focusStatus = "Out of Focus";
+                        this.ctx.strokeStyle = 'blue';
+                        this.ctx.lineWidth = 1; // Thinner for blurred/dashed
+
+                        // Determine if Myopic or Hyperopic
+                        if (v_signed_m < retinaDistance_from_principal_plane_M) {
+                            focusStatus += " (Myopic - Image in front of retina)";
+                            // Draw converging rays that cross before retina and then spread
+                            const focusPointPx = principalPlaneX + v_signed_m * this.CANVAS_METER_SCALE;
+                            const raySpreadAngle = Math.atan2(Math.abs(imageHeightPx), Math.abs(retinaX - focusPointPx));
+
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(principalPlaneX, objectTipY_px); // From lens
+                            this.ctx.lineTo(focusPointPx, eyeCenterY + imageHeightPx); // To focal point
+                            this.ctx.lineTo(retinaX, eyeCenterY + (retinaX - focusPointPx) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1)); // Continues past focus
+
+                            this.ctx.moveTo(principalPlaneX, eyeCenterY - objectHeightPx); // Symmetrical ray
+                            this.ctx.lineTo(focusPointPx, eyeCenterY - imageHeightPx);
+                            this.ctx.lineTo(retinaX, eyeCenterY - (retinaX - focusPointPx) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1));
+                            this.ctx.stroke();
+
+                            // Draw the blurred image region on the retina
+                            this.ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+                            this.ctx.beginPath();
+                            this.ctx.ellipse(retinaX, eyeCenterY, 5, Math.abs(imageHeightPx) * Math.abs(retinaX - focusPointPx) / Math.abs(imageX_px - focusPointPx), 0, 0, Math.PI * 2);
+                            this.ctx.fill();
+                            this.ctx.fillText('Blurred Image', retinaX - 40, eyeCenterY + imageHeightPx + 30);
+
+
+                        } else {
+                            focusStatus += " (Hyperopic - Image behind retina)";
+                            // Draw converging rays that would focus behind retina
+                            const focusPointPx = principalPlaneX + v_signed_m * this.CANVAS_METER_SCALE;
+                            const raySpreadAngle = Math.atan2(Math.abs(imageHeightPx), Math.abs(focusPointPx - retinaX));
+
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(principalPlaneX, objectTipY_px); // From lens
+                            this.ctx.lineTo(retinaX, eyeCenterY + (focusPointPx - retinaX) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1)); // Hits retina before focus
+                            this.ctx.moveTo(principalPlaneX, eyeCenterY - objectHeightPx); // Symmetrical ray
+                            this.ctx.lineTo(retinaX, eyeCenterY - (focusPointPx - retinaX) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1));
+                            this.ctx.stroke();
+
+                            // Draw the blurred image region on the retina
+                            this.ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+                            this.ctx.beginPath();
+                            this.ctx.ellipse(retinaX, eyeCenterY, 5, Math.abs(imageHeightPx) * Math.abs(retinaX - principalPlaneX) / Math.abs(imageX_px - principalPlaneX), 0, 0, Math.PI * 2);
+                            this.ctx.fill();
+                            this.ctx.fillText('Blurred Image', retinaX - 40, eyeCenterY + imageHeightPx + 30);
+
+                            this.ctx.setLineDash([3, 3]); // Show virtual extension to focus point
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(retinaX, eyeCenterY + (focusPointPx - retinaX) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1));
+                            this.ctx.lineTo(focusPointPx, eyeCenterY + imageHeightPx);
+                            this.ctx.moveTo(retinaX, eyeCenterY - (focusPointPx - retinaX) * Math.tan(raySpreadAngle) * (imageHeightPx > 0 ? 1 : -1));
+                            this.ctx.lineTo(focusPointPx, eyeCenterY - imageHeightPx);
+                            this.ctx.stroke();
+                            this.ctx.setLineDash([]);
+                        }
+                    }
+                } else { // Virtual Image (v_signed_m < 0)
+                    focusStatus = "Out of Focus (Virtual Image - forms in front of eye)";
+                    this.ctx.strokeStyle = 'blue';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.setLineDash([3, 3]);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(imageX_px, eyeCenterY);
+                    this.ctx.lineTo(imageX_px, eyeCenterY + imageHeightPx);
+                    this.ctx.stroke();
+                    drawArrowhead(this.ctx, imageX_px, eyeCenterY + imageHeightPx, Math.PI / 2, 'blue', 8);
+                    this.ctx.setLineDash([]);
+                    this.ctx.fillText('Virtual Image', imageX_px + 10, eyeCenterY + imageHeightPx - 5);
+                }
+            } else { // Image at Infinity
+                focusStatus = "Image at Infinity (Out of Focus)";
+                this.ctx.fillText('Image at Infinity', principalPlaneX + 50, eyeCenterY - 50);
+            }
+
+
+            // Update info panel
+            document.getElementById('infoEyeObjectDistance').textContent = objectDistanceMeters.toFixed(2) + " m";
+            document.getElementById('infoEyeLensPower').textContent = crystallineLensPower.toFixed(1) + " D";
+            document.getElementById('infoTotalEyePower').textContent = totalEyePower.toFixed(1) + " D";
+            document.getElementById('infoEyeImagePosition').textContent = isFinite(v_signed_m) ? (v_signed_m * 100).toFixed(2) + " cm from principal plane" : "Infinity";
+            document.getElementById('infoEyeFocusStatus').textContent = focusStatus;
+        }
+    };
+
+    // --- Lens Power Calculator Tab ---
+    const lensPowerCalculatorSim = {
+      canvas: null,
+      ctx: null,
+      farPointCmInput: null,
+      nearPointCmInput: null,
+      calculateButton: null,
+      infoPanel: null,
+      CANVAS_METER_SCALE: 0, // Pixels per meter
+
+      init: function() {
+        this.canvas = document.getElementById('lensPowerCalculatorCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        // Define a scale for this specific simulation, e.g., 2 meters visually represented
+        const simSpaceWidthMeters = 2.0; // Total conceptual width of 2 meters for the simulation area
+        this.CANVAS_METER_SCALE = this.canvas.width / simSpaceWidthMeters;
+
+        this.farPointCmInput = document.getElementById('farPointCm');
+        this.nearPointCmInput = document.getElementById('nearPointCm');
+        this.calculateButton = document.getElementById('calculateLensPower');
+        this.infoPanel = document.getElementById('lensPowerCalculatorInfo');
+
+        this.draw = this.draw.bind(this);
+        this.calculateAndDraw = this.calculateAndDraw.bind(this);
+
+        if (this.calculateButton) this.calculateButton.addEventListener('click', this.calculateAndDraw);
+        // Add event listeners to input fields for dynamic updates
+        if (this.farPointCmInput) this.farPointCmInput.addEventListener('input', this.calculateAndDraw);
+        if (this.nearPointCmInput) this.nearPointCmInput.addEventListener('input', this.calculateAndDraw);
+
+        // Initial call to set values and draw when the tab is first loaded/switched to
+        this.calculateAndDraw();
+      },
+
+      calculateAndDraw: function() {
+        let farPointCm = parseFloat(this.farPointCmInput.value); // In cm
+        let nearPointCm = parseFloat(this.nearPointCmInput.value); // In cm
+
+        let myopiaCorrectivePower = 'N/A';
+        let hypermetropiaCorrectivePower = 'N/A';
+
+        // Myopia calculation
+        if (!isNaN(farPointCm)) {
+            if (farPointCm < 0) { // Myopic eye has a finite far point (negative by convention)
+                let power = 100 / farPointCm;
+                myopiaCorrectivePower = (isNaN(power) || !isFinite(power)) ? 'N/A' : power.toFixed(2);
+            } else if (farPointCm === 0) { // Represents far point at infinity (normal vision)
+                myopiaCorrectivePower = "0.00";
+            } else { // Positive far point implies hypermetropia or presbyopia, not myopia
+                myopiaCorrectivePower = "N/A (Not Myopic)";
+            }
+        }
+
+        // Hypermetropia calculation
+        const normalReadingDistanceM = 0.25; // 25 cm = 0.25 meters
+        if (!isNaN(nearPointCm)) {
+            if (nearPointCm > 0) { // Real near point (could be hyperopic or normal/presbyopic)
+                const u_hyper_m = -normalReadingDistanceM; // Object at normal reading distance
+                const v_hyper_m = -nearPointCm / 100; // Patient's near point distance in meters (virtual image for corrective lens)
+                let power = (1 / v_hyper_m - 1 / u_hyper_m);
+                hypermetropiaCorrectivePower = (isNaN(power) || !isFinite(power)) ? 'N/A' : power.toFixed(2);
+            } else if (nearPointCm <= 0) { // Theoretical near point at infinity or virtual near point (extreme hyperopia or aphakia)
+                hypermetropiaCorrectivePower = "N/A (Extreme)"; // Indicate extreme case
+            }
+        }
+
+
+        // Update info panel
+        if (document.getElementById('myopiaCorrectivePower')) {
+            document.getElementById('myopiaCorrectivePower').textContent = `${myopiaCorrectivePower}`;
+        }
+        if (document.getElementById('hypermetropiaCorrectivePower')) {
+            document.getElementById('hypermetropiaCorrectivePower').textContent = `${hypermetropiaCorrectivePower}`;
+        }
+
+        this.draw(farPointCm, nearPointCm, myopiaCorrectivePower, hypermetropiaCorrectivePower);
+      },
+
+      draw: function(farPointCm, nearPointCm, myopiaPower, hypermetropiaPower) {
+        if (!this.ctx || !this.canvas) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+        this.ctx.font = '14px Arial';
+
+        // Common eye parameters for drawing, roughly scaled
+        const EYE_RADIUS_PX = 50;
+        const EYE_LENGTH_PX = 150; // Total length of eye visually
+        const PRINCIPAL_PLANE_OFFSET_PX = 10; // Offset of effective lens from front of eye
+
+        // Reference point for eye drawing: assuming eye's effective lens is near the middle of the canvas for good visualization
+        const EYE_SYSTEM_MID_X = width * 0.5;
+
+        // Myopia Section
+        const myopiaEyeY = height * 0.3;
+        const myopiaPrincipalPlaneX = EYE_SYSTEM_MID_X - 100; // Position of the eye's lens for Myopia section
+        const myopiaRetinaX = myopiaPrincipalPlaneX + (EYE_LENGTH_PX - PRINCIPAL_PLANE_OFFSET_PX);
+
+        this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 2;
+
+        // Draw Myopic Eye (simple circle for illustration)
+        this.ctx.beginPath();
+        this.ctx.arc(myopiaPrincipalPlaneX + EYE_LENGTH_PX / 2, myopiaEyeY, EYE_RADIUS_PX, 0, 2 * Math.PI); // Eyeball outline
+        this.ctx.stroke();
+        this.ctx.fillText('Myopic Eye', myopiaPrincipalPlaneX + EYE_LENGTH_PX / 2 - 40, myopiaEyeY - EYE_RADIUS_PX - 10);
+
+        this.ctx.beginPath(); // Retina
+        this.ctx.moveTo(myopiaRetinaX, myopiaEyeY - EYE_RADIUS_PX);
+        this.ctx.lineTo(myopiaRetinaX, myopiaEyeY + EYE_RADIUS_PX);
+        this.ctx.strokeStyle = 'green';
+        this.ctx.stroke();
+
+        this.ctx.beginPath(); // Eye's natural lens (simplified as a line)
+        this.ctx.moveTo(myopiaPrincipalPlaneX, myopiaEyeY - EYE_RADIUS_PX * 0.8);
+        this.ctx.lineTo(myopiaPrincipalPlaneX, myopiaEyeY + EYE_RADIUS_PX * 0.8);
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        this.ctx.fillText('Eye Lens', myopiaPrincipalPlaneX + 5, myopiaEyeY - EYE_RADIUS_PX * 0.8 - 5);
+
+
+        // Rays for myopia (from infinity, converging before retina)
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 1;
+
+        // Incident parallel rays from infinity
+        drawRaySegment(this.ctx, 0, myopiaEyeY - 20, myopiaPrincipalPlaneX, myopiaEyeY - 20, 'red');
+        drawRaySegment(this.ctx, 0, myopiaEyeY + 20, myopiaPrincipalPlaneX, myopiaEyeY + 20, 'red');
+
+        // Rays converge after passing through eye lens (before retina)
+        let myopiaUncorrectedFocusX_calc = myopiaPrincipalPlaneX; // Default to eye lens x
+        if (!isNaN(farPointCm) && farPointCm < 0) {
+            // Uncorrected eye focuses at the far point. Far point is relative to the eye's principal plane.
+            myopiaUncorrectedFocusX_calc = myopiaPrincipalPlaneX + (farPointCm / 100) * this.CANVAS_METER_SCALE;
+        } else {
+            // For normal/hyperopic or invalid far point, just place it conceptually before retina
+            myopiaUncorrectedFocusX_calc = myopiaRetinaX - 40;
+        }
+        drawRaySegment(this.ctx, myopiaPrincipalPlaneX, myopiaEyeY - 20, myopiaUncorrectedFocusX_calc, myopiaEyeY, 'red');
+        drawRaySegment(this.ctx, myopiaPrincipalPlaneX, myopiaEyeY + 20, myopiaUncorrectedFocusX_calc, myopiaEyeY, 'red');
+
+        this.ctx.fillText('Focus (Myopic)', myopiaUncorrectedFocusX_calc - 60, myopiaEyeY + 30);
+        this.ctx.beginPath(); // Mark the focal point
+        this.ctx.arc(myopiaUncorrectedFocusX_calc, myopiaEyeY, 4, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'red';
+        this.ctx.fill();
+
+
+        // Corrective Lens for Myopia (Concave Lens)
+        const correctiveLensX_myopia = myopiaPrincipalPlaneX - 70; // Position of corrective lens
+        const lensHeight = EYE_RADIUS_PX * 1.5;
+        drawLens(this.ctx, correctiveLensX_myopia, myopiaEyeY, lensHeight, 'concave_lens', 'orange', 3);
+        this.ctx.fillText('Corrective Lens', correctiveLensX_myopia - 60, myopiaEyeY - lensHeight / 2 - 5);
+
+        // Corrected rays (after passing through corrective lens, then eye lens)
+        this.ctx.strokeStyle = 'blue';
+        this.ctx.lineWidth = 2;
+
+        // Ray 1: Parallel incident -> diverges -> hits eye lens -> focuses on retina
+        const ray1CorrectedY_at_eyeLens = myopiaEyeY - 30; // Illustrative point after diverging
+        drawRaySegment(this.ctx, 0, myopiaEyeY - 20, correctiveLensX_myopia, myopiaEyeY - 20, 'blue'); // Incident to corrective
+        drawRaySegment(this.ctx, correctiveLensX_myopia, myopiaEyeY - 20, myopiaPrincipalPlaneX, ray1CorrectedY_at_eyeLens, 'blue'); // Diverges
+        drawRaySegment(this.ctx, myopiaPrincipalPlaneX, ray1CorrectedY_at_eyeLens, myopiaRetinaX, myopiaEyeY, 'blue'); // Focuses on retina
+
+        // Ray 2: Parallel incident -> diverges -> hits eye lens -> focuses on retina
+        const ray2CorrectedY_at_eyeLens = myopiaEyeY + 30; // Illustrative point after diverging
+        drawRaySegment(this.ctx, 0, myopiaEyeY + 20, correctiveLensX_myopia, myopiaEyeY + 20, 'blue'); // Incident to corrective
+        drawRaySegment(this.ctx, correctiveLensX_myopia, myopiaEyeY + 20, myopiaPrincipalPlaneX, ray2CorrectedY_at_eyeLens, 'blue'); // Diverges
+        drawRaySegment(this.ctx, myopiaPrincipalPlaneX, ray2CorrectedY_at_eyeLens, myopiaRetinaX, myopiaEyeY, 'blue'); // Focuses on retina
+
+        this.ctx.fillText('Corrected Focus', myopiaRetinaX + 10, myopiaEyeY + 30);
+        this.ctx.beginPath(); // Mark the corrected focal point
+        this.ctx.arc(myopiaRetinaX, myopiaEyeY, 4, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'blue';
+        this.ctx.fill();
+
+        this.ctx.fillText(`Far Point: ${farPointCm} cm`, myopiaPrincipalPlaneX + EYE_LENGTH_PX / 2 - 50, myopiaEyeY + EYE_RADIUS_PX + 20);
+        this.ctx.fillText(`Correction: ${myopiaPower} D`, myopiaPrincipalPlaneX + EYE_LENGTH_PX / 2 - 50, myopiaEyeY + EYE_RADIUS_PX + 40);
+
+
+        // --- Hypermetropia Section ---
+        const hyperEyeY = height * 0.7;
+        const hyperPrincipalPlaneX = EYE_SYSTEM_MID_X - 100; // Position of the eye's lens for Hypermetropia section
+        const hyperRetinaX = hyperPrincipalPlaneX + (EYE_LENGTH_PX - PRINCIPAL_PLANE_OFFSET_PX);
+
+        this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 2;
+
+        // Draw Hyperopic Eye
+        this.ctx.beginPath();
+        this.ctx.arc(hyperPrincipalPlaneX + EYE_LENGTH_PX / 2, hyperEyeY, EYE_RADIUS_PX, 0, 2 * Math.PI); // Eyeball outline
+        this.ctx.stroke();
+        this.ctx.fillText('Hyperopic Eye', hyperPrincipalPlaneX + EYE_LENGTH_PX / 2 - 40, hyperEyeY - EYE_RADIUS_PX - 10);
+
+        this.ctx.beginPath(); // Retina
+        this.ctx.moveTo(hyperRetinaX, hyperEyeY - EYE_RADIUS_PX);
+        this.ctx.lineTo(hyperRetinaX, hyperEyeY + EYE_RADIUS_PX);
+        this.ctx.strokeStyle = 'green';
+        this.ctx.stroke();
+
+        this.ctx.beginPath(); // Eye's natural lens
+        this.ctx.moveTo(hyperPrincipalPlaneX, hyperEyeY - EYE_RADIUS_PX * 0.8);
+        this.ctx.lineTo(hyperPrincipalPlaneX, hyperEyeY + EYE_RADIUS_PX * 0.8);
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        this.ctx.fillText('Eye Lens', hyperPrincipalPlaneX + 5, hyperEyeY - EYE_RADIUS_PX * 0.8 - 5);
+
+
+        // Rays for hypermetropia (from 25cm, converging behind retina)
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 1;
+
+        // Incident rays from normal reading distance (object at far left, conceptually)
+        const normalReadingObjX = hyperPrincipalPlaneX - 100; // Represents normal 25cm object position
+        drawRaySegment(this.ctx, normalReadingObjX, hyperEyeY - 20, hyperPrincipalPlaneX, hyperEyeY - 20, 'red');
+        drawRaySegment(this.ctx, normalReadingObjX, hyperEyeY + 20, hyperPrincipalPlaneX, hyperEyeY + 20, 'red');
+
+        // Rays converge after passing through eye lens (behind retina, shown as dashed extension)
+        const hyperUncorrectedFocusX = hyperRetinaX + 40; // Conceptual focus point behind retina for illustration
+        this.ctx.setLineDash([5, 5]); // Dashed for virtual extension
+        drawRaySegment(this.ctx, hyperPrincipalPlaneX, hyperEyeY - 20, hyperUncorrectedFocusX, hyperEyeY, 'red', true);
+        drawRaySegment(this.ctx, hyperPrincipalPlaneX, hyperEyeY + 20, hyperUncorrectedFocusX, hyperEyeY, 'red', true);
+        this.ctx.setLineDash([0,0]); // Reset dash
+
+        this.ctx.fillText('Focus (Hyperopic)', hyperUncorrectedFocusX - 60, hyperEyeY + 30);
+        this.ctx.beginPath(); // Mark the focal point
+        this.ctx.arc(hyperUncorrectedFocusX, hyperEyeY, 4, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'red';
+        this.ctx.fill();
+
+
+        // Corrective Lens for Hypermetropia (Convex Lens)
+        const hyperCorrectiveLensX = hyperPrincipalPlaneX - 70; // Position of corrective lens
+        drawLens(this.ctx, hyperCorrectiveLensX, hyperEyeY, lensHeight, 'convex_lens', 'orange', 3);
+        this.ctx.fillText('Corrective Lens', hyperCorrectiveLensX - 60, hyperEyeY - lensHeight / 2 - 5);
+
+        // Corrected rays (after passing through corrective lens, then eye lens)
+        this.ctx.strokeStyle = 'blue';
+        this.ctx.lineWidth = 2;
+
+        // Ray 1: From normal reading distance, converges slightly from corrective lens
+        const ray1CorrectedY_at_eyeLens_hyper = hyperEyeY - 10; // Illustrative point after converging
+        drawRaySegment(this.ctx, normalReadingObjX, hyperEyeY - 20, hyperCorrectiveLensX, hyperEyeY - 20, 'blue'); // Incident to corrective
+        drawRaySegment(this.ctx, hyperCorrectiveLensX, hyperEyeY - 20, hyperPrincipalPlaneX, ray1CorrectedY_at_eyeLens_hyper, 'blue'); // Converges
+        drawRaySegment(this.ctx, hyperPrincipalPlaneX, ray1CorrectedY_at_eyeLens_hyper, hyperRetinaX, hyperEyeY, 'blue'); // Focuses on retina
+
+        // Ray 2: From normal reading distance, converges slightly from corrective lens
+        const ray2CorrectedY_at_eyeLens_hyper = hyperEyeY + 10; // Illustrative point after converging
+        drawRaySegment(this.ctx, normalReadingObjX, hyperEyeY + 20, hyperCorrectiveLensX, hyperEyeY + 20, 'blue'); // Incident to corrective
+        drawRaySegment(this.ctx, hyperCorrectiveLensX, hyperEyeY + 20, hyperPrincipalPlaneX, ray2CorrectedY_at_eyeLens_hyper, 'blue'); // Converges
+        drawRaySegment(this.ctx, hyperPrincipalPlaneX, ray2CorrectedY_at_eyeLens_hyper, hyperRetinaX, hyperEyeY, 'blue'); // Focuses on retina
+
+        this.ctx.fillText('Corrected Focus', hyperRetinaX + 10, hyperEyeY + 30);
+        this.ctx.beginPath(); // Mark the corrected focal point
+        this.ctx.arc(hyperRetinaX, hyperEyeY, 4, 0, 2 * Math.PI);
+        this.ctx.fillStyle = 'blue';
+        this.ctx.fill();
+
+
+        this.ctx.fillText(`Near Point: ${nearPointCm} cm`, hyperPrincipalPlaneX + EYE_LENGTH_PX / 2 - 50, hyperEyeY + EYE_RADIUS_PX + 20);
+        this.ctx.fillText(`Correction: ${hypermetropiaPower} D`, hyperPrincipalPlaneX + EYE_LENGTH_PX / 2 - 50, hyperEyeY + EYE_RADIUS_PX + 40);
+      }
+    };
+
+    // --- Light Spectrum Tab ---
+    const lightSpectrumSim = {
+      canvas: null,
+      ctx: null,
+      wavelengthInput: null,
+      showPrismCheckbox: null,
+      infoPanel: null,
+
+      init: function() {
+        this.canvas = document.getElementById('lightSpectrumCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        this.wavelengthInput = document.getElementById('wavelengthInput');
+        this.showPrismCheckbox = document.getElementById('showPrism');
+        this.infoPanel = document.getElementById('lightSpectrumInfo');
+
+        this.draw = this.draw.bind(this);
+
+        if (this.wavelengthInput) this.wavelengthInput.addEventListener('input', () => {
+          document.getElementById('wavelengthValue').textContent = this.wavelengthInput.value;
+          this.draw();
+        });
+        if (this.showPrismCheckbox) this.showPrismCheckbox.addEventListener('change', () => this.draw());
+
+        // Initial draw
+        this.draw();
+      },
+
+      draw: function() {
+        if (!this.ctx || !this.canvas || !this.wavelengthInput || !this.infoPanel) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+
+        const wavelength = parseFloat(this.wavelengthInput.value);
+        const showPrism = this.showPrismCheckbox.checked;
+        const color = wavelengthToColor(wavelength);
+        const lightType = getLightType(wavelength);
+
+        // Draw light source and ray
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(50, height / 2);
+        this.ctx.lineTo(width / 2 - (showPrism ? 70 : 0), height / 2);
+        this.ctx.stroke();
+        drawArrowhead(this.ctx, width / 2 - (showPrism ? 70 : 0), height / 2, 0, color, 10);
+
+        if (showPrism) {
+            // Draw prism (equilateral triangle)
+            const prismSize = 100;
+            const prismX = width / 2 - 50;
+            const prismY = height / 2;
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(prismX, prismY - prismSize / 2); // Top point
+            this.ctx.lineTo(prismX + prismSize, prismY);      // Right point
+            this.ctx.lineTo(prismX, prismY + prismSize / 2); // Bottom point
+            this.ctx.closePath();
+            this.ctx.fillStyle = 'rgba(173, 216, 230, 0.5)'; // Light blue transparent
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Simulate dispersion
+            const numRays = 7; // For a spectrum
+            const startAngle = -Math.PI / 12; // Starting angle of dispersed light (downwards)
+            const endAngle = Math.PI / 12;   // Ending angle of dispersed light (upwards)
+            const dispersionSpan = 400; // Visual length of dispersed spectrum
+
+            for (let i = 0; i < numRays; i++) {
+                const rayWavelength = 380 + (i / (numRays - 1)) * (780 - 380); // Distribute wavelengths
+                const rayColor = wavelengthToColor(rayWavelength);
+                const rayAngle = startAngle + (i / (numRays - 1)) * (endAngle - startAngle);
+
+                this.ctx.strokeStyle = rayColor;
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.moveTo(prismX + prismSize, prismY); // From right tip of prism
+                const endX = prismX + prismSize + dispersionSpan * Math.cos(rayAngle);
+                const endY = prismY + dispersionSpan * Math.sin(rayAngle);
+                this.ctx.lineTo(endX, endY);
+                this.ctx.stroke();
+                drawArrowhead(this.ctx, endX, endY, rayAngle, rayColor, 8);
+            }
+
+            this.ctx.fillStyle = '#333';
+            this.ctx.fillText('Prism', prismX + prismSize / 3, prismY - prismSize / 2 - 10);
+
+        } else {
+            // No prism, just continue the ray
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = 5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(width / 2, height / 2);
+            this.ctx.lineTo(width - 50, height / 2);
+            this.ctx.stroke();
+            drawArrowhead(this.ctx, width - 50, height / 2, 0, color, 10);
+        }
+
+
+        // Update info panel
+        document.getElementById('infoWavelength').textContent = wavelength.toFixed(0);
+        document.getElementById('infoColorBlock').style.backgroundColor = color;
+        document.getElementById('infoLightType').textContent = lightType;
+        document.getElementById('infoDispersionStatus').textContent = showPrism ? 'Yes' : 'No';
+      }
+    };
+
+    // Initial load: activate the first tab and draw its content
+    document.addEventListener('DOMContentLoaded', () => {
+      const activeTabBtn = document.querySelector('.tab-btn.active');
+      if (activeTabBtn) {
+        const tabId = activeTabBtn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active'); // Ensure the div is active
+      }
+    });
+
+    // Handle canvas resizing for all simulations
+    window.addEventListener('resize', () => {
+        // Only re-init and redraw the currently active canvas
+        const activeTabId = document.querySelector('.tab-btn.active').dataset.tab;
+        if (activeTabId === 'lightOptics') {
+            lightOpticsSim.init(); // Re-initializes canvas size
+            lightOpticsSim.draw(); // Redraws content immediately
+        } else if (activeTabId === 'lensMirror') {
+            lensMirrorSim.init(); // Re-initializes canvas size
+            lensMirrorSim.draw(); // Redraws content immediately
+        } else if (activeTabId === 'humanEye') {
+            humanEyeSim.init(); // Re-initializes canvas size
+            humanEyeSim.draw(); // Redraws content immediately
+        } else if (activeTabId === 'lensPowerCalculator') {
+            lensPowerCalculatorSim.init(); // Re-initializes canvas size
+            lensPowerCalculatorSim.draw(); // Redraws content immediately
+        } else if (activeTabId === 'lightSpectrum') {
+            lightSpectrumSim.init(); // Re-initializes canvas size
+            lightSpectrumSim.draw(); // Redraws content immediately
+        }
+    });
+</script>
+</body>
+</html>

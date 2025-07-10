@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Oscillation Simulator</title>
+  <style>
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px; /* Adjusted max-width for standalone */
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    .controls {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group input[type="range"],
+    .control-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .control-group input[type="range"] {
+      padding: 0;
+      height: 25px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 10px;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    .simulation-area {
+      width: 100%;
+      max-width: 800px;
+      height: 500px;
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .tab-btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+      }
+      .simulation-area {
+        height: 350px;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+        .tabs {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .tab-btn {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Physics Oscillation Simulator</h1>
+      <p class="subtitle">Interactive simulations for Simple Pendulum and Spring Oscillation</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pendulum">Simple Pendulum</button>
+      <button class="tab-btn" data-tab="spring">Spring Oscillation</button>
+    </div>
+
+    <!-- Simple Pendulum Tab -->
+    <div id="pendulum" class="tab-content active">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Simple Pendulum</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="pendulumLength">Length (m):</label>
+            <input type="number" id="pendulumLength" min="0.1" max="5.0" value="1.5" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="initialAngle">Initial Angle (°):</label>
+            <input type="number" id="initialAngle" min="0" max="80" value="45" step="1">
+          </div>
+          <div class="control-group">
+            <label for="gravity">Gravity (m/s²):</label>
+            <input type="number" id="gravity" min="1" max="20" value="9.81" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="pendulumDamping">Damping Factor:</label>
+            <input type="number" id="pendulumDamping" min="0" max="0.1" value="0.005" step="0.001">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="pendulumStartPauseBtn">Pause</button>
+          <button class="secondary" id="pendulumResetBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="pendulumCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="pendulumInfo">
+          <div class="info-item">Length: <span id="infoPendulumLength">1.5</span> m</div>
+          <div class="info-item">Initial Angle: <span id="infoInitialAngle">45</span>°</div>
+          <div class="info-item">Gravity: <span id="infoGravity">9.81</span> m/s²</div>
+          <div class="info-item">Damping: <span id="infoPendulumDamping">0.005</span></div>
+          <div class="info-item">Period: <span id="pendulumPeriod">?</span> s</div>
+          <div class="info-item">Frequency: <span id="pendulumFrequency">?</span> Hz</div>
+          <div class="info-item">Angular Velocity: <span id="pendulumAngularVel">?</span> rad/s</div>
+          <div class="info-item">Angular Acceleration: <span id="pendulumAngularAcc">?</span> rad/s²</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spring Oscillation Tab -->
+    <div id="spring" class="tab-content">
+      <div class="simulation-container">
+        <h2 class="simulation-title">Spring Oscillation</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="springMass">Mass (kg):</label>
+            <input type="number" id="springMass" min="0.1" max="10" value="1" step="0.1">
+          </div>
+          <div class="control-group">
+            <label for="springConstant">Spring Constant (N/m):</label>
+            <input type="number" id="springConstant" min="1" max="100" value="20" step="1">
+          </div>
+          <div class="control-group">
+            <label for="initialDisplacement">Initial Displacement (m):</label>
+            <input type="number" id="initialDisplacement" min="0.01" max="0.5" value="0.2" step="0.01">
+          </div>
+          <div class="control-group">
+            <label for="springDamping">Damping Factor:</label>
+            <input type="number" id="springDamping" min="0" max="0.5" value="0.05" step="0.01">
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="primary" id="springStartPauseBtn">Pause</button>
+          <button class="secondary" id="springResetBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+          <canvas id="springCanvas"></canvas>
+        </div>
+
+        <div class="info-panel" id="springInfo">
+          <div class="info-item">Mass: <span id="infoSpringMass">1</span> kg</div>
+          <div class="info-item">Spring Constant: <span id="infoSpringConstant">20</span> N/m</div>
+          <div class="info-item">Initial Displacement: <span id="infoInitialDisplacement">0.2</span> m</div>
+          <div class="info-item">Damping: <span id="infoSpringDamping">0.05</span></div>
+          <div class="info-item">Period: <span id="springPeriod">?</span> s</div>
+          <div class="info-item">Frequency: <span id="springFrequency">?</span> Hz</div>
+          <div class="info-item">Velocity: <span id="springVelocity">?</span> m/s</div>
+          <div class="info-item">Acceleration: <span id="springAcceleration">?</span> m/s²</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Constants
+    const PI = Math.PI;
+
+    // --- Tab Switching Functionality ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Stop any ongoing animations before switching tabs
+        if (pendulumSim.animationId) cancelAnimationFrame(pendulumSim.animationId);
+        if (springSim.animationId) cancelAnimationFrame(springSim.animationId);
+
+        // Remove active class from all buttons and content
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding content
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+
+        // Initialize and start the simulation for the new tab
+        if (tabId === 'pendulum') {
+          pendulumSim.init();
+          pendulumSim.reset();
+          pendulumSim.start();
+        } else if (tabId === 'spring') {
+          springSim.init();
+          springSim.reset();
+          springSim.start();
+        }
+      });
+    });
+
+    // --- Simple Pendulum Simulation Object ---
+    const pendulumSim = {
+      canvas: null,
+      ctx: null,
+      animationId: null,
+      isRunning: false,
+      // Pendulum state variables
+      angle: 0,        // Current angle in radians
+      aVel: 0,         // Angular velocity
+      g: 9.81,         // Gravity (m/s^2)
+      length: 1.5,     // Length of pendulum (meters)
+      damping: 0.005,  // Damping factor
+
+      // Initial conditions for reset
+      initialAngleDeg: 45,
+      initialLength: 1.5,
+      initialGravity: 9.81,
+      initialDamping: 0.005,
+
+      // UI elements
+      lengthInput: document.getElementById('pendulumLength'),
+      angleInput: document.getElementById('initialAngle'),
+      gravityInput: document.getElementById('gravity'),
+      dampingInput: document.getElementById('pendulumDamping'),
+      startPauseBtn: document.getElementById('pendulumStartPauseBtn'),
+      resetBtn: document.getElementById('pendulumResetBtn'),
+      infoPanel: document.getElementById('pendulumInfo'),
+
+      init: function() {
+        this.canvas = document.getElementById('pendulumCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        // Add event listeners for controls
+        this.lengthInput.addEventListener('input', () => this.updateParameters());
+        this.angleInput.addEventListener('input', () => {
+          // Parse value as float for number input
+          this.initialAngleDeg = parseFloat(this.angleInput.value);
+          this.reset(); // Reset to new initial angle
+        });
+        this.gravityInput.addEventListener('input', () => this.updateParameters());
+        this.dampingInput.addEventListener('input', () => this.updateParameters());
+
+        this.startPauseBtn.addEventListener('click', () => this.toggleSimulation());
+        this.resetBtn.addEventListener('click', () => this.reset());
+
+        // Initial setup
+        this.updateParameters();
+        this.reset();
+      },
+
+      updateParameters: function() {
+        this.length = parseFloat(this.lengthInput.value);
+        this.g = parseFloat(this.gravityInput.value);
+        this.damping = parseFloat(this.dampingInput.value);
+        this.updateInfoPanel();
+      },
+
+      reset: function() {
+        this.stop();
+        this.lengthInput.value = this.initialLength;
+        this.angleInput.value = this.initialAngleDeg;
+        this.gravityInput.value = this.initialGravity;
+        this.dampingInput.value = this.initialDamping;
+
+        this.updateParameters(); // Update internal parameters from inputs
+        this.angle = this.initialAngleDeg * PI / 180; // Reset angle to initial
+        this.aVel = 0; // Reset angular velocity
+
+        this.draw(); // Draw initial state
+        this.start(); // Start animation automatically on reset
+      },
+
+      draw: function() {
+        if (!this.ctx || !this.canvas) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+
+        const originX = width / 2;
+        const originY = 100; // Fixed pivot point
+
+        // Physics calculation for angular acceleration with damping
+        // τ = -mgl sinθ - bω (Torque)
+        // Iα = τ => α = τ / I
+        // For simple pendulum, I = ml^2
+        // α = (-mgL sinθ - bω) / (mL^2) = (-g/L)sinθ - (b/mL^2)ω
+        const aAcc = (-this.g / this.length) * Math.sin(this.angle);
+        this.aVel += aAcc * 0.016; // dt approximately 1/60th of a second
+        this.aVel *= (1 - this.damping); // Apply damping
+        this.angle += this.aVel * 0.016;
+
+        const visualLength = this.length * 100; // Scale meters to pixels for drawing
+        const bobX = originX + visualLength * Math.sin(this.angle);
+        const bobY = originY + visualLength * Math.cos(this.angle);
+
+        // Draw support
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(originX - 30, originY - 10, 60, 20);
+
+        // Draw string
+        this.ctx.beginPath();
+        this.ctx.moveTo(originX, originY);
+        this.ctx.lineTo(bobX, bobY);
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+
+        // Draw bob
+        this.ctx.beginPath();
+        this.ctx.arc(bobX, bobY, 20, 0, PI * 2);
+        this.ctx.fillStyle = '#4a6bff';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+
+        this.updateInfoPanel();
+      },
+
+      updateInfoPanel: function() {
+        const period = 2 * PI * Math.sqrt(this.length / this.g);
+        const frequency = 1 / period;
+
+        this.infoPanel.innerHTML = `
+          <div class="info-item">Length: <span>${this.length.toFixed(2)}</span> m</div>
+          <div class="info-item">Initial Angle: <span>${parseFloat(this.angleInput.value).toFixed(0)}</span>°</div>
+          <div class="info-item">Gravity: <span>${this.g.toFixed(2)}</span> m/s²</div>
+          <div class="info-item">Damping: <span>${this.damping.toFixed(3)}</span></div>
+          <div class="info-item">Period: <span>${period.toFixed(3)}</span> s</div>
+          <div class="info-item">Frequency: <span>${frequency.toFixed(3)}</span> Hz</div>
+          <div class="info-item">Angular Velocity: <span>${this.aVel.toFixed(3)}</span> rad/s</div>
+          <div class="info-item">Angular Acceleration: <span>${((-this.g / this.length) * Math.sin(this.angle)).toFixed(3)}</span> rad/s²</div>
+        `;
+      },
+
+      animate: function() {
+        this.draw();
+        this.animationId = requestAnimationFrame(() => this.animate());
+      },
+
+      start: function() {
+        if (!this.isRunning) {
+          this.isRunning = true;
+          this.startPauseBtn.textContent = 'Pause';
+          this.animate();
+        }
+      },
+
+      stop: function() {
+        if (this.isRunning) {
+          cancelAnimationFrame(this.animationId);
+          this.isRunning = false;
+          this.startPauseBtn.textContent = 'Start';
+        }
+      },
+
+      toggleSimulation: function() {
+        if (this.isRunning) {
+          this.stop();
+        } else {
+          this.start();
+        }
+      }
+    };
+
+
+    // --- Spring Oscillation Simulation Object ---
+    const springSim = {
+      canvas: null,
+      ctx: null,
+      animationId: null,
+      isRunning: false,
+      // Spring state variables
+      y: 0,             // Current Y position of the mass (pixels)
+      velocity: 0,      // Velocity of the mass
+      acceleration: 0,  // Acceleration of the mass
+      mass: 1,          // Mass (kg)
+      k: 20,            // Spring constant (N/m)
+      damping: 0.05,    // Damping factor
+      equilibriumY: 150, // Equilibrium Y position (pixels) - adjusted for visual
+      visualScale: 200, // Pixels per meter for drawing (e.g., 1m = 200px)
+
+      // Initial conditions for reset
+      initialMass: 1,
+      initialK: 20,
+      initialDisplacement: 0.2, // meters
+      initialDamping: 0.05,
+
+      // UI elements
+      massInput: document.getElementById('springMass'),
+      kInput: document.getElementById('springConstant'),
+      displacementInput: document.getElementById('initialDisplacement'),
+      dampingInput: document.getElementById('springDamping'),
+      startPauseBtn: document.getElementById('springStartPauseBtn'),
+      resetBtn: document.getElementById('springResetBtn'),
+      infoPanel: document.getElementById('springInfo'),
+
+      init: function() {
+        this.canvas = document.getElementById('springCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        const parentContainer = this.canvas.closest('.simulation-area');
+        if (parentContainer) {
+          this.canvas.width = parentContainer.offsetWidth;
+          this.canvas.height = parentContainer.offsetHeight;
+        }
+
+        // Add event listeners for controls
+        this.massInput.addEventListener('input', () => this.updateParameters());
+        this.kInput.addEventListener('input', () => this.updateParameters());
+        this.displacementInput.addEventListener('input', () => {
+          // Parse value as float for number input
+          this.initialDisplacement = parseFloat(this.displacementInput.value);
+          this.reset(); // Reset to new initial displacement
+        });
+        this.dampingInput.addEventListener('input', () => this.updateParameters());
+
+        this.startPauseBtn.addEventListener('click', () => this.toggleSimulation());
+        this.resetBtn.addEventListener('click', () => this.reset());
+
+        // Initial setup
+        this.updateParameters();
+        this.reset();
+      },
+
+      updateParameters: function() {
+        this.mass = parseFloat(this.massInput.value);
+        this.k = parseFloat(this.kInput.value);
+        this.damping = parseFloat(this.dampingInput.value);
+        this.updateInfoPanel();
+      },
+
+      reset: function() {
+        this.stop();
+        this.massInput.value = this.initialMass;
+        this.kInput.value = this.initialK;
+        this.displacementInput.value = this.initialDisplacement;
+        this.dampingInput.value = this.initialDamping;
+
+        this.updateParameters(); // Update internal parameters from inputs
+        // Set initial position based on initialDisplacement (in meters, converted to pixels)
+        this.y = this.equilibriumY + this.initialDisplacement * this.visualScale;
+        this.velocity = 0;
+        this.acceleration = 0;
+
+        this.draw(); // Draw initial state
+        this.start(); // Start animation automatically on reset
+      },
+
+      draw: function() {
+        if (!this.ctx || !this.canvas) return;
+
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.ctx.clearRect(0, 0, width, height);
+
+        const springX = width / 2;
+
+        // Physics calculation with damping: F = -ky - bv => a = (-ky - bv) / m
+        const displacementFromEq = (this.y - this.equilibriumY) / this.visualScale; // Convert pixels to meters
+        this.acceleration = (-this.k * displacementFromEq - this.damping * this.velocity) / this.mass;
+        this.velocity += this.acceleration * 0.016; // dt approximately 1/60th of a second
+        this.y += this.velocity * 0.016 * this.visualScale; // Convert velocity to pixels per second
+
+        // Draw support
+        this.ctx.fillStyle = '#333';
+        this.ctx.fillRect(springX - 40, 0, 80, 10);
+
+        // Draw spring (zigzag pattern)
+        this.ctx.strokeStyle = '#666';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(springX, 10);
+
+        const numCoils = 15;
+        const maxCoilAmplitude = 15;
+        const currentSpringHeight = this.y - 10;
+
+        if (currentSpringHeight > 0) {
+            for (let i = 0; i <= numCoils; i++) {
+                const yPos = 10 + (i / numCoils) * currentSpringHeight;
+                const xOffset = (i % 2 === 0 ? maxCoilAmplitude : -maxCoilAmplitude);
+                this.ctx.lineTo(springX + xOffset, yPos);
+            }
+        }
+        this.ctx.lineTo(springX, this.y);
+        this.ctx.stroke();
+
+        // Draw mass
+        this.ctx.fillStyle = '#ff6b6b';
+        this.ctx.fillRect(springX - 30, this.y, 60, 40);
+        this.ctx.strokeStyle = '#333';
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeRect(springX - 30, this.y, 60, 40);
+
+        // Draw equilibrium line
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.strokeStyle = '#aaa';
+        this.ctx.beginPath();
+        this.ctx.moveTo(springX - 50, this.equilibriumY + 20); // Center of the mass at equilibrium
+        this.ctx.lineTo(springX + 50, this.equilibriumY + 20);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#666';
+        this.ctx.fillText('Equilibrium', springX + 60, this.equilibriumY + 25);
+
+
+        this.updateInfoPanel();
+      },
+
+      updateInfoPanel: function() {
+        const period = 2 * PI * Math.sqrt(this.mass / this.k);
+        const frequency = 1 / period;
+
+        this.infoPanel.innerHTML = `
+          <div class="info-item">Mass: <span>${this.mass.toFixed(2)}</span> kg</div>
+          <div class="info-item">Spring Constant: <span>${this.k.toFixed(2)}</span> N/m</div>
+          <div class="info-item">Initial Displacement: <span>${this.initialDisplacement.toFixed(2)}</span> m</div>
+          <div class="info-item">Damping: <span>${this.damping.toFixed(2)}</span></div>
+          <div class="info-item">Period: <span>${period.toFixed(3)}</span> s</div>
+          <div class="info-item">Frequency: <span>${frequency.toFixed(3)}</span> Hz</div>
+          <div class="info-item">Velocity: <span>${this.velocity.toFixed(3)}</span> m/s</div>
+          <div class="info-item">Acceleration: <span>${this.acceleration.toFixed(3)}</span> m/s²</div>
+        `;
+      },
+
+      animate: function() {
+        this.draw();
+        this.animationId = requestAnimationFrame(() => this.animate());
+      },
+
+      start: function() {
+        if (!this.isRunning) {
+          this.isRunning = true;
+          this.startPauseBtn.textContent = 'Pause';
+          this.animate();
+        }
+      },
+
+      stop: function() {
+        if (this.isRunning) {
+          cancelAnimationFrame(this.animationId);
+          this.isRunning = false;
+          this.startPauseBtn.textContent = 'Start';
+        }
+      },
+
+      toggleSimulation: function() {
+        if (this.isRunning) {
+          this.stop();
+        } else {
+          this.start();
+        }
+      }
+    };
+
+    // Initialize the currently active tab on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Find the initially active tab (Simple Pendulum is default)
+      const activeTabBtn = document.querySelector('.tab-btn.active');
+      if (activeTabBtn) {
+        const tabId = activeTabBtn.getAttribute('data-tab');
+        if (tabId === 'pendulum') {
+          pendulumSim.init();
+          pendulumSim.reset();
+          pendulumSim.start();
+        } else if (tabId === 'spring') {
+          // This case will be triggered if the user changes the initial active tab manually in dev tools
+          springSim.init();
+          springSim.reset();
+          springSim.start();
+        }
+      }
+    });
+
+    // Handle canvas resizing for both simulations
+    window.addEventListener('resize', () => {
+        // Only re-init and redraw the currently active canvas
+        const activeTabId = document.querySelector('.tab-btn.active').dataset.tab;
+        if (activeTabId === 'pendulum') {
+            pendulumSim.init(); // Re-initializes canvas size
+            pendulumSim.draw(); // Redraws content immediately
+        } else if (activeTabId === 'spring') {
+            springSim.init(); // Re-initializes canvas size
+            springSim.draw(); // Redraws content immediately
+        }
+    });
+
+  </script>
+</body>
+</html>

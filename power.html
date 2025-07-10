@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Simulation Suite (Energy, Work, Power, Efficiency)</title>
+  <style>
+    /* CSS Variables for consistent styling */
+    :root {
+      --primary-color: #4a6bff;
+      --secondary-color: #ff6b6b;
+      --accent-color: #6bff6b;
+      --dark-color: #333;
+      --light-color: #f8f9fa;
+      --border-radius: 10px;
+      --box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      --input-bg: #f0f4f8;
+      --button-hover-scale: 1.03;
+      --button-active-scale: 0.98;
+    }
+
+    /* Reset default browser styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Body styling with a gradient background and Inter font */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align content to the top */
+      min-height: 100vh; /* Ensure body takes full viewport height */
+    }
+
+    /* Main container for the simulation */
+    .container {
+      max-width: 900px; /* Increased max-width for multiple simulations */
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Header styling */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    /* Tabs navigation styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+      gap: 10px; /* Space between tabs */
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      font-weight: 600;
+      flex-shrink: 0; /* Prevent buttons from shrinking too much */
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .tab-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Base styling for all law/concept content sections */
+    .law-content {
+      display: none; /* Hidden by default */
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-bottom: 30px;
+      flex-direction: column; /* Ensure content is stacked */
+      align-items: center; /* Center items horizontally */
+    }
+
+    .law-content.active {
+      display: flex; /* Show active content */
+      animation: fadeIn 0.5s ease; /* Fade-in effect */
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .simulation-title {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+    }
+
+    /* Controls layout using CSS Grid for responsiveness */
+    .controls {
+      width: 100%;
+      max-width: 700px; /* Consistent max-width for controls */
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background: var(--input-bg);
+    }
+
+    .control-group {
+      margin-bottom: 5px;
+    }
+
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .control-group input[type="number"],
+    .control-group input[type="range"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      background: white;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Custom styling for range input (slider) */
+    .control-group input[type="range"] {
+      padding: 0;
+      height: 25px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      outline: none;
+      border-radius: 10px;
+    }
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Button group and individual button styling */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    button.primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    button.secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(var(--button-hover-scale));
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:active {
+      transform: scale(var(--button-active-scale));
+    }
+
+    /* Simulation area for the car and canvas-based simulations */
+    .simulation-area {
+      width: 100%;
+      max-width: 700px; /* Consistent max-width for simulation visuals */
+      height: 400px; /* Increased height for canvas simulations */
+      margin: 20px 0;
+      background: #f8f9fa;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      display: flex; /* For centering canvas/elements */
+      justify-content: center;
+      align-items: center;
+      position: relative; /* For absolute positioning of cars/rocket */
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+    }
+
+    .track {
+      position: relative;
+      width: 100%;
+      height: 60px;
+      background: #e9ecef;
+      border: 2px solid #adb5bd;
+      margin: 20px 0; /* Adjust margin for proper placement within simulation-area */
+      border-radius: var(--border-radius);
+      overflow: hidden;
+    }
+
+    /* Car styling for Work and Power */
+    .car {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      background: var(--primary-color);
+      border-radius: 10px 10px 5px 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0px; /* Initial position */
+    }
+
+    /* Car wheels */
+    .car::before, .car::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      width: 15px;
+      height: 15px;
+      background: #333;
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .car::before {
+      left: 10px;
+    }
+
+    .car::after {
+      right: 10px;
+    }
+
+    /* Car windows */
+    .car .window {
+      position: absolute;
+      top: 5px;
+      width: 15px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 3px;
+    }
+
+    .car .window.left {
+      left: 10px;
+    }
+
+    .car .window.right {
+      right: 10px;
+    }
+
+    /* Info panel styling */
+    .info-panel {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin-top: 20px;
+      width: 100%;
+      max-width: 700px; /* Consistent max-width */
+    }
+
+    .info-item {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    .info-item span {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Style for Efficiency Gauge/Bar */
+    #efficiencyCanvas {
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .simulation-title {
+        font-size: 1.5rem;
+      }
+      .info-item {
+        font-size: 1rem;
+      }
+      .simulation-area {
+        height: 300px; /* Smaller height on mobile */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Physics Simulation Suite</h1>
+      <p class="subtitle">Interactive simulations for various physics concepts</p>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" data-concept="energy">Energy</button>
+      <button class="tab-btn" data-concept="work">Work</button>
+      <button class="tab-btn" data-concept="power">Power</button>
+      <button class="tab-btn" data-concept="efficiency">Efficiency</button>
+    </div>
+
+    <!-- Energy Tab -->
+    <div id="energyTab" class="law-content active">
+        <h2 class="simulation-title">Energy: Potential & Kinetic Energy Conversion</h2>
+        <p style="text-align: center; margin-bottom: 20px; color: #555;">
+            Observe how potential energy converts into kinetic energy as an object falls.
+            Total mechanical energy should remain constant (ignoring air resistance).
+        </p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="energyBallMass">Ball Mass (kg):</label>
+                <input type="number" id="energyBallMass" min="0.1" max="10" value="1" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="energyInitialHeight">Initial Height (m):</label>
+                <input type="number" id="energyInitialHeight" min="1" max="100" value="50" step="1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="primary" id="energyStartBtn">Start Simulation</button>
+            <button class="secondary" id="energyResetBtn">Reset</button>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="energyCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-item">Height: <span id="energyHeight">0</span> m</div>
+            <div class="info-item">Velocity: <span id="energyVelocity">0</span> m/s</div>
+            <div class="info-item">Potential Energy (PE): <span id="energyPE">0</span> J</div>
+            <div class="info-item">Kinetic Energy (KE): <span id="energyKE">0</span> J</div>
+            <div class="info-item">Total Energy (PE+KE): <span id="energyTotalE">0</span> J</div>
+        </div>
+    </div>
+
+    <!-- Work Tab -->
+    <div id="workTab" class="law-content">
+        <h2 class="simulation-title">Work Done by a Force</h2>
+        <p style="text-align: center; margin-bottom: 20px; color: #555;">
+            Explore how work is done when a force causes displacement.
+        </p>
+        <div class="controls">
+            <div class="control-group">
+                <label for="workAppliedForce">Applied Force (N):</label>
+                <input type="number" id="workAppliedForce" min="1" max="100" value="20" step="1">
+            </div>
+            <div class="control-group">
+                <label for="workDistance">Distance (m):</label>
+                <input type="number" id="workDistance" min="1" max="50" value="10" step="1">
+            </div>
+            <div class="control-group">
+                <label for="workAngle">Angle (degrees):</label>
+                <input type="number" id="workAngle" min="0" max="90" value="0" step="1">
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="primary" id="workStartBtn">Start Work Sim</button>
+            <button class="secondary" id="workResetBtn">Reset Work Sim</button>
+        </div>
+        <div class="simulation-area">
+            <div class="track">
+                <div class="car" id="workBox">
+                    <div class="window left"></div>
+                    <div class="window right"></div>
+                </div>
+            </div>
+        </div>
+        <div class="info-panel">
+            <div class="info-item">Force Component (x-direction): <span id="workForceComponent">0</span> N</div>
+            <div class="info-item">Distance Moved: <span id="workDistanceMoved">0</span> m</div>
+            <div class="info-item">Work Done: <span id="workDoneValue">0</span> J</div>
+        </div>
+    </div>
+
+    <!-- Power Tab -->
+    <div id="powerTab" class="law-content">
+        <h2 class="simulation-title">Power: Rate of Doing Work</h2>
+        <p style="text-align: center; margin-bottom: 20px; color: #555;">
+            Understand power as the rate at which work is performed or energy is transferred.
+        </p>
+        <div class="controls">
+            <div class="control-group">
+                <label for="powerAppliedForce">Applied Force (N):</label>
+                <input type="number" id="powerAppliedForce" min="1" max="100" value="20" step="1">
+            </div>
+            <div class="control-group">
+                <label for="powerVelocity">Velocity (m/s):</label>
+                <input type="number" id="powerVelocity" min="0.1" max="10" value="2" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="powerAngle">Angle (degrees):</label>
+                <input type="number" id="powerAngle" min="0" max="90" value="0" step="1">
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="primary" id="powerStartBtn">Start Power Sim</button>
+            <button class="secondary" id="powerResetBtn">Reset Power Sim</button>
+        </div>
+        <div class="simulation-area">
+            <div class="track">
+                <div class="car" id="powerBox">
+                    <div class="window left"></div>
+                    <div class="window right"></div>
+                </div>
+            </div>
+        </div>
+        <div class="info-panel">
+            <div class="info-item">Instantaneous Power: <span id="powerInstantaneous">0</span> W</div>
+            <div class="info-item">Work Done: <span id="powerWorkDone">0</span> J</div>
+            <div class="info-item">Time Elapsed: <span id="powerTimeElapsed">0</span> s</div>
+        </div>
+    </div>
+
+    <!-- Efficiency Tab -->
+    <div id="efficiencyTab" class="law-content">
+        <h2 class="simulation-title">Efficiency: Output vs. Input</h2>
+        <p style="text-align: center; margin-bottom: 20px; color: #555;">
+            Calculate and visualize the efficiency of a system as the ratio of useful output to total input.
+        </p>
+        <div class="controls">
+            <div class="control-group">
+                <label for="efficiencyInputEnergy">Input Energy (J):</label>
+                <input type="number" id="efficiencyInputEnergy" min="10" max="1000" value="500" step="10">
+            </div>
+            <div class="control-group">
+                <label for="efficiencyOutputEnergy">Output Energy (J):</label>
+                <input type="number" id="efficiencyOutputEnergy" min="0" max="1000" value="400" step="10">
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="primary" id="efficiencyCalculateBtn">Calculate Efficiency</button>
+            <button class="secondary" id="efficiencyResetBtn">Reset Efficiency</button>
+        </div>
+        <div class="simulation-area">
+            <canvas id="efficiencyCanvas"></canvas>
+        </div>
+        <div class="info-panel">
+            <div class="info-item">Calculated Efficiency: <span id="efficiencyValue">0</span> %</div>
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Global variables for managing animation loops and current state
+    let activeAnimationId = null; // Stores the requestAnimationFrame ID for the currently active simulation
+    let currentConceptMode = 'energy'; // Default to Energy initially
+
+    // Object to hold animation IDs for each concept to stop them individually
+    const animationLoopIds = {
+        energy: null,
+        work: null,
+        power: null,
+        efficiency: null,
+    };
+
+    // --- Utility Functions ---
+
+    /**
+     * Helper function to clamp a value between a min and max.
+     * @param {number} value - The value to clamp.
+     * @param {number} min - The minimum allowed value.
+     * @param {number} max - The maximum allowed value.
+     * @returns {number} The clamped value.
+     */
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    /**
+     * Stops all ongoing animation loops.
+     */
+    function stopAllAnimations() {
+        for (const key in animationLoopIds) {
+            if (animationLoopIds[key]) {
+                cancelAnimationFrame(animationLoopIds[key]);
+                animationLoopIds[key] = null;
+            }
+        }
+    }
+
+    /**
+     * Switches between different physics simulations and manages active tab state.
+     * @param {string} conceptId - The ID of the concept to show (e.g., 'energy', 'work').
+     */
+    function showConcept(conceptId) {
+        // Stop any currently running animations from all simulations
+        stopAllAnimations();
+
+        // Remove active class from all tab buttons and content divs
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.law-content').forEach(content => content.classList.remove('active'));
+
+        // Add active class to the clicked tab button
+        const activeTabButton = document.querySelector(`.tab-btn[data-concept="${conceptId}"]`);
+        if (activeTabButton) {
+            activeTabButton.classList.add('active');
+        }
+
+        // Show the selected concept content div
+        const selectedConceptContent = document.getElementById(conceptId + 'Tab'); // Append 'Tab' to match div IDs
+        if (selectedConceptContent) {
+            selectedConceptContent.classList.add('active');
+        }
+
+        currentConceptMode = conceptId; // Update global mode
+
+        // Initialize and/or start animation for the newly active concept
+        // Each simulation's init() method also handles its own reset.
+        if (currentConceptMode === 'energy') {
+            energySim.init();
+        } else if (currentConceptMode === 'work') {
+            workSim.init();
+        } else if (currentConceptMode === 'power') {
+            powerSim.init();
+        } else if (currentConceptMode === 'efficiency') {
+            efficiencySim.init();
+        }
+    }
+
+    // --- Energy Simulation ---
+    const energyCanvas = document.getElementById('energyCanvas');
+    const energyBallMassInput = document.getElementById('energyBallMass');
+    const energyInitialHeightInput = document.getElementById('energyInitialHeight');
+    const energyStartBtn = document.getElementById('energyStartBtn');
+    const energyResetBtn = document.getElementById('energyResetBtn');
+    const energyHeightText = document.getElementById('energyHeight');
+    const energyVelocityText = document.getElementById('energyVelocity');
+    const energyPEText = document.getElementById('energyPE');
+    const energyKEText = document.getElementById('energyKE');
+    const energyTotalEText = document.getElementById('energyTotalE');
+
+    const energySim = {
+        ctx: null,
+        canvas: null,
+        ball: {
+            x: 0,
+            y: 0,
+            radius: 15, // pixels
+            mass: 1,    // kg
+            velocity: 0, // m/s (downwards is positive)
+            height: 0,  // meters (from ground)
+        },
+        g: 9.81, // m/s^2
+        pixelsPerMeter: 5, // Scale factor: how many pixels represent 1 meter
+        groundY: 0, // Calculated ground Y position on canvas
+        initialBallY: 0, // Initial y-position on canvas for drawing initial height line
+        animationId: null,
+        lastTime: null,
+
+        /**
+         * Initializes the Energy simulation.
+         * Sets up canvas, calculates ground position, and calls reset.
+         */
+        init: function() {
+            this.canvas = energyCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.groundY = this.canvas.height - 20; // 20 pixels for ground visual
+            // Calculate pixelsPerMeter based on canvas height and initial height input's max value
+            const maxInputHeight = parseFloat(energyInitialHeightInput.max);
+            const availableCanvasHeight = this.canvas.height - 20 - (this.ball.radius * 2);
+            if (maxInputHeight > 0) {
+                this.pixelsPerMeter = availableCanvasHeight / maxInputHeight;
+                this.pixelsPerMeter = Math.max(1, this.pixelsPerMeter);
+            } else {
+                this.pixelsPerMeter = 1;
+            }
+            this.reset();
+        },
+
+        /**
+         * Resets the Energy simulation to its initial state.
+         * Stops animation, resets ball properties, and redraws.
+         */
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+            this.lastTime = null;
+
+            this.ball.mass = parseFloat(energyBallMassInput.value);
+            this.ball.height = parseFloat(energyInitialHeightInput.value);
+            this.ball.velocity = 0;
+            this.ball.x = this.canvas.width / 2;
+            // Convert initial height (meters) to canvas y-coordinate (pixels)
+            this.ball.y = this.groundY - (this.ball.height * this.pixelsPerMeter) - this.ball.radius;
+            this.initialBallY = this.ball.y; // Store for drawing initial height line
+
+            this.draw();
+            this.updateInfoPanel();
+        },
+
+        /**
+         * Draws the ground, the ball, and the initial height line on the canvas.
+         */
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Draw Ground
+            this.ctx.fillStyle = '#6B4226'; // Brown
+            this.ctx.fillRect(0, this.groundY, this.canvas.width, this.canvas.height - this.groundY);
+
+            // Draw Initial Height Line (only if ball is above ground initially)
+            // Adjust line position to be at the initial top of the ball for clarity
+            if (this.initialBallY + this.ball.radius < this.groundY) {
+                this.ctx.beginPath();
+                this.ctx.setLineDash([5, 5]); // Dashed line
+                this.ctx.strokeStyle = '#666';
+                this.ctx.lineWidth = 1;
+                this.ctx.moveTo(this.ball.x - 30, this.initialBallY + this.ball.radius);
+                this.ctx.lineTo(this.ball.x + 30, this.initialBallY + this.ball.radius);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]); // Reset to solid line
+                this.ctx.font = '12px "Inter", sans-serif';
+                this.ctx.fillStyle = '#666';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(`${this.ball.height.toFixed(1)} m (initial)`, this.ball.x, this.initialBallY + this.ball.radius - 10);
+            }
+
+            // Draw Ball
+            this.ctx.beginPath();
+            this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+            this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color'); 
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowOffsetX = 2;
+            this.ctx.shadowOffsetY = 2;
+            this.ctx.fill();
+            this.ctx.shadowColor = 'transparent'; // Reset shadow
+        },
+
+        /**
+         * Main animation loop for the Energy simulation.
+         * Updates the physical state of the ball and calculates energy values.
+         * @param {DOMHighResTimeStamp} currentTime - The current time provided by requestAnimationFrame.
+         */
+        animate: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000;
+            this.lastTime = currentTime;
+
+            // Apply gravity (constant acceleration downwards)
+            this.ball.velocity += this.g * deltaTime; // Velocity increases downwards
+
+            // Update ball's canvas Y position
+            this.ball.y += this.ball.velocity * this.pixelsPerMeter * deltaTime; // Convert m/s to pixels/s
+
+            // Convert canvas Y back to real-world height
+            this.ball.height = (this.groundY - this.ball.y - this.ball.radius) / this.pixelsPerMeter;
+            this.ball.height = Math.max(0, this.ball.height); // Height cannot go below zero
+
+            // Collision with ground
+            if (this.ball.y + this.ball.radius >= this.groundY) {
+                this.ball.y = this.groundY - this.ball.radius; // Snap to ground
+                this.ball.velocity = 0; // Stop
+                this.ball.height = 0; // Ensure height is 0
+                this.stop(); // Stop animation
+            }
+
+            this.updateInfoPanel();
+            this.draw();
+
+            if (this.animationId) {
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.energy = this.animationId; // Store for global stopping
+            }
+        },
+
+        /**
+         * Updates the information panel for the Energy simulation.
+         * Calculates and displays Height, Velocity, PE, KE, and Total Energy.
+         */
+        updateInfoPanel: function() {
+            const mass = this.ball.mass;
+            const height = this.ball.height;
+            const velocity = this.ball.velocity;
+
+            const PE = mass * this.g * height; // Potential Energy
+            const KE = 0.5 * mass * velocity * velocity; // Kinetic Energy
+            const TotalE = PE + KE; // Total Mechanical Energy
+
+            energyHeightText.textContent = height.toFixed(2); // Corrected to display actual height
+            energyVelocityText.textContent = Math.abs(velocity).toFixed(2); // Display absolute velocity
+            energyPEText.textContent = PE.toFixed(2);
+            energyKEText.textContent = KE.toFixed(2);
+            energyTotalEText.textContent = TotalE.toFixed(2);
+        },
+
+        /**
+         * Starts the animation loop for the Energy simulation.
+         * Resets before starting.
+         */
+        start: function() {
+            if (!this.animationId) {
+                this.reset(); // Always reset to start from configured height
+                this.lastTime = null;
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.energy = this.animationId;
+            }
+        },
+
+        /**
+         * Stops the animation loop for the Energy simulation.
+         */
+        stop: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+    };
+
+    // Event Listeners for Energy controls
+    energyStartBtn.addEventListener('click', () => energySim.start());
+    energyResetBtn.addEventListener('click', () => energySim.reset());
+    energyBallMassInput.addEventListener('input', () => energySim.reset()); // Reset on input change
+    energyInitialHeightInput.addEventListener('input', () => energySim.reset()); // Reset on input change
+
+    // --- Work Simulation ---
+    const workAppliedForceInput = document.getElementById('workAppliedForce');
+    const workDistanceInput = document.getElementById('workDistance');
+    const workAngleInput = document.getElementById('workAngle');
+    const workStartBtn = document.getElementById('workStartBtn');
+    const workResetBtn = document.getElementById('workResetBtn');
+    const workForceComponentText = document.getElementById('workForceComponent');
+    const workDistanceMovedText = document.getElementById('workDistanceMoved');
+    const workDoneValueText = document.getElementById('workDoneValue');
+    const workBox = document.getElementById('workBox');
+    const workTrack = document.querySelector('#workTab .track');
+
+    const workSim = {
+        position: 0, // Current position of the car in pixels
+        targetDistancePx: 0, // Target distance in pixels
+        force: 0,
+        distance: 0,
+        angle: 0, // in degrees
+        workDone: 0,
+        animationId: null,
+        lastTime: null,
+        trackWidth: 0,
+        carWidth: 0,
+        pixelsPerMeter: 50, // 50 pixels per meter for visual scaling
+
+        init: function() {
+            this.trackWidth = workTrack.offsetWidth;
+            this.carWidth = workBox.offsetWidth;
+            this.reset();
+        },
+
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+            this.lastTime = null;
+
+            this.force = parseFloat(workAppliedForceInput.value);
+            this.distance = parseFloat(workDistanceInput.value);
+            this.angle = parseFloat(workAngleInput.value);
+            
+            this.position = 0;
+            this.workDone = 0;
+
+            workAppliedForceInput.value = this.force;
+            workDistanceInput.value = this.distance;
+            workAngleInput.value = this.angle;
+
+            this.targetDistancePx = this.distance * this.pixelsPerMeter;
+            this.targetDistancePx = Math.min(this.targetDistancePx, this.trackWidth - this.carWidth); // Clamp to track
+            
+            workBox.style.left = this.position + 'px';
+            this.updateInfoPanel();
+            this.draw(); // Draw in initial state
+        },
+
+        draw: function() {
+            // No direct canvas drawing for workSim, relies on DOM manipulation
+        },
+
+        animate: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000;
+            this.lastTime = currentTime;
+
+            // Recalculate parameters in case inputs changed during motion
+            this.force = parseFloat(workAppliedForceInput.value);
+            this.distance = parseFloat(workDistanceInput.value);
+            this.angle = parseFloat(workAngleInput.value);
+            this.targetDistancePx = this.distance * this.pixelsPerMeter;
+            this.targetDistancePx = Math.min(this.targetDistancePx, this.trackWidth - this.carWidth);
+
+            const forceComponent = this.force * Math.cos(this.angle * Math.PI / 180); // Fx = F * cos(theta)
+            
+            // Simple constant velocity for demonstration, derived from force and some assumed mass
+            const assumedVelocity = 50; // pixels per second for visual speed
+            
+            // We want to simulate movement towards the target distance.
+            // If the car is already at the target, stop.
+            if (this.position >= this.targetDistancePx) {
+                this.position = this.targetDistancePx;
+                this.workDone = forceComponent * (this.position / this.pixelsPerMeter); // Final calculation
+                workBox.style.left = this.position + 'px';
+                this.updateInfoPanel();
+                this.stop();
+                return;
+            }
+
+            // Move the car
+            this.position += assumedVelocity * deltaTime;
+            this.position = Math.min(this.position, this.targetDistancePx); // Don't overshoot
+
+            this.workDone = forceComponent * (this.position / this.pixelsPerMeter); // Work done so far
+
+            workBox.style.left = this.position + 'px';
+            this.updateInfoPanel();
+
+            if (this.animationId) {
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.work = this.animationId;
+            }
+        },
+
+        updateInfoPanel: function() {
+            const forceComponent = this.force * Math.cos(this.angle * Math.PI / 180);
+            workForceComponentText.textContent = forceComponent.toFixed(2);
+            workDistanceMovedText.textContent = (this.position / this.pixelsPerMeter).toFixed(2);
+            workDoneValueText.textContent = this.workDone.toFixed(2);
+        },
+
+        start: function() {
+            if (!this.animationId) {
+                this.reset(); // Reset to initial state
+                this.lastTime = null;
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.work = this.animationId;
+            }
+        },
+
+        stop: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+    };
+
+    // Event listeners for Work controls
+    workStartBtn.addEventListener('click', () => workSim.start());
+    workResetBtn.addEventListener('click', () => workSim.reset());
+    workAppliedForceInput.addEventListener('input', () => workSim.reset());
+    workDistanceInput.addEventListener('input', () => workSim.reset());
+    workAngleInput.addEventListener('input', () => workSim.reset());
+
+
+    // --- Power Simulation ---
+    const powerAppliedForceInput = document.getElementById('powerAppliedForce');
+    const powerVelocityInput = document.getElementById('powerVelocity');
+    const powerAngleInput = document.getElementById('powerAngle');
+    const powerStartBtn = document.getElementById('powerStartBtn');
+    const powerResetBtn = document.getElementById('powerResetBtn');
+    const powerInstantaneousText = document.getElementById('powerInstantaneous');
+    const powerWorkDoneText = document.getElementById('powerWorkDone');
+    const powerTimeElapsedText = document.getElementById('powerTimeElapsed');
+    const powerBox = document.getElementById('powerBox');
+    const powerTrack = document.querySelector('#powerTab .track');
+
+    const powerSim = {
+        position: 0,
+        force: 0,
+        velocity: 0,
+        angle: 0, // in degrees
+        timeElapsed: 0,
+        instantaneousPower: 0,
+        workDone: 0,
+        animationId: null,
+        lastTime: null,
+        trackWidth: 0,
+        carWidth: 0,
+        pixelsPerMeter: 50, // 50 pixels per meter for visual scaling
+
+        init: function() {
+            this.trackWidth = powerTrack.offsetWidth;
+            this.carWidth = powerBox.offsetWidth;
+            this.reset();
+        },
+
+        reset: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+            this.lastTime = null;
+
+            this.force = parseFloat(powerAppliedForceInput.value);
+            this.velocity = parseFloat(powerVelocityInput.value);
+            this.angle = parseFloat(powerAngleInput.value);
+            
+            this.position = 0;
+            this.timeElapsed = 0;
+            this.instantaneousPower = 0;
+            this.workDone = 0;
+
+            powerAppliedForceInput.value = this.force;
+            powerVelocityInput.value = this.velocity;
+            powerAngleInput.value = this.angle;
+
+            powerBox.style.left = this.position + 'px';
+            this.updateInfoPanel();
+        },
+
+        draw: function() {
+            // No direct canvas drawing for powerSim, relies on DOM manipulation
+        },
+
+        animate: function(currentTime) {
+            if (!this.lastTime) this.lastTime = currentTime;
+            const deltaTime = (currentTime - this.lastTime) / 1000;
+            this.lastTime = currentTime;
+
+            // Recalculate parameters in case inputs changed during motion
+            this.force = parseFloat(powerAppliedForceInput.value);
+            this.velocity = parseFloat(powerVelocityInput.value);
+            this.angle = parseFloat(powerAngleInput.value);
+            
+            this.timeElapsed += deltaTime;
+
+            const forceComponent = this.force * Math.cos(this.angle * Math.PI / 180);
+            
+            this.instantaneousPower = forceComponent * this.velocity;
+            this.workDone = forceComponent * this.velocity * this.timeElapsed;
+
+            this.position += this.velocity * this.pixelsPerMeter * deltaTime;
+
+            // Wrap around the track
+            const maxPosition = this.trackWidth - this.carWidth;
+            if (this.position > maxPosition) {
+                this.position = 0; // Reset to start
+            }
+
+            powerBox.style.left = this.position + 'px';
+            this.updateInfoPanel();
+
+            if (this.animationId) {
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.power = this.animationId;
+            }
+        },
+
+        updateInfoPanel: function() {
+            powerInstantaneousText.textContent = this.instantaneousPower.toFixed(2);
+            powerWorkDoneText.textContent = this.workDone.toFixed(2);
+            powerTimeElapsedText.textContent = this.timeElapsed.toFixed(2);
+        },
+
+        start: function() {
+            if (!this.animationId) {
+                this.reset();
+                this.lastTime = null;
+                this.animationId = requestAnimationFrame((t) => this.animate(t));
+                animationLoopIds.power = this.animationId;
+            }
+        },
+
+        stop: function() {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+    };
+
+    // Event listeners for Power controls
+    powerStartBtn.addEventListener('click', () => powerSim.start());
+    powerResetBtn.addEventListener('click', () => powerSim.reset());
+    powerAppliedForceInput.addEventListener('input', () => powerSim.reset());
+    powerVelocityInput.addEventListener('input', () => powerSim.reset());
+    powerAngleInput.addEventListener('input', () => powerSim.reset());
+
+
+    // --- Efficiency Simulation ---
+    const efficiencyCanvas = document.getElementById('efficiencyCanvas');
+    const efficiencyInputEnergyInput = document.getElementById('efficiencyInputEnergy');
+    const efficiencyOutputEnergyInput = document.getElementById('efficiencyOutputEnergy');
+    const efficiencyCalculateBtn = document.getElementById('efficiencyCalculateBtn');
+    const efficiencyResetBtn = document.getElementById('efficiencyResetBtn');
+    const efficiencyValueText = document.getElementById('efficiencyValue');
+
+    const efficiencySim = {
+        ctx: null,
+        canvas: null,
+        inputEnergy: 0,
+        outputEnergy: 0,
+        efficiency: 0,
+
+        init: function() {
+            this.canvas = efficiencyCanvas;
+            this.ctx = this.canvas.getContext('2d');
+            const parentContainer = this.canvas.closest('.simulation-area');
+            if (parentContainer) {
+              this.canvas.width = parentContainer.offsetWidth;
+              this.canvas.height = parentContainer.offsetHeight;
+            }
+            this.reset();
+            this.calculateEfficiency(); // Calculate and draw initially
+        },
+
+        reset: function() {
+            this.inputEnergy = parseFloat(efficiencyInputEnergyInput.value);
+            this.outputEnergy = parseFloat(efficiencyOutputEnergyInput.value);
+            this.efficiency = 0;
+            
+            efficiencyInputEnergyInput.value = this.inputEnergy;
+            efficiencyOutputEnergyInput.value = this.outputEnergy;
+
+            this.draw();
+            this.updateInfoPanel();
+        },
+
+        calculateEfficiency: function() {
+            this.inputEnergy = parseFloat(efficiencyInputEnergyInput.value);
+            this.outputEnergy = parseFloat(efficiencyOutputEnergyInput.value);
+
+            // Clamp inputs
+            this.inputEnergy = clamp(this.inputEnergy, parseFloat(efficiencyInputEnergyInput.min), parseFloat(efficiencyInputEnergyInput.max));
+            this.outputEnergy = clamp(this.outputEnergy, parseFloat(efficiencyOutputEnergyInput.min), parseFloat(efficiencyOutputEnergyInput.max));
+            // Ensure output does not exceed input
+            this.outputEnergy = Math.min(this.outputEnergy, this.inputEnergy);
+
+            efficiencyInputEnergyInput.value = this.inputEnergy;
+            efficiencyOutputEnergyInput.value = this.outputEnergy;
+
+            if (this.inputEnergy > 0) {
+                this.efficiency = (this.outputEnergy / this.inputEnergy) * 100;
+            } else {
+                this.efficiency = 0;
+            }
+            this.draw();
+            this.updateInfoPanel();
+        },
+
+        draw: function() {
+            if (!this.ctx) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const barWidth = this.canvas.width * 0.8;
+            const barHeight = 40;
+            const startX = (this.canvas.width - barWidth) / 2;
+            const startY = (this.canvas.height - barHeight) / 2;
+
+            // Draw background bar (represents 100% input)
+            this.ctx.fillStyle = '#e0e0e0';
+            this.ctx.fillRect(startX, startY, barWidth, barHeight);
+            this.ctx.strokeStyle = '#999';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(startX, startY, barWidth, barHeight);
+
+            // Draw efficiency bar
+            const efficientWidth = barWidth * (this.efficiency / 100);
+            this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color'); /* Accent color for efficiency */
+            this.ctx.fillRect(startX, startY, efficientWidth, barHeight);
+
+            // Draw text
+            this.ctx.font = '20px "Inter", sans-serif';
+            // Corrected: Access CSS variable correctly
+            this.ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--dark-color');
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(`${this.efficiency.toFixed(1)}% Efficient`, this.canvas.width / 2, this.canvas.height / 2);
+
+            // Input/Output labels
+            this.ctx.font = '14px "Inter", sans-serif';
+            this.ctx.fillStyle = '#555';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`Input: ${this.inputEnergy} J`, startX, startY - 10);
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`Output: ${this.outputEnergy} J`, startX + barWidth, startY + barHeight + 25);
+        },
+
+        updateInfoPanel: function() {
+            efficiencyValueText.textContent = this.efficiency.toFixed(1);
+        }
+    };
+
+    // Event listeners for Efficiency controls
+    efficiencyInputEnergyInput.addEventListener('input', () => efficiencySim.calculateEfficiency());
+    efficiencyOutputEnergyInput.addEventListener('input', () => efficiencySim.calculateEfficiency());
+    efficiencyCalculateBtn.addEventListener('click', () => efficiencySim.calculateEfficiency());
+    efficiencyResetBtn.addEventListener('click', () => efficiencySim.reset());
+
+
+    // --- Global Initialization ---
+    /**
+     * Executes when the DOM is fully loaded.
+     * Initializes all simulation objects and sets up the initial active tab.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize all simulation objects. Each init() also calls its respective reset().
+        energySim.init();
+        workSim.init(); // Initialize Work sim
+        powerSim.init(); // Initialize Power sim
+        efficiencySim.init(); // Initialize Efficiency sim
+
+        // Set the initial concept to display (Energy by default) and activate its button.
+        const initialConcept = 'energy';
+        const initialTabButton = document.querySelector(`.tab-btn[data-concept="${initialConcept}"]`);
+        if (initialTabButton) {
+            initialTabButton.click(); // Programmatically click the button
+        } else {
+            // Fallback in case the button isn't found (shouldn't happen)
+            showConcept(initialConcept);
+        }
+    });
+
+    // Event listener for the tab navigation buttons.
+    // When a tab button is clicked, it calls showConcept to switch simulations.
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const conceptId = btn.getAttribute('data-concept'); // Get the data-concept attribute directly
+        showConcept(conceptId); // Switch to the selected concept's simulation
+      });
+    });
+
+  </script>
+</body>
+</html>
